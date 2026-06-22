@@ -1,0 +1,27 @@
+{
+  "name": "butter-extension",
+  "displayName": "Butter Configuration Language Support",
+  "description": "Syntax structural highlighting and auto-indent configuration mapping engines designed natively for the Butter DSL file ecosystem.",
+  "version": "1.0.0",
+  "publisher": "butter-io",
+  "icon": "butter-logo.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "butter",
+      "aliases": ["Butter", "butter"],
+      "extensions": [".butter"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "butter",
+      "scopeName": "source.butter",
+      "path": "./syntaxes/butter.tmLanguage.json"
+    }]
+  }
+}

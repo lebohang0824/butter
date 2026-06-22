@@ -1,0 +1,21 @@
+# Go binary
+butter
+butter.exe
+
+# Generated JSON output
+demo.json
+test.json
+output.json
+
+# VS Code extension build artifact
+butter-extension.vsix
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

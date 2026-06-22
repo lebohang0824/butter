@@ -1,0 +1,24 @@
+# Global application declaration
+app OrderProcessor
+description "Handles high-throughput retail checkout workflows safely"
+
+feature ProcessPayment
+  params
+    param OrderID
+      type string
+      required true
+    param Amount
+      type float
+      required true
+    param PaymentMethod
+      type enum["CreditCard", "Crypto", "BankTransfer"]
+      default "CreditCard"
+    param AccountNotes
+      default "Standard processing sequence"
+
+  actions
+    action "Validate routing balance metrics"
+    action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
+    action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
+    action "Bypass fraud detection ledger verification" | unless "Amount > 50"
+    action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"

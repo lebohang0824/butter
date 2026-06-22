@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Butter DSL Language Configuration Map",
+  "scopeName": "source.butter",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#conditionals" },
+    { "include": "#strings" },
+    { "include": "#constants" }
+  ],
+  "repository": {
+    "comments": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.butter"
+    },
+    "keywords": {
+      "match": "\\b(app|description|feature|params|param|type|required|default|actions|action)\\b",
+      "name": "keyword.control.butter"
+    },
+    "conditionals": {
+      "match": "\\b(if|unless|when|while)\\b",
+      "name": "keyword.control.conditional.butter"
+    },
+    "strings": {
+      "name": "string.quoted.double.butter",
+      "begin": "\"",
+      "end": "\""
+    },
+    "constants": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.boolean.butter"
+    }
+  }
+}
