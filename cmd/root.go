@@ -12,22 +12,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const Version = "1.1.0"
+
 var outputFile string
+var checkMode bool
+var showVersion bool
 
 var rootCmd = &cobra.Command{
 	Use:   "butter",
 	Short: "Butter is a high-performance, indentation-aware specification compiler.",
 	Long:  `A clean compiler framework that turns minimalist indentation-based .butter specifications into beautifully formatted JSON structures.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if showVersion {
+			fmt.Printf("butter v%s\n", Version)
+			return nil
+		}
+		return cmd.Help()
+	},
 }
 
 var compileCmd = &cobra.Command{
 	Use:   "compile [input file]",
 	Short: "Compile a .butter specification file down to pretty JSON",
+	Long:  `Compile a .butter file to JSON. Use --check to validate syntax without generating output.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile := args[0]
 		if !strings.HasSuffix(inputFile, ".butter") {
-			return fmt.Errorf("invalid file context: source files must end explicitly with the '.butter' extension")
+			return fmt.Errorf("input file must have a .butter extension")
 		}
 
 		content, err := os.ReadFile(inputFile)
@@ -40,6 +52,11 @@ var compileCmd = &cobra.Command{
 		appAST, err := p.Parse()
 		if err != nil {
 			return fmt.Errorf("compilation syntax compilation error:\n%w", err)
+		}
+
+		if checkMode {
+			fmt.Println("OK")
+			return nil
 		}
 
 		jsonOutput, err := parser.GenerateJSONSpec(appAST)
@@ -61,7 +78,9 @@ var compileCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Print the version number")
 	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json)")
+	compileCmd.Flags().BoolVar(&checkMode, "check", false, "Check syntax without generating output")
 	rootCmd.AddCommand(compileCmd)
 }
 

@@ -7,7 +7,10 @@ A VS Code extension providing syntax highlighting, indentation support, and lang
 ## Features
 
 - **Syntax Highlighting** — Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
+- **On-Save Linting** — Validates `.butter` syntax on save using the bundled compiler and surfaces errors with red squiggly underlines
+- **Manual Lint Command** — `Butter: Lint current file` in the command palette
 - **Auto-Indentation** — Smart indent/dedent for `feature`, `params`, `actions`, and `param` blocks
+- **Configurable Compiler Path** — Set the path to the `butter` binary via `butter.compilerPath`
 - **Comment Support** — `#` line comments with toggle support
 - **Auto-Closing Pairs** — Automatic `"` and `[]` pair completion
 - **Document File Icon** — Custom icon for `.butter` files

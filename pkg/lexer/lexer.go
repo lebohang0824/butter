@@ -133,7 +133,7 @@ func (l *Lexer) NextToken() Token {
 	}
 
 	l.pos++
-	return Token{Type: TokenError, Value: fmt.Sprintf("Unexpected standalone literal token instance: '%c'", ch), Line: l.line}
+		return Token{Type: TokenError, Value: fmt.Sprintf("unexpected character '%c'", ch), Line: l.line}
 }
 
 func (l *Lexer) consumeIndentation() int {

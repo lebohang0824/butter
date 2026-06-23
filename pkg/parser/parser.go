@@ -38,14 +38,14 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "app" {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenIdentifier {
-				return nil, fmt.Errorf("line %d: expected application identifier string name configuration directly following 'app'", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected an application name after 'app'", p.curToken.Line)
 			}
 			appSpec.App = p.curToken.Value
 			p.nextToken()
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "description" {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenString {
-				return nil, fmt.Errorf("line %d: expected quoted string definition literal mapping for system descriptions", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected a quoted string for description", p.curToken.Line)
 			}
 			appSpec.Description = p.curToken.Value
 			p.nextToken()
@@ -63,7 +63,7 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			}
 			appSpec.Features = append(appSpec.Features, *feat)
 		} else {
-			return nil, fmt.Errorf("line %d: unexpected root syntax definition key structure rule target block component mapping token: '%s'", p.curToken.Line, p.curToken.Value)
+			return nil, fmt.Errorf("line %d: unexpected '%s' at the top level — expected 'app', 'description', 'version', or 'feature'", p.curToken.Line, p.curToken.Value)
 		}
 	}
 
@@ -73,19 +73,19 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 	p.nextToken()
 	if p.curToken.Type != lexer.TokenIdentifier {
-		return nil, fmt.Errorf("line %d: feature definition missing targeted unique naming string sequence token module descriptor block", p.curToken.Line)
+		return nil, fmt.Errorf("line %d: expected a feature name after 'feature'", p.curToken.Line)
 	}
 
 	feat := &ast.FeatureSpec{Name: p.curToken.Value}
 	p.nextToken()
 
 	if p.curToken.Type != lexer.TokenNewline {
-		return nil, fmt.Errorf("line %d: expected newline formatting sequence following declaration configuration target feature string identifier", p.curToken.Line)
+		return nil, fmt.Errorf("line %d: expected a newline after the feature name", p.curToken.Line)
 	}
 	p.nextToken()
 
 	if p.curToken.Type != lexer.TokenIndent {
-		return nil, fmt.Errorf("line %d: expected scope nesting block alignment sequence step directly underneath feature structural block initialization parameter mappings", p.curToken.Line)
+		return nil, fmt.Errorf("line %d: expected an indented block under this feature", p.curToken.Line)
 	}
 	p.nextToken()
 
@@ -112,11 +112,11 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenNewline {
-				return nil, fmt.Errorf("line %d: missing parameters array scoping sequence separator indicator formatting mapping standard line-break config", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected a newline after 'params'", p.curToken.Line)
 			}
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenIndent {
-				return nil, fmt.Errorf("line %d: parameters block must establish an indented nested list context mapping step block element hierarchy", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected an indented block under 'params'", p.curToken.Line)
 			}
 			p.nextToken()
 
@@ -130,7 +130,7 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 				} else if p.curToken.Type == lexer.TokenNewline {
 					p.nextToken()
 				} else {
-					return nil, fmt.Errorf("line %d: parameter structural blocks only take 'param' structural definitions directly, got: '%s'", p.curToken.Line, p.curToken.Value)
+					return nil, fmt.Errorf("line %d: expected 'param' inside this block, got '%s'", p.curToken.Line, p.curToken.Value)
 				}
 			}
 			p.nextToken()
@@ -149,12 +149,12 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 				} else if p.curToken.Type == lexer.TokenNewline {
 					p.nextToken()
 				} else {
-					return nil, fmt.Errorf("line %d: unexpected definition item structured in actions container matrix execution target rules array sequence mapping index: '%s'", p.curToken.Line, p.curToken.Value)
+					return nil, fmt.Errorf("line %d: expected 'action' inside this block, got '%s'", p.curToken.Line, p.curToken.Value)
 				}
 			}
 			p.nextToken()
 		} else {
-			return nil, fmt.Errorf("line %d: unexpected item inside feature block: '%s'", p.curToken.Line, p.curToken.Value)
+			return nil, fmt.Errorf("line %d: unexpected '%s' inside feature — expected 'description', 'version', 'params', or 'actions'", p.curToken.Line, p.curToken.Value)
 		}
 	}
 
@@ -168,7 +168,7 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	p.nextToken()
 	if p.curToken.Type != lexer.TokenIdentifier {
-		return nil, fmt.Errorf("line %d: parameter mapping statement requires target string literal key token name mapping sequence instance rule assignment", p.curToken.Line)
+		return nil, fmt.Errorf("line %d: expected a parameter name after 'param'", p.curToken.Line)
 	}
 	param := &ast.ParamSpec{Name: p.curToken.Value, Type: "string", Required: false}
 	p.nextToken()
@@ -199,7 +199,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 				}
 				p.nextToken()
 			default:
-				return nil, fmt.Errorf("line %d: unexpected configuration keyword attribute found inside target parameter object block structural mapping list context: '%s'", p.curToken.Line, p.curToken.Value)
+				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', or 'default'", p.curToken.Line, p.curToken.Value)
 			}
 		}
 	}
@@ -210,7 +210,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 	p.nextToken()
 	if p.curToken.Type != lexer.TokenString {
-		return nil, fmt.Errorf("line %d: actions declaration string description parameter sequence block mapping assignment context target tracking value must be wrapped in matching quote marks", p.curToken.Line)
+		return nil, fmt.Errorf("line %d: action statement must be a quoted string", p.curToken.Line)
 	}
 	action := &ast.ActionSpec{Statement: p.curToken.Value}
 	p.nextToken()
@@ -219,11 +219,11 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 		p.nextToken()
 		condType := p.curToken.Value
 		if condType != "if" && condType != "unless" && condType != "when" && condType != "while" {
-			return nil, fmt.Errorf("line %d: inline pipe routing structural parameter condition syntax expression evaluator parsing step error: unsupported runtime operator token state verification rule flag '%s'", p.curToken.Line, condType)
+			return nil, fmt.Errorf("line %d: unsupported condition '%s' after '|' — expected if, unless, when, or while", p.curToken.Line, condType)
 		}
 		p.nextToken()
 		if p.curToken.Type != lexer.TokenString {
-			return nil, fmt.Errorf("line %d: condition tracking specification parameters target context string value must explicitly be embedded inside string quotes", p.curToken.Line)
+			return nil, fmt.Errorf("line %d: condition expression after '|' must be a quoted string", p.curToken.Line)
 		}
 		action.Condition = &ast.ConditionSpec{
 			Type:       condType,

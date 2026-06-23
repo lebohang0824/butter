@@ -201,14 +201,17 @@ butter compile [input file] [flags]
 | Flag | Shorthand | Description |
 | :--- | :--- | :--- |
 | `--output` | `-o` | Custom output path (defaults to `<input>.json`) |
+| `--check` | | Validate syntax without generating output |
 
 ```bash
 butter compile demo.butter
 butter compile demo.butter --output result.json
 butter compile demo.butter -o result.json
+butter compile --check demo.butter
+butter --version
 ```
 
-Only `.butter` files are accepted as input. The output is pretty-printed JSON written to the specified path (or `<input-name>.json` by default).
+Only `.butter` files are accepted as input. Use `--check` to validate syntax without writing a `.json` file — useful for editor integration and CI pipelines.
 
 ---
 
@@ -262,7 +265,10 @@ A VS Code extension providing syntax highlighting, indentation support, and lang
 
 **Features:**
 - Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
+- On-save linting — validates syntax via the bundled `butter` compiler and surfaces errors with red squiggly underlines
+- `Butter: Lint current file` command in the command palette
 - Auto-indentation for `feature`, `params`, `actions`, and `param` blocks
+- Configurable compiler path (`butter.compilerPath`)
 - Comment toggle with `#`
 - Auto-closing pairs for `"` and `[]`
 - Document file icon for `.butter` files
