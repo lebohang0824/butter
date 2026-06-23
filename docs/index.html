@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Butter — Indentation-Aware DSL Compiler</title>
+<meta name="description" content="Butter is a high-performance, indentation-aware DSL compiler that converts clean .butter specification files into structured JSON configurations.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.1.0</div>
+  </div>
+  <nav>
+    <a href="#home" class="active">Home</a>
+    <a href="#philosophy">Design Philosophy</a>
+    <a href="#installation">Installation</a>
+    <a href="#getting-started">Getting Started</a>
+    <a href="#language-guide">Language Guide</a>
+    <a href="#cli-reference">CLI Reference</a>
+    <a href="#architecture">Compiler Architecture</a>
+    <a href="#extension">VS Code Extension</a>
+    <a href="#errors">Error Reference</a>
+    <a href="#examples">Examples</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="home">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Butter</h1>
+    <p class="subtitle">A high-performance, indentation-aware DSL compiler that converts clean <code>.butter</code> specifications into structured, production-ready JSON.</p>
+  </div>
+  <p>Modern application architectures often require declarative schemas to define features, validation rules, application parameters, or workflows. While JSON and YAML are industry standards, they can become verbose, deeply nested, and visually exhausting to write and maintain from scratch.</p>
+  <p>Butter solves this with an elegant, minimalistic language inspired by Python's significant indentation — stripping away trailing commas, brackets, curly braces, and redundant tags.</p>
+  <pre><code class="language-butter"># Quick taste of Butter
+app OrderProcessor
+description "Handles high-throughput retail checkout workflows"
+
+feature ProcessPayment
+  description "Processes financial transactions"
+  params
+    param OrderID
+      type string
+      required true
+    param Amount
+      type float
+      required true
+
+  actions
+    action "Validate routing balance metrics"
+    action "Flag for review" | if "Amount > 10000"</code></pre>
+</section>
+
+<section id="philosophy">
+  <h2>Design Philosophy</h2>
+
+  <h3>Core Objectives</h3>
+  <ul>
+    <li><strong>Zero Dependencies for Compilation</strong> — The lexer, parser, and semantic validation engines are entirely hand-written in native Go, ensuring extreme speed, predictable compilation, and zero supply-chain vulnerabilities.</li>
+    <li><strong>Significant Indentation</strong> — Structural scope is driven entirely by whitespace (spaces or tabs), optimizing readability and eliminating delimiter noise.</li>
+    <li><strong>Rich Conditionals</strong> — Four native keywords (<code>if</code>, <code>unless</code>, <code>when</code>, <code>while</code>) naturally capture diverse semantic states.</li>
+    <li><strong>Developer Ergonomics</strong> — Paired with a VS Code extension for syntax highlighting, auto-indentation, and on-save linting.</li>
+  </ul>
+
+  <h3>Why not just use JSON / YAML?</h3>
+  <p>JSON's syntactic overhead (braces, commas, quotes) makes manual authoring tedious. YAML's implicit typing and complex rules (anchors, aliases, multi-document support) can produce surprising results. Butter sits in the middle: explicit enough to be unambiguous, minimal enough to be pleasant to write.</p>
+</section>
+
+<section id="installation">
+  <h2>Installation</h2>
+
+  <h3>Prerequisites</h3>
+  <ul>
+    <li><a href="https://go.dev/dl/">Go</a> 1.21+ (for building from source)</li>
+    <li><a href="https://code.visualstudio.com/">VS Code</a> (for the extension)</li>
+  </ul>
+
+  <h3>From Source</h3>
+  <pre><code class="language-bash">git clone &lt;repository-url&gt; butter
+cd butter
+go build -o butter main.go
+sudo cp butter /usr/local/bin/</code></pre>
+
+  <h3>Install Script (Linux / macOS)</h3>
+  <p>The <code>install.sh</code> script handles both the compiler binary and the VS Code extension:</p>
+  <pre><code class="language-bash">chmod +x install.sh
+./install.sh            # install compiler + VS Code extension
+./install.sh update     # rebuild and reinstall both
+./install.sh binary     # compiler only
+./install.sh extension  # VS Code extension only</code></pre>
+  <p>The binary is installed to <code>/usr/local/bin/butter</code> (falls back to <code>~/.local/bin/butter</code>). The script automatically checks if the install directory is in your <code>PATH</code>.</p>
+
+  <h3>Install Script (Windows PowerShell)</h3>
+  <pre><code class="language-bash">.\install.ps1                     # install compiler + VS Code extension
+.\install.ps1 -Command update      # rebuild and reinstall both
+.\install.ps1 -Command binary      # compiler only
+.\install.ps1 -Command extension   # VS Code extension only</code></pre>
+
+  <h3>VS Code Extension (Manual)</h3>
+  <pre><code class="language-bash">code --install-extension butter-extension.vsix</code></pre>
+  <p>Or open the <code>butter-extension/</code> directory in VS Code and press <kbd>F5</kbd>.</p>
+
+  <h3>Verify Installation</h3>
+  <pre><code class="language-bash">butter --version
+# butter v1.1.0</code></pre>
+</section>
+
+<section id="getting-started">
+  <h2>Getting Started</h2>
+
+  <h3>Your first <code>.butter</code> file</h3>
+  <p>Create a file called <code>hello.butter</code>:</p>
+  <pre><code class="language-butter"># My first Butter spec
+app HelloWorld
+description "A simple demonstration"
+version "1.0.0"
+
+feature Greet
+  params
+    param Name
+      type string
+      required true
+      default "World"
+
+  actions
+    action "Say hello to the user"</code></pre>
+
+  <h3>Compile it</h3>
+  <pre><code class="language-bash">butter compile hello.butter</code></pre>
+  <p>This produces <code>hello.json</code>:</p>
+  <pre><code>{
+  "app": "HelloWorld",
+  "description": "A simple demonstration",
+  "version": "1.0.0",
+  "features": [
+    {
+      "name": "Greet",
+      "params": [
+        {
+          "name": "Name",
+          "type": "string",
+          "required": true,
+          "default": "World"
+        }
+      ],
+      "actions": [
+        { "statement": "Say hello to the user" }
+      ]
+    }
+  ]
+}</code></pre>
+
+  <h3>Check syntax without generating output</h3>
+  <pre><code class="language-bash">butter compile --check hello.butter
+# OK</code></pre>
+  <p>Use <code>--check</code> during development to validate syntax without cluttering your project with <code>.json</code> files. This is how the VS Code extension lints on every save.</p>
+</section>
+
+<section id="language-guide">
+  <h2>Language Guide</h2>
+
+  <h3>Keywords</h3>
+  <table>
+    <thead>
+      <tr><th>Keyword</th><th>Context</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>app</code></td><td>Top-level</td><td>Defines the namespace or structural root of the configuration</td></tr>
+      <tr><td><code>description</code></td><td>Top / Block</td><td>Provides context or documentation string metadata</td></tr>
+      <tr><td><code>version</code></td><td>Top / Block</td><td>Declares the version identifier for the application or feature</td></tr>
+      <tr><td><code>feature</code></td><td>Block-level</td><td>Declares a sub-system module, API endpoint, or discrete capability</td></tr>
+      <tr><td><code>params</code></td><td>Block-level</td><td>A container block specifying input parameter definitions</td></tr>
+      <tr><td><code>param</code></td><td>Item-level</td><td>Declares a discrete parameter variable name</td></tr>
+      <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>enum[...]</code>)</td></tr>
+      <tr><td><code>required</code></td><td>Parameter field</td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
+      <tr><td><code>default</code></td><td>Parameter field</td><td>Explicit fallback value if the parameter is omitted</td></tr>
+      <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
+      <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Structure</h3>
+  <p>A Butter file has a single <code>app</code> declaration at the top level, which contains one or more <code>feature</code> blocks. Each feature can define parameters (<code>params</code> → <code>param</code>) and actions (<code>actions</code> → <code>action</code>).</p>
+
+  <pre><code class="language-butter">app MyApp
+description "..."
+version "..."
+
+feature FeatureA
+  description "..."
+  version "..."
+  params
+    param ParamName
+      type string
+      required true
+      default "value"
+
+  actions
+    action "Do something"
+    action "Do something else" | if "condition"</code></pre>
+
+  <h3>Block Nesting &amp; Indentation</h3>
+  <p>Blocks are defined by indentation. The first level after <code>app</code> has no indent. Each nested block (<code>feature</code>, <code>params</code>, <code>param</code>, <code>actions</code>) increases the indent level. Use 2 or 4 spaces (or tabs — tabs are normalized to 4 spaces).</p>
+
+  <blockquote>
+    <p><strong>Important:</strong> Indentation must be consistent within a file. Mixing tabs and spaces will produce an error.</p>
+  </blockquote>
+
+  <h3>Conditionals</h3>
+  <p>Actions can have optional conditions attached via the pipe (<code>|</code>) character:</p>
+
+  <table>
+    <thead>
+      <tr><th>Keyword</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>if</code></td><td>Executes <strong>only if</strong> the predicate evaluates to <code>true</code>.</td></tr>
+      <tr><td><code>unless</code></td><td>Executes <strong>except when</strong> the predicate evaluates to <code>true</code> (inversion of <code>if not</code>).</td></tr>
+      <tr><td><code>when</code></td><td>Reactive or event-driven hook; triggers upon an external event or state shift.</td></tr>
+      <tr><td><code>while</code></td><td>Active polling or operational state persistence; the state condition must remain continuously active.</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code class="language-butter">action "Process payment" | if "Amount > 0"
+action "Skip validation" | unless "TrustedSource == true"
+action "Notify admin" | when "ThresholdExceeded"
+action "Keep alive" | while "ConnectionActive"</code></pre>
+
+  <h3>Types</h3>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Example</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>string</code></td><td><code>type string</code></td><td>Default type if omitted.</td></tr>
+      <tr><td><code>int</code></td><td><code>type int</code></td><td>Integer values.</td></tr>
+      <tr><td><code>float</code></td><td><code>type float</code></td><td>Floating-point values.</td></tr>
+      <tr><td><code>enum["A", "B"]</code></td><td><code>type enum["CreditCard", "Crypto"]</code></td><td>Restricted set of string values.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Implicit Defaults</h3>
+  <ul>
+    <li>A <code>param</code> without an explicit <code>type</code> defaults to <code>string</code>.</li>
+    <li>A <code>param</code> without an explicit <code>required</code> defaults to <code>false</code>.</li>
+  </ul>
+
+  <h3>Comments</h3>
+  <p>Line comments start with <code>#</code>. They can appear at the start of a line or inline after a statement:</p>
+  <pre><code class="language-butter"># This is a comment
+app MyApp  # inline comment also works</code></pre>
+</section>
+
+<section id="cli-reference">
+  <h2>CLI Reference</h2>
+
+  <h3><code>butter compile</code></h3>
+  <p>Compiles a <code>.butter</code> file to pretty-printed JSON.</p>
+
+  <pre><code class="language-bash">butter compile [input file] [flags]</code></pre>
+
+  <h4>Flags</h4>
+  <table class="flag-table">
+    <thead>
+      <tr><th>Flag</th><th>Shorthand</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>--output</td><td>-o</td><td>Custom output path (defaults to <code>&lt;input&gt;.json</code>)</td></tr>
+      <tr><td>--check</td><td></td><td>Validate syntax without generating output</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Examples</h4>
+  <pre><code class="language-bash">butter compile demo.butter
+butter compile demo.butter --output result.json
+butter compile demo.butter -o result.json
+butter compile --check demo.butter</code></pre>
+
+  <h3><code>butter --version</code></h3>
+  <p>Prints the compiler version:</p>
+  <pre><code class="language-bash">butter --version
+# butter v1.1.0</code></pre>
+
+  <h3>Exit Codes</h3>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>Success (compilation or validation passed)</td></tr>
+      <tr><td>1</td><td>Error (syntax error, file not found, etc.)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Error Output Format</h3>
+  <p>When compilation fails, the error includes the line number and a descriptive message:</p>
+  <pre><code>Error: compilation syntax compilation error:
+line 5: expected an application name after 'app'</code></pre>
+  <p>The VS Code extension parses this format to show red squiggly underlines at the reported line.</p>
+</section>
+
+<section id="architecture">
+  <h2>Compiler Architecture</h2>
+
+  <h3>Pipeline</h3>
+  <pre><code>[ .butter file ]
+       │
+       ▼
+ ┌───────────┐
+ │   Lexer   │  ← Tracks Indentation Stack, emits INDENT/DEDENT/NEWLINE
+ └─────┬─────┘
+       │ (Stream of Tokens)
+       ▼
+ ┌───────────┐
+ │  Parser   │  ← Stateful Recursive Descent State Machine
+ └─────┬─────┘
+       │ (Abstract Syntax Tree)
+       ▼
+ ┌───────────┐
+ │JSON Engine│  ← Go json.MarshalIndent Serialization
+ └─────┬─────┘
+       │
+       ▼
+ [ .json file ]</code></pre>
+
+  <h3>Lexer</h3>
+  <p>The lexer reads the input file sequentially while maintaining a <strong>LIFO indentation stack</strong> tracking the current whitespace depth:</p>
+  <ul>
+    <li>On each new line, leading whitespace is measured.</li>
+    <li>If the indent exceeds the stack top, the new depth is pushed and an <code>INDENT</code> token is emitted.</li>
+    <li>If the indent is less than the stack top, elements are popped (emitting a <code>DEDENT</code> token each) until a matching level is found.</li>
+    <li>A mismatch throws an indentation error.</li>
+  </ul>
+
+  <p><strong>Token types:</strong> <code>ERROR</code>, <code>EOF</code>, <code>IDENTIFIER</code>, <code>STRING</code>, <code>INDENT</code>, <code>DEDENT</code>, <code>NEWLINE</code>, <code>PIPE</code></p>
+
+  <h3>Parser</h3>
+  <p>Hand-written recursive descent parser that converts the token stream into a typed AST. It handles <code>app</code>, <code>description</code>, <code>version</code>, <code>feature</code>, <code>params</code>, <code>param</code> (with <code>type</code>, <code>required</code>, <code>default</code>), <code>actions</code>, <code>action</code>, and pipe-delimited conditionals.</p>
+
+  <h3>AST Types</h3>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Fields</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>AppSpec</code></td><td><code>app</code>, <code>description?</code>, <code>version?</code>, <code>features[]</code></td></tr>
+      <tr><td><code>FeatureSpec</code></td><td><code>name</code>, <code>description?</code>, <code>version?</code>, <code>params[]?</code>, <code>actions[]?</code></td></tr>
+      <tr><td><code>ParamSpec</code></td><td><code>name</code>, <code>type</code> (default <code>"string"</code>), <code>required</code> (default <code>false</code>), <code>default?</code></td></tr>
+      <tr><td><code>ActionSpec</code></td><td><code>statement</code>, <code>condition?</code></td></tr>
+      <tr><td><code>ConditionSpec</code></td><td><code>type</code> (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>), <code>expression</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>JSON Engine</h3>
+  <p>The AST is serialized to pretty-printed JSON via Go's <code>json.MarshalIndent(app, "", "  ")</code>. Fields tagged with <code>omitempty</code> are excluded when empty.</p>
+</section>
+
+<section id="extension">
+  <h2>VS Code Extension</h2>
+
+  <p>The project includes a VS Code extension (<code>butter-extension/</code>) providing language support for <code>.butter</code> files.</p>
+
+  <h3>Features</h3>
+  <ul>
+    <li><strong>Syntax highlighting</strong> — Full TextMate grammar with named captures for <code>app</code>, <code>feature</code>, and <code>param</code> identifiers.</li>
+    <li><strong>On-save linting</strong> — Runs <code>butter compile --check</code> every time you save, surfacing syntax errors with red squiggly underlines and entries in the Problems panel.</li>
+    <li><strong>Manual lint command</strong> — <code>Butter: Lint current file</code> in the command palette.</li>
+    <li><strong>Auto-indentation</strong> — Smart indent for <code>feature</code>, <code>params</code>, <code>actions</code>, and <code>param</code> blocks.</li>
+    <li><strong>Configurable compiler path</strong> — Set via <code>butter.compilerPath</code> in settings (defaults to <code>"butter"</code>).</li>
+    <li><strong>Comment toggle</strong> — <kbd>Ctrl+/</kbd> or <kbd>Cmd+/</kbd> toggles <code>#</code> line comments.</li>
+    <li><strong>Auto-closing pairs</strong> — <code>"</code> and <code>[]</code> are auto-closed.</li>
+    <li><strong>Document icon</strong> — Custom SVG icon for <code>.butter</code> files.</li>
+  </ul>
+
+  <h3>Installation</h3>
+  <p>Use the install script: <code>./install.sh extension</code></p>
+  <p>Or manually: <code>code --install-extension butter-extension.vsix</code></p>
+
+  <h3>Settings</h3>
+  <table>
+    <thead>
+      <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>butter.compilerPath</code></td><td><code>"butter"</code></td><td>Path to the <code>butter</code> compiler binary. Use this if the binary is not on your <code>PATH</code> or to use a different version.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Troubleshooting</h3>
+  <blockquote>
+    <p><strong>Linting is not working.</strong> Make sure the <code>butter</code> binary is installed and accessible from the <code>butter.compilerPath</code> setting (default: <code>PATH</code>). Open the "Butter" output channel in the VS Code panel to see diagnostic messages.</p>
+  </blockquote>
+</section>
+
+<section id="errors">
+  <h2>Error Reference</h2>
+
+  <p>The compiler produces line-precise error messages. Here are the most common ones and what they mean:</p>
+
+  <table>
+    <thead>
+      <tr><th>Error Message</th><th>Likely Cause</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>input file must have a .butter extension</code></td>
+        <td>You tried to compile a file that doesn't end in <code>.butter</code>.</td>
+      </tr>
+      <tr>
+        <td><code>expected an application name after 'app'</code></td>
+        <td>The <code>app</code> keyword must be followed by a name (e.g. <code>app MyApp</code>).</td>
+      </tr>
+      <tr>
+        <td><code>expected a quoted string for description</code></td>
+        <td><code>description</code> must be followed by a double-quoted string.</td>
+      </tr>
+      <tr>
+        <td><code>expected a feature name after 'feature'</code></td>
+        <td><code>feature</code> must be followed by a name (e.g. <code>feature MyFeature</code>).</td>
+      </tr>
+      <tr>
+        <td><code>expected an indented block under this feature</code></td>
+        <td>The content after a <code>feature</code> declaration must be indented.</td>
+      </tr>
+      <tr>
+        <td><code>expected a newline after 'params'</code></td>
+        <td><code>params</code> must be on its own line, followed by an indented block.</td>
+      </tr>
+      <tr>
+        <td><code>expected 'param' inside this block, got '...'</code></td>
+        <td>Only <code>param</code> declarations are allowed inside a <code>params</code> block.</td>
+      </tr>
+      <tr>
+        <td><code>expected a parameter name after 'param'</code></td>
+        <td><code>param</code> must be followed by a name (e.g. <code>param MyParam</code>).</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', or 'default'</code></td>
+        <td>Only <code>type</code>, <code>required</code>, and <code>default</code> are valid parameter fields.</td>
+      </tr>
+      <tr>
+        <td><code>action statement must be a quoted string</code></td>
+        <td>The action description must be wrapped in double quotes.</td>
+      </tr>
+      <tr>
+        <td><code>unsupported condition ... after '|' — expected if, unless, when, or while</code></td>
+        <td>The word after <code>|</code> must be one of the four conditionals.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '...' at the top level — expected 'app', 'description', 'version', or 'feature'</code></td>
+        <td>Only <code>app</code>, <code>description</code>, <code>version</code>, and <code>feature</code> are valid at the root level.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '...' inside feature — expected 'description', 'version', 'params', or 'actions'</code></td>
+        <td>Only <code>description</code>, <code>version</code>, <code>params</code>, and <code>actions</code> are valid inside a feature.</td>
+      </tr>
+      <tr>
+        <td><code>Indentation mismatch</code></td>
+        <td>The indentation level does not match any parent block level. Check that you're using consistent spacing.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected character '...'</code></td>
+        <td>The character is not valid Butter syntax. Only letters, digits, underscores, pipes, quotes, and whitespace are allowed.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="examples">
+  <h2>Examples</h2>
+
+  <h3>Order Processor (Retail)</h3>
+  <p>A full retail checkout configuration with all four conditionals:</p>
+
+  <pre><code class="language-butter"># Global application declaration
+app OrderProcessor
+description "Handles high-throughput retail checkout workflows safely"
+version "2.1.0"
+
+feature ProcessPayment
+  description "Processes financial transactions through multiple payment gateways"
+  version "1.0.0"
+  params
+    param OrderID
+      type string
+      required true
+    param Amount
+      type float
+      required true
+    param PaymentMethod
+      type enum["CreditCard", "Crypto", "BankTransfer"]
+      default "CreditCard"
+    param AccountNotes
+      default "Standard processing sequence"
+
+  actions
+    action "Validate routing balance metrics"
+    action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
+    action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
+    action "Bypass fraud detection ledger verification" | unless "Amount > 50"
+    action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"</code></pre>
+
+  <p>Compile: <code>butter compile demo.butter</code></p>
+
+  <details>
+    <summary>View output (<code>demo.json</code>)</summary>
+  <pre><code>{
+  "app": "OrderProcessor",
+  "description": "Handles high-throughput retail checkout workflows safely",
+  "version": "2.1.0",
+  "features": [
+    {
+      "name": "ProcessPayment",
+      "description": "Processes financial transactions through multiple payment gateways",
+      "version": "1.0.0",
+      "params": [
+        { "name": "OrderID", "type": "string", "required": true },
+        { "name": "Amount", "type": "float", "required": true },
+        {
+          "name": "PaymentMethod",
+          "type": "enum[\"CreditCard\", \"Crypto\", \"BankTransfer\"]",
+          "default": "CreditCard"
+        },
+        {
+          "name": "AccountNotes",
+          "type": "string",
+          "default": "Standard processing sequence"
+        }
+      ],
+      "actions": [
+        { "statement": "Validate routing balance metrics" },
+        { "statement": "Apply cryptocurrency transaction surcharge",
+          "condition": { "type": "when", "expression": "PaymentMethod is set to Crypto" } },
+        { "statement": "Flag transaction for manual risk mitigation review",
+          "condition": { "type": "if", "expression": "Amount > 10000" } },
+        { "statement": "Bypass fraud detection ledger verification",
+          "condition": { "type": "unless", "expression": "Amount > 50" } },
+        { "statement": "Maintain continuous transaction ledger heartbeat",
+          "condition": { "type": "while", "expression": "Gateway Connection is unstable" } }
+      ]
+    }
+  ]
+}</code></pre>
+  </details>
+
+  <h3>Automated Gatekeeper (Network Security)</h3>
+  <p>A network gateway configuration with float types and enum validation:</p>
+
+  <pre><code class="language-butter">app AutomatedGatekeeper
+description "Defines network gateway configuration maps programmatically"
+version "1.0.0"
+
+feature InterceptPayload
+  description "Inspects and filters network packets based on threat analysis"
+  version "2.0.0"
+  params
+    param SourceIP
+      type string
+      required true
+    param ThreatVectorScore
+      type float
+      required true
+    param MitigationAction
+      type enum["Drop", "Quarantine", "Pass"]
+      default "Quarantine"
+
+  actions
+    action "Log full system payload frame data packet maps directly to disk metadata pools"
+    action "Route traffic straight into specialized network analysis pools" | if "ThreatVectorScore > 7.5"
+    action "Bypass deep validation routing checking layer parameters entirely" | unless "SourceIP == 127.0.0.1"
+    action "Halt secondary egress interfaces securely to safely isolate hardware zones" | when "MitigationAction == Drop"
+    action "Keep auditing diagnostic internal systems infrastructure pipelines active" | while "ThreatVectorScore >= 5.0"</code></pre>
+
+  <h3>Minimal</h3>
+  <p>The simplest valid Butter file:</p>
+  <pre><code class="language-butter">app Minimal</code></pre>
+  <p>This compiles to:</p>
+  <pre><code>{
+  "app": "Minimal",
+  "features": []
+}</code></pre>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>
