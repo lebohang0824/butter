@@ -3,13 +3,16 @@ package ast
 type AppSpec struct {
 	App         string        `json:"app"`
 	Description string        `json:"description,omitempty"`
+	Version     string        `json:"version,omitempty"`
 	Features    []FeatureSpec `json:"features"`
 }
 
 type FeatureSpec struct {
-	Name    string       `json:"name"`
-	Params  []ParamSpec  `json:"params,omitempty"`
-	Actions []ActionSpec `json:"actions,omitempty"`
+	Name        string       `json:"name"`
+	Description string       `json:"description,omitempty"`
+	Version     string       `json:"version,omitempty"`
+	Params      []ParamSpec  `json:"params,omitempty"`
+	Actions     []ActionSpec `json:"actions,omitempty"`
 }
 
 type ParamSpec struct {

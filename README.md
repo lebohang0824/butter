@@ -43,6 +43,7 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 | :---          | :---          | :--- |
 | `app`         | Top-level     | Defines the namespace or structural root of the configuration |
 | `description` | Top/Block     | Provides context or documentation string metadata |
+| `version`     | Top/Block     | Declares the version identifier for the application or feature |
 | `feature`     | Block-level   | Declares a sub-system module, API endpoint, or discrete capability |
 | `params`      | Block-level   | A dedicated container block specifying input definitions |
 | `param`       | Item-level    | Declares a discrete parameter variable name |
@@ -71,8 +72,11 @@ Save the following as `demo.butter`:
 # Global application declaration
 app OrderProcessor
 description "Handles high-throughput retail checkout workflows safely"
+version "2.1.0"
 
 feature ProcessPayment
+  description "Processes financial transactions through multiple payment gateways"
+  version "1.0.0"
   params
     param OrderID
       type string
@@ -106,9 +110,12 @@ Output (`demo.json`):
 {
   "app": "OrderProcessor",
   "description": "Handles high-throughput retail checkout workflows safely",
+  "version": "2.1.0",
   "features": [
     {
       "name": "ProcessPayment",
+      "description": "Processes financial transactions through multiple payment gateways",
+      "version": "1.0.0",
       "params": [
         {
           "name": "OrderID",
@@ -241,8 +248,8 @@ Because Butter uses whitespace indentation to mark boundaries, the lexer reads f
 
 The parser constructs a typed AST graph mapped directly to Go structures:
 
-- **AppSpec** — Root node: app name, description, and features
-- **FeatureSpec** — Named feature with optional params and actions
+- **AppSpec** — Root node: app name, description, version, and features
+- **FeatureSpec** — Named feature with optional description, version, params, and actions
 - **ParamSpec** — Parameter with name, type, required flag, and default value
 - **ActionSpec** — Action statement with an optional condition (type + expression)
 - **ConditionSpec** — One of `if`, `unless`, `when`, `while` plus a predicate expression
@@ -254,10 +261,11 @@ The parser constructs a typed AST graph mapped directly to Go structures:
 A VS Code extension providing syntax highlighting, indentation support, and language configuration is included in the `butter-extension/` directory.
 
 **Features:**
-- Full TextMate grammar for keywords, strings, conditionals, comments, and booleans
+- Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
 - Auto-indentation for `feature`, `params`, `actions`, and `param` blocks
 - Comment toggle with `#`
 - Auto-closing pairs for `"` and `[]`
+- Document file icon for `.butter` files
 
 Install via the install script (`./install.sh extension`) or manually with:
 

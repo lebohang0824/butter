@@ -16,7 +16,11 @@
       "id": "butter",
       "aliases": ["Butter", "butter"],
       "extensions": [".butter"],
-      "configuration": "./language-configuration.json"
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "icon.svg",
+        "dark": "icon.svg"
+      }
     }],
     "grammars": [{
       "language": "butter",

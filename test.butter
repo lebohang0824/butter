@@ -1,7 +1,10 @@
 app AutomatedGatekeeper
 description "Defines network gateway configuration maps programmatically"
+version "1.0.0"
 
 feature InterceptPayload
+  description "Inspects and filters network packets based on threat analysis"
+  version "2.0.0"
   params
     param SourceIP
       type string

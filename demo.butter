@@ -1,8 +1,11 @@
 # Global application declaration
 app OrderProcessor
 description "Handles high-throughput retail checkout workflows safely"
+version "2.1.0"
 
 feature ProcessPayment
+  description "Processes financial transactions through multiple payment gateways"
+  version "1.0.0"
   params
     param OrderID
       type string

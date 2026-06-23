@@ -4,6 +4,9 @@
   "scopeName": "source.butter",
   "patterns": [
     { "include": "#comments" },
+    { "include": "#app_name" },
+    { "include": "#feature_name" },
+    { "include": "#param_name" },
     { "include": "#keywords" },
     { "include": "#conditionals" },
     { "include": "#strings" },
@@ -14,8 +17,29 @@
       "match": "#.*$",
       "name": "comment.line.number-sign.butter"
     },
+    "app_name": {
+      "match": "\\b(app)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.type.butter" }
+      }
+    },
+    "feature_name": {
+      "match": "\\b(feature)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" }
+      }
+    },
+    "param_name": {
+      "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "variable.parameter.butter" }
+      }
+    },
     "keywords": {
-      "match": "\\b(app|description|feature|params|param|type|required|default|actions|action)\\b",
+      "match": "\\b(app|description|version|feature|params|param|type|required|default|actions|action)\\b",
       "name": "keyword.control.butter"
     },
     "conditionals": {

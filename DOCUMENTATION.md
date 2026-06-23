@@ -30,6 +30,7 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | :--- | :--- | :--- |
 | `app` | Top-level | Defines the namespace or structural root of the configuration. |
 | `description` | Top/Block-level | Provides context or documentation string metadata. |
+| `version` | Top/Block-level | Declares the version identifier for the application or feature. |
 | `feature` | Block-level | Declares a sub-system module, API endpoint, or discrete capability. |
 | `params` | Block-level | A dedicated container block specifying input definitions. |
 | `param` | Item-level | Declares a discrete parameter variable name. |
@@ -53,8 +54,11 @@ Butter expands standard evaluation logic beyond a simple `if` condition, offerin
 # Global application declaration
 app OrderProcessor
 description "Handles high-throughput retail checkout workflows safely"
+version "2.1.0"
 
 feature ProcessPayment
+  description "Processes financial transactions through multiple payment gateways"
+  version "1.0.0"
   params
     param OrderID
       type string
@@ -239,13 +243,16 @@ package ast
 type AppSpec struct {
 	App         string        `json:"app"`
 	Description string        `json:"description,omitempty"`
+	Version     string        `json:"version,omitempty"`
 	Features    []FeatureSpec `json:"features"`
 }
 
 type FeatureSpec struct {
-	Name    string       `json:"name"`
-	Params  []ParamSpec  `json:"params,omitempty"`
-	Actions []ActionSpec `json:"actions,omitempty"`
+	Name        string       `json:"name"`
+	Description string       `json:"description,omitempty"`
+	Version     string       `json:"version,omitempty"`
+	Params      []ParamSpec  `json:"params,omitempty"`
+	Actions     []ActionSpec `json:"actions,omitempty"`
 }
 
 type ParamSpec struct {
@@ -504,6 +511,13 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			}
 			appSpec.Description = p.curToken.Value
 			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "version" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted version string for the application", p.curToken.Line)
+			}
+			appSpec.Version = p.curToken.Value
+			p.nextToken()
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "feature" {
 			feat, err := p.parseFeature()
 			if err != nil {
@@ -543,7 +557,21 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 			continue
 		}
 
-		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
+		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "description" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted string for feature description", p.curToken.Line)
+			}
+			feat.Description = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "version" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted version string for the feature", p.curToken.Line)
+			}
+			feat.Version = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenNewline {
 				return nil, fmt.Errorf("line %d: missing parameters array scoping sequence separator indicator formatting mapping standard line-break config", p.curToken.Line)
@@ -757,8 +785,29 @@ butter-extension/
       "match": "#.*$",
       "name": "comment.line.number-sign.butter"
     },
+    "app_name": {
+      "match": "\\b(app)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.type.butter" }
+      }
+    },
+    "feature_name": {
+      "match": "\\b(feature)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" }
+      }
+    },
+    "param_name": {
+      "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "variable.parameter.butter" }
+      }
+    },
     "keywords": {
-      "match": "\\b(app|description|feature|params|param|type|required|default|actions|action)\\b",
+      "match": "\\b(app|description|version|feature|params|param|type|required|default|actions|action)\\b",
       "name": "keyword.control.butter"
     },
     "conditionals": {
@@ -795,8 +844,11 @@ Create a temporary validation source instance verification file locally matching
 cat << 'EOF' > test.butter
 app AutomatedGatekeeper
 description "Defines network gateway configuration maps programmatically"
+version "1.0.0"
 
 feature InterceptPayload
+  description "Inspects and filters network packets based on threat analysis"
+  version "2.0.0"
   params
     param SourceIP
       type string

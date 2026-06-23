@@ -49,6 +49,13 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			}
 			appSpec.Description = p.curToken.Value
 			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "version" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted version string for the application", p.curToken.Line)
+			}
+			appSpec.Version = p.curToken.Value
+			p.nextToken()
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "feature" {
 			feat, err := p.parseFeature()
 			if err != nil {
@@ -88,7 +95,21 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 			continue
 		}
 
-		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
+		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "description" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted string for feature description", p.curToken.Line)
+			}
+			feat.Description = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "version" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted version string for the feature", p.curToken.Line)
+			}
+			feat.Version = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenNewline {
 				return nil, fmt.Errorf("line %d: missing parameters array scoping sequence separator indicator formatting mapping standard line-break config", p.curToken.Line)
