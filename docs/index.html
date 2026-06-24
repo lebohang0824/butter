@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.1.0</div>
+    <div class="version">v1.2.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -50,6 +50,7 @@ description "Handles high-throughput retail checkout workflows"
 
 feature ProcessPayment
   description "Processes financial transactions"
+
   params
     param OrderID
       type string
@@ -201,6 +202,7 @@ version "..."
 feature FeatureA
   description "..."
   version "..."
+
   params
     param ParamName
       type string
@@ -288,10 +290,29 @@ butter compile demo.butter --output result.json
 butter compile demo.butter -o result.json
 butter compile --check demo.butter</code></pre>
 
+  <h3><code>butter fmt</code></h3>
+  <p>Formats a <code>.butter</code> file according to standard conventions — removes blank lines after parameter keywords and adds blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</p>
+
+  <pre><code class="language-bash">butter fmt [input file] [flags]</code></pre>
+
+  <h4>Flags</h4>
+  <table class="flag-table">
+    <thead>
+      <tr><th>Flag</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>--check</td><td>Check formatting without modifying</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Examples</h4>
+  <pre><code class="language-bash">butter fmt demo.butter
+butter fmt --check demo.butter</code></pre>
+
   <h3><code>butter --version</code></h3>
   <p>Prints the compiler version:</p>
   <pre><code class="language-bash">butter --version
-# butter v1.1.0</code></pre>
+# butter v1.2.0</code></pre>
 
   <h3>Exit Codes</h3>
   <table>
@@ -375,8 +396,10 @@ line 5: expected an application name after 'app'</code></pre>
   <h3>Features</h3>
   <ul>
     <li><strong>Syntax highlighting</strong> — Full TextMate grammar with named captures for <code>app</code>, <code>feature</code>, and <code>param</code> identifiers.</li>
-    <li><strong>On-save linting</strong> — Runs <code>butter compile --check</code> every time you save, surfacing syntax errors with red squiggly underlines and entries in the Problems panel.</li>
+    <li><strong>On-save formatting</strong> — Automatically applies <code>butter fmt</code> every time you save, no configuration needed.</li>
+    <li><strong>On-save linting</strong> — Runs <code>butter compile --check</code> after formatting, surfacing syntax errors with red squiggly underlines and entries in the Problems panel.</li>
     <li><strong>Manual lint command</strong> — <code>Butter: Lint current file</code> in the command palette.</li>
+    <li><strong>Manual format command</strong> — <code>Butter: Format current file</code> in the command palette.</li>
     <li><strong>Auto-indentation</strong> — Smart indent for <code>feature</code>, <code>params</code>, <code>actions</code>, and <code>param</code> blocks.</li>
     <li><strong>Configurable compiler path</strong> — Set via <code>butter.compilerPath</code> in settings (defaults to <code>"butter"</code>).</li>
     <li><strong>Comment toggle</strong> — <kbd>Ctrl+/</kbd> or <kbd>Cmd+/</kbd> toggles <code>#</code> line comments.</li>
@@ -492,6 +515,7 @@ version "2.1.0"
 feature ProcessPayment
   description "Processes financial transactions through multiple payment gateways"
   version "1.0.0"
+
   params
     param OrderID
       type string
@@ -565,6 +589,7 @@ version "1.0.0"
 feature InterceptPayload
   description "Inspects and filters network packets based on threat analysis"
   version "2.0.0"
+
   params
     param SourceIP
       type string

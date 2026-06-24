@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.2.0] - 2026-06-24
+
+- `butter fmt` command — automatically formats `.butter` files according to standard conventions
+- Format on save — the extension automatically applies `butter fmt` every time a file is saved
+- `Butter: Format current file` command in the command palette
+
 ## [1.1.0] - 2026-06-23
 
 - Named capture highlighting for `app`, `feature`, and `param` identifiers

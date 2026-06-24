@@ -5,6 +5,7 @@ version "1.0.0"
 feature InterceptPayload
   description "Inspects and filters network packets based on threat analysis"
   version "2.0.0"
+
   params
     param SourceIP
       type string
@@ -15,6 +16,7 @@ feature InterceptPayload
     param MitigationAction
       type enum["Drop", "Quarantine", "Pass"]
       default "Quarantine"
+
   actions
     action "Log full system payload frame data packet maps directly to disk metadata pools"
     action "Route traffic straight into specialized network analysis pools" | if "ThreatVectorScore > 7.5"

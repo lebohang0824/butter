@@ -2,7 +2,7 @@
   "name": "butter-extension",
   "displayName": "Butter Configuration Language Support",
   "description": "Syntax structural highlighting and auto-indent configuration mapping engines designed natively for the Butter DSL file ecosystem.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "butter-io",
   "icon": "butter-logo.png",
   "engines": {
@@ -16,10 +16,16 @@
   ],
   "main": "./src/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "butter.lint",
-      "title": "Butter: Lint current file"
-    }],
+    "commands": [
+      {
+        "command": "butter.lint",
+        "title": "Butter: Lint current file"
+      },
+      {
+        "command": "butter.fmt",
+        "title": "Butter: Format current file"
+      }
+    ],
     "configuration": {
       "title": "Butter",
       "properties": {

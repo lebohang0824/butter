@@ -196,7 +196,10 @@ chmod +x install.sh
 
 ```text
 butter compile [input file] [flags]
+butter fmt    [input file] [flags]
 ```
+
+### `butter compile`
 
 | Flag | Shorthand | Description |
 | :--- | :--- | :--- |
@@ -209,6 +212,19 @@ butter compile demo.butter --output result.json
 butter compile demo.butter -o result.json
 butter compile --check demo.butter
 butter --version
+```
+
+### `butter fmt`
+
+Formats a `.butter` file according to standard conventions — removes blank lines after parameter keywords and adds blank lines before `params`, `actions`, and between top-level `feature` blocks.
+
+| Flag | Description |
+| :--- | :--- |
+| `--check` | Check formatting without modifying |
+
+```bash
+butter fmt demo.butter
+butter fmt --check demo.butter
 ```
 
 Only `.butter` files are accepted as input. Use `--check` to validate syntax without writing a `.json` file — useful for editor integration and CI pipelines.
@@ -265,8 +281,10 @@ A VS Code extension providing syntax highlighting, indentation support, and lang
 
 **Features:**
 - Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
-- On-save linting — validates syntax via the bundled `butter` compiler and surfaces errors with red squiggly underlines
+- On-save formatting — automatically applies `butter fmt` every time a file is saved, no configuration needed
+- On-save linting — validates syntax via `butter compile --check` after formatting and surfaces errors with red squiggly underlines
 - `Butter: Lint current file` command in the command palette
+- `Butter: Format current file` command in the command palette
 - Auto-indentation for `feature`, `params`, `actions`, and `param` blocks
 - Configurable compiler path (`butter.compilerPath`)
 - Comment toggle with `#`
