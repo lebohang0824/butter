@@ -169,6 +169,24 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   background: var(--border);
 }
 
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-backdrop.visible {
+  display: block;
+  opacity: 1;
+}
+
 .main {
   margin-left: 260px;
   flex: 1;
@@ -447,6 +465,15 @@ pre[class*="language-"] {
   color: #E8A060;
 }
 
+@media (max-width: 1024px) {
+  .main {
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -463,15 +490,91 @@ pre[class*="language-"] {
 
   .main {
     margin-left: 0;
-    padding: 3rem 1.25rem 3rem;
+    padding: 3rem 1rem 3rem;
+    max-width: 100%;
   }
 
-  .hero h1 { font-size: 2rem; }
+  .hero {
+    padding: 2rem 0 1.5rem;
+  }
+
+  .hero img { max-width: 80px; }
+  .hero h1 { font-size: 1.75rem; }
+  .hero .subtitle { font-size: 1rem; }
+
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.2rem; }
+  h3 { font-size: 1.05rem; }
 
   .theme-toggle {
     top: 0.75rem;
     right: 0.75rem;
   }
 
-  h2 { font-size: 1.3rem; }
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.82rem;
+  }
+
+  th, td {
+    padding: 0.4rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  pre {
+    font-size: 0.78rem;
+    padding: 0.75rem;
+  }
+
+  code[class*="language-"],
+  pre[class*="language-"] {
+    font-size: 0.78rem;
+  }
+
+  .sidebar-header { padding: 0 1rem 0.75rem; }
+  .sidebar nav { padding: 0 0.5rem; }
+  .sidebar nav a { font-size: 0.85rem; }
+
+  section { scroll-margin-top: 3.5rem; }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 3rem 0.75rem 2rem;
+  }
+
+  .hero h1 { font-size: 1.5rem; }
+  h1 { font-size: 1.35rem; }
+  h2 { font-size: 1.1rem; }
+
+  pre {
+    font-size: 0.72rem;
+    padding: 0.6rem;
+    border-radius: 4px;
+  }
+
+  code[class*="language-"],
+  pre[class*="language-"] {
+    font-size: 0.72rem;
+  }
+
+  blockquote {
+    padding: 0.4rem 0.75rem;
+  }
+
+  ul, ol { padding-left: 1rem; }
+
+  .theme-toggle {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.95rem;
+  }
+
+  .menu-toggle {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.95rem;
+  }
 }

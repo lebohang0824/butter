@@ -27,21 +27,44 @@
   const menuToggle = document.getElementById('menuToggle');
   const navLinks = sidebar.querySelectorAll('nav a');
 
+  var backdrop = document.createElement('div');
+  backdrop.className = 'sidebar-backdrop';
+  document.body.appendChild(backdrop);
+
+  function toggleSidebar(open) {
+    if (open === undefined) {
+      sidebar.classList.toggle('open');
+    } else if (open) {
+      sidebar.classList.add('open');
+    } else {
+      sidebar.classList.remove('open');
+    }
+    var isOpen = sidebar.classList.contains('open');
+    backdrop.classList.toggle('visible', isOpen);
+    if (window.innerWidth <= 768) {
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+  }
+
   menuToggle.addEventListener('click', function () {
-    sidebar.classList.toggle('open');
+    toggleSidebar();
   });
 
   navLinks.forEach(function (link) {
     link.addEventListener('click', function () {
-      sidebar.classList.remove('open');
+      toggleSidebar(false);
     });
+  });
+
+  backdrop.addEventListener('click', function () {
+    toggleSidebar(false);
   });
 
   document.addEventListener('click', function (e) {
     if (window.innerWidth <= 768 &&
         !sidebar.contains(e.target) &&
         !menuToggle.contains(e.target)) {
-      sidebar.classList.remove('open');
+      toggleSidebar(false);
     }
   });
 
