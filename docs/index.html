@@ -31,6 +31,7 @@
     <a href="#extension">VS Code Extension</a>
     <a href="#errors">Error Reference</a>
     <a href="#examples">Examples</a>
+    <a href="#changelog">Changelog</a>
   </nav>
 </aside>
 
@@ -616,6 +617,38 @@ feature InterceptPayload
   "app": "Minimal",
   "features": []
 }</code></pre>
+</section>
+
+<section id="changelog">
+  <h2>Changelog</h2>
+
+  <h3>v1.2.0 — 2026-06-24</h3>
+  <ul>
+    <li><strong>Butter Format (<code>butter fmt</code>)</strong> — New subcommand to automatically format <code>.butter</code> files. Uses a two-pass algorithm: removes blank lines after parameter keywords, then inserts blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</li>
+    <li><strong>Format on save</strong> — The VS Code extension now automatically runs <code>butter fmt</code> on every save, no configuration needed.</li>
+    <li><strong><code>Butter: Format current file</code> command</strong> — Available in the VS Code command palette.</li>
+  </ul>
+
+  <h3>v1.1.0 — 2026-06-23</h3>
+  <ul>
+    <li><strong><code>--check</code> flag</strong> — <code>butter compile --check</code> validates syntax without writing a <code>.json</code> file. Returns exit code 0 on success, 1 on error.</li>
+    <li><strong>On-save linting</strong> — The VS Code extension runs <code>butter compile --check</code> on every save, surfacing errors with red squiggly underlines.</li>
+    <li><strong><code>Butter: Lint current file</code> command</strong> — Available in the VS Code command palette.</li>
+    <li><strong>Configurable compiler path</strong> — <code>butter.compilerPath</code> setting lets you specify a custom path to the <code>butter</code> binary.</li>
+    <li><strong><code>butter --version</code></strong> — Prints the compiler version.</li>
+    <li><strong>Named capture highlighting</strong> — TextMate grammar now highlights <code>app</code>, <code>feature</code>, and <code>param</code> identifiers distinctly.</li>
+    <li><strong><code>version</code> keyword</strong> — Added to syntax highlighting.</li>
+    <li><strong>Document icon</strong> — Custom SVG icon for <code>.butter</code> files.</li>
+  </ul>
+
+  <h3>v1.0.0 — 2026-06-22</h3>
+  <ul>
+    <li>Initial release of the Butter DSL compiler.</li>
+    <li><code>butter compile</code> command compiles <code>.butter</code> files to pretty-printed JSON.</li>
+    <li>Lexer with Python-style indentation tracking (INDENT/DEDENT tokens).</li>
+    <li>Recursive descent parser supporting <code>app</code>, <code>description</code>, <code>version</code>, <code>feature</code>, <code>params</code>, <code>param</code> (with <code>type</code>, <code>required</code>, <code>default</code>), <code>actions</code>, <code>action</code>, and pipe-delimited conditionals (<code>if</code>, <code>unless</code>, <code>when</code>, <code>while</code>).</li>
+    <li>VS Code extension with syntax highlighting, indentation rules, and comment toggling.</li>
+  </ul>
 </section>
 
 <footer class="footer">
