@@ -28,7 +28,7 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 
 | Keyword | Context | Semantic Purpose |
 | :--- | :--- | :--- |
-| `app` | Top-level | Defines the namespace or structural root of the configuration. |
+| `app` / `product` | Top-level | Defines the namespace or structural root of the configuration. |
 | `description` | Top/Block-level | Provides context or documentation string metadata. |
 | `version` | Top/Block-level | Declares the version identifier for the application or feature. |
 | `feature` | Block-level | Declares a sub-system module, API endpoint, or discrete capability. |

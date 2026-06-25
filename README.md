@@ -41,7 +41,7 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 
 | Keyword       | Context       | Semantic Purpose |
 | :---          | :---          | :--- |
-| `app`         | Top-level     | Defines the namespace or structural root of the configuration |
+| `app` / `product` | Top-level     | Defines the namespace or structural root of the configuration |
 | `description` | Top/Block     | Provides context or documentation string metadata |
 | `version`     | Top/Block     | Declares the version identifier for the application or feature |
 | `feature`     | Block-level   | Declares a sub-system module, API endpoint, or discrete capability |

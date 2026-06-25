@@ -35,10 +35,10 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			continue
 		}
 
-		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "app" {
+		if p.curToken.Type == lexer.TokenIdentifier && (p.curToken.Value == "app" || p.curToken.Value == "product") {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenIdentifier {
-				return nil, fmt.Errorf("line %d: expected an application name after 'app'", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected an application name after '%s'", p.curToken.Line, p.curToken.Value)
 			}
 			appSpec.App = p.curToken.Value
 			p.nextToken()
@@ -63,7 +63,7 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			}
 			appSpec.Features = append(appSpec.Features, *feat)
 		} else {
-			return nil, fmt.Errorf("line %d: unexpected '%s' at the top level — expected 'app', 'description', 'version', or 'feature'", p.curToken.Line, p.curToken.Value)
+			return nil, fmt.Errorf("line %d: unexpected '%s' at the top level — expected 'app' (or 'product'), 'description', 'version', or 'feature'", p.curToken.Line, p.curToken.Value)
 		}
 	}
 
