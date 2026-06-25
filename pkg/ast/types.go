@@ -20,6 +20,7 @@ type ParamSpec struct {
 	Type     string      `json:"type"`
 	Required bool        `json:"required"`
 	Default  interface{} `json:"default,omitempty"`
+	Validate []string    `json:"validate,omitempty"`
 }
 
 type ActionSpec struct {

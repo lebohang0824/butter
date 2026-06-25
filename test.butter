@@ -13,6 +13,8 @@ feature InterceptPayload
     param ThreatVectorScore
       type float
       required true
+      validate ">=0"
+      validate "<=10"
     param MitigationAction
       type enum["Drop", "Quarantine", "Pass"]
       default "Quarantine"

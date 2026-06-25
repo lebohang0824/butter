@@ -37,6 +37,7 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `type` | Parameter field| Dictates data constraints (e.g., `string`, `int`, `enum[...]`). |
 | `required` | Parameter field| Boolean validation rule (`true` or `false`). |
 | `default` | Parameter field| Explicit fallback value if the parameter is omitted. |
+| `validate` | Parameter field| Validation rule for numeric parameters (e.g. `>10`, `!=5`, `=<12`). Multiple lines allowed. |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
 
@@ -770,7 +771,7 @@ func GenerateJSONSpec(app *ast.AppSpec) ([]byte, error) {
 Located in `pkg/formatter/formatter.go`, the formatter normalizes blank lines in `.butter` files using a two-pass algorithm:
 
 **Pass 1 — Remove blank lines after parameter keywords:**
-Lines matching `app` (or `product`), `description`, `version`, `feature`, `param`, `type`, `required`, or `default` (followed by a value) have any blank lines immediately after them removed.
+Lines matching `app` (or `product`), `description`, `version`, `feature`, `param`, `type`, `required`, `default`, or `validate` (followed by a value) have any blank lines immediately after them removed.
 
 **Pass 2 — Insert blank lines before `actions`/`params` and `feature`:**
 - Before `actions` or `params`: inserted unless the preceding meaningful line is a `feature` line (i.e., it's the first child of the feature block).

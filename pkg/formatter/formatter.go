@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|param|type|required|default)\s+\S`)
+var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|param|type|required|default|validate)\s+\S`)
 
 var blockKeywordRe = regexp.MustCompile(`^\s*(actions|params)\s*$`)
 

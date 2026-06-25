@@ -486,6 +486,19 @@ async function executeListTasks(params) {
       }
     },
     {
+      label: 'Validate Limit parameter',
+      action: (p) => {
+        const val = parseInt(p.Limit);
+        if (isNaN(val)) throw new Error('Limit must be a number');
+        const rules = [">=1", "<=200"];
+        for (const rule of rules) {
+          const ok = validateNumber(val, rule);
+          if (!ok) throw new Error(`Limit ${val} fails validation: ${rule}`);
+        }
+        return { msg: `Limit ${val} passes all validation rules` };
+      }
+    },
+    {
       label: 'Limit results to specified count',
       action: (p) => {
         const limit = Math.min(Math.max(parseInt(p.Limit) || 50, 1), 200);
@@ -742,6 +755,24 @@ function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+function validateNumber(value, rule) {
+  const m = rule.match(/^([><]=?|!=|={1,2})\s*([0-9.]+)$/);
+  if (!m) return true;
+  const op = m[1];
+  const expected = parseFloat(m[2]);
+  switch (op) {
+    case '>':  return value > expected;
+    case '<':  return value < expected;
+    case '>=': return value >= expected;
+    case '<=': return value <= expected;
+    case '=<': return value <= expected;
+    case '==': return value === expected;
+    case '=':  return value === expected;
+    case '!=': return value !== expected;
+    default:   return true;
+  }
 }
 
 function showToast(msg, type) {

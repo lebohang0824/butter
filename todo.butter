@@ -41,6 +41,8 @@ feature ListTasks
     param Limit
       type int
       default 50
+      validate ">=1"
+      validate "<=200"
 
   actions
     action "Query task repository with specified filters"

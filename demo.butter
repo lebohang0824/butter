@@ -14,6 +14,7 @@ feature ProcessPayment
     param Amount
       type float
       required true
+      validate ">0"
     param PaymentMethod
       type enum["CreditCard", "Crypto", "BankTransfer"]
       default "CreditCard"

@@ -188,6 +188,7 @@ feature Greet
       <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>enum[...]</code>)</td></tr>
       <tr><td><code>required</code></td><td>Parameter field</td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
       <tr><td><code>default</code></td><td>Parameter field</td><td>Explicit fallback value if the parameter is omitted</td></tr>
+      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (e.g. <code>>10</code>, <code>!=5</code>, <code>=<12</code>). Multiple lines allowed.</td></tr>
       <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
       <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
     </tbody>
@@ -560,6 +561,8 @@ feature ListTasks
     param Limit
       type int
       default 50
+      validate ">=1"
+      validate "<=200"
 
   actions
     action "Query task repository with specified filters"

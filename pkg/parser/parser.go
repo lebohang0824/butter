@@ -199,8 +199,15 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 					param.Default = p.curToken.Value
 				}
 				p.nextToken()
+			case "validate":
+				p.nextToken()
+				if p.curToken.Type != lexer.TokenString {
+					return nil, fmt.Errorf("line %d: validate rule must be a quoted string", p.curToken.Line)
+				}
+				param.Validate = append(param.Validate, p.curToken.Value)
+				p.nextToken()
 			default:
-				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', or 'default'", p.curToken.Line, p.curToken.Value)
+				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', 'default', or 'validate'", p.curToken.Line, p.curToken.Value)
 			}
 		default:
 			return nil, fmt.Errorf("line %d: unexpected token %s in parameter fields", p.curToken.Line, p.curToken.Type)

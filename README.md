@@ -50,6 +50,7 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 | `type`        | Parameter     | Dictates data constraints (`string`, `int`, `float`, `enum[...]`) |
 | `required`    | Parameter     | Boolean validation rule (`true` or `false`) |
 | `default`     | Parameter     | Explicit fallback value if the parameter is omitted |
+| `validate`    | Parameter     | Validation rule for numeric parameters (e.g. `>10`, `!=5`, `=<12`). Multiple lines allowed. |
 | `actions`     | Block-level   | A dedicated container block specifying execution routines |
 | `action`      | Item-level    | Declares a logical execution string or mutation step |
 
