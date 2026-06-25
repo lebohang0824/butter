@@ -51,6 +51,8 @@ feature ListTasks
 feature UpdateTask
   description "Modifies existing task attributes via a modal form opened from the task list"
   version "1.0.0"
+  # When rendering the update form, pre-fill each field with the task's current
+  # values so the user can see what they are changing before modifying them.
 
   params
     param TaskID
@@ -65,6 +67,7 @@ feature UpdateTask
 
   actions
     action "Look up task by TaskID"
+    action "Populate form fields with current task values for reference"
     action "Merge provided fields into existing task record"
     action "Set last-modified timestamp to current time"
     action "Reject update if task is archived" | unless "Status != archived"

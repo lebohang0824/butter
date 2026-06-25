@@ -570,9 +570,11 @@ function openEditModal(taskId) {
   editingTaskId = taskId;
   document.getElementById('modalTitle').textContent = 'Edit: ' + task.title;
   document.getElementById('modalTaskId').textContent = 'ID: ' + task.id;
-  document.getElementById('updateTitle').value = '';
-  document.getElementById('updateStatus').value = '';
-  document.getElementById('updatePriority').value = '';
+  // Pre-fill with existing values so the user sees what they are changing
+  document.getElementById('updateTitle').placeholder = 'Keep: ' + task.title;
+  document.getElementById('updateTitle').value = task.title;
+  document.getElementById('updateStatus').value = task.status;
+  document.getElementById('updatePriority').value = task.priority;
   document.getElementById('updateLog').innerHTML = '<div class="empty-state">Steps will appear here</div>';
   document.getElementById('deleteConfirm').value = '';
   document.getElementById('deleteLog').innerHTML = '<div class="empty-state">Steps will appear here</div>';
@@ -603,6 +605,12 @@ async function executeUpdateTask(params) {
         if (!task) throw new Error(`Task not found`);
         p._task = task;
         return { msg: `Found "${task.title}"` };
+      }
+    },
+    {
+      label: 'Populate form fields with current task values for reference',
+      action: (p) => {
+        return { msg: `Title: "${p._task.title}", Status: ${p._task.status}, Priority: ${p._task.priority}` };
       }
     },
     {
