@@ -3,10 +3,13 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"butter/pkg/ast"
 	"butter/pkg/lexer"
 )
+
+var validateRuleRe = regexp.MustCompile(`^\s*(>=?|<=?|={1,2}|!=|=<)\s*[0-9]+(\.[0-9]+)?\s*$`)
 
 type Parser struct {
 	l         *lexer.Lexer
@@ -203,6 +206,9 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 				p.nextToken()
 				if p.curToken.Type != lexer.TokenString {
 					return nil, fmt.Errorf("line %d: validate rule must be a quoted string", p.curToken.Line)
+				}
+				if !validateRuleRe.MatchString(p.curToken.Value) {
+					return nil, fmt.Errorf("line %d: invalid validate rule %q — must be a numeric comparison like \">0\", \">=1\", \"=<100\", \"!=5\"", p.curToken.Line, p.curToken.Value)
 				}
 				param.Validate = append(param.Validate, p.curToken.Value)
 				p.nextToken()
