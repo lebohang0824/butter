@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|param|type|required|default|validate)\s+\S`)
+var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|param|type|required|default|validate|length)\s+\S`)
 
 var validateSpaceRe = regexp.MustCompile(`^(\s*validate\s+")([><=!]+)\s+(\d+(?:\.\d+)?)"`)
 

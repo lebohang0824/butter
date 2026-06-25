@@ -22,6 +22,9 @@ feature CreateTask
       default "medium"
     param DueDate
       type string
+    param RSAIdentityNumber
+      type string
+      length 13
 
   actions
     action "Validate title is not empty"
@@ -43,7 +46,7 @@ feature ListTasks
       type enum["created", "priority", "due_date", "title"]
       default "created"
     param Limit
-      type length
+      type int
       default 50
       validate ">=1"
       validate "<=200"

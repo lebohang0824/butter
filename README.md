@@ -47,10 +47,11 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 | `feature`     | Block-level   | Declares a sub-system module, API endpoint, or discrete capability |
 | `params`      | Block-level   | A dedicated container block specifying input definitions |
 | `param`       | Item-level    | Declares a discrete parameter variable name |
-| `type`        | Parameter     | Dictates data constraints (`string`, `int`, `float`, `bool`, `length`, `enum[...]`) |
+| `type`        | Parameter     | Dictates data constraints (`string`, `int`, `float`, `bool`, `enum[...]`) |
 | `required`    | Parameter     | Boolean validation rule (`true` or `false`) |
 | `default`     | Parameter     | Explicit fallback value if the parameter is omitted |
-| `validate`    | Parameter     | Validation rule for numeric parameters (`int`, `float`, `length`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Must be a valid numeric comparison (operator + number). |
+| `validate`    | Parameter     | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
+| `length`      | Parameter     | Exact character/numeric length constraint (e.g. `length 13`). Mutually exclusive with `validate`. |
 | `actions`     | Block-level   | A dedicated container block specifying execution routines |
 | `action`      | Item-level    | Declares a logical execution string or mutation step |
 

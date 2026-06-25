@@ -185,10 +185,11 @@ feature Greet
       <tr><td><code>feature</code></td><td>Block-level</td><td>Declares a sub-system module, API endpoint, or discrete capability</td></tr>
       <tr><td><code>params</code></td><td>Block-level</td><td>A container block specifying input parameter definitions</td></tr>
       <tr><td><code>param</code></td><td>Item-level</td><td>Declares a discrete parameter variable name</td></tr>
-      <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>length</code>, <code>enum[...]</code>)</td></tr>
+      <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>enum[...]</code>)</td></tr>
       <tr><td><code>required</code></td><td>Parameter field</td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
       <tr><td><code>default</code></td><td>Parameter field</td><td>Explicit fallback value if the parameter is omitted</td></tr>
-      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (<code>int</code>, <code>float</code>, <code>length</code>). E.g. <code>>10</code>, <code>!=5</code>, <code>=<12</code>. Multiple lines allowed. Must be a valid numeric comparison.</td></tr>
+      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (<code>int</code>, <code>float</code>). E.g. <code>&gt;10</code>, <code>!=5</code>, <code>=&lt;12</code>. Multiple lines allowed. Mutually exclusive with <code>length</code>.</td></tr>
+      <tr><td><code>length</code></td><td>Parameter field</td><td>Exact character/numeric length constraint (e.g. <code>length 13</code>). Mutually exclusive with <code>validate</code>.</td></tr>
       <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
       <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
     </tbody>
@@ -252,7 +253,6 @@ action "Keep alive" | while "ConnectionActive"</code></pre>
       <tr><td><code>bool</code></td><td><code>type bool</code></td><td>Boolean values (<code>true</code> or <code>false</code>).</td></tr>
       <tr><td><code>int</code></td><td><code>type int</code></td><td>Integer values.</td></tr>
       <tr><td><code>float</code></td><td><code>type float</code></td><td>Floating-point values.</td></tr>
-      <tr><td><code>length</code></td><td><code>type length</code></td><td>Numeric length values (supports <code>validate</code> rules).</td></tr>
       <tr><td><code>enum["A", "B"]</code></td><td><code>type enum["CreditCard", "Crypto"]</code></td><td>Restricted set of string values.</td></tr>
     </tbody>
   </table>
@@ -474,16 +474,20 @@ line 5: expected an application name after 'app'</code></pre>
         <td><code>param</code> must be followed by a name (e.g. <code>param MyParam</code>).</td>
       </tr>
       <tr>
-        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', 'default', or 'validate'</code></td>
-        <td>Only <code>type</code>, <code>required</code>, <code>default</code>, and <code>validate</code> are valid parameter fields.</td>
+        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', 'default', 'validate', or 'length'</code></td>
+        <td>Only <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, and <code>length</code> are valid parameter fields.</td>
       </tr>
       <tr>
         <td><code>invalid validate rule "..." — must be a numeric comparison like ">0", ">=1", "=<100", "!=5"</code></td>
         <td>The <code>validate</code> string must be a comparison operator followed by a number (e.g. <code>&gt;=1</code>, <code>!=0</code>).</td>
       </tr>
       <tr>
-        <td><code>validate rules require numeric type (int, float, or length), got "..."</code></td>
-        <td><code>validate</code> is only allowed on parameters with <code>type int</code>, <code>float</code>, or <code>length</code>.</td>
+        <td><code>validate rules require numeric type (int or float), got "..."</code></td>
+        <td><code>validate</code> is only allowed on parameters with <code>type int</code> or <code>type float</code>.</td>
+      </tr>
+      <tr>
+        <td><code>length and validate cannot be used together on the same parameter</code></td>
+        <td>A parameter can have <code>length</code> or <code>validate</code>, but not both.</td>
       </tr>
       <tr>
         <td><code>action statement must be a quoted string</code></td>
@@ -661,7 +665,8 @@ after the other in the listed order, never in parallel or reordered.
   <h3>v1.4.0 — 2026-06-25</h3>
   <ul>
     <li><strong><code>bool</code> type</strong> — New <code>bool</code> parameter type for boolean values (<code>true</code> / <code>false</code>).</li>
-    <li><strong><code>length</code> type</strong> — New <code>length</code> parameter type for numeric length values. Supports <code>validate</code> rules like <code>int</code> and <code>float</code>.</li>
+    <li><strong><code>length</code> field</strong> — New <code>length</code> parameter field for exact length constraints (e.g. <code>length 13</code>). Mutually exclusive with <code>validate</code>.</li>
+    <li><strong>Updated error messages</strong> — Param field error lists include <code>validate</code> and <code>length</code>; length/validate mutual exclusion enforced.</li>
   </ul>
 
   <h3>v1.3.0 — 2026-06-25</h3>

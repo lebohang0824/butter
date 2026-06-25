@@ -21,6 +21,7 @@ type ParamSpec struct {
 	Required bool        `json:"required"`
 	Default  interface{} `json:"default,omitempty"`
 	Validate []string    `json:"validate,omitempty"`
+	Length   int         `json:"length,omitempty"`
 }
 
 type ActionSpec struct {

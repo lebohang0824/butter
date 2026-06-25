@@ -3,6 +3,7 @@
 ## [1.4.0] - 2026-06-25
 
 - Added `bool|boolean|length` to keyword syntax highlighting
+- `length` param field for exact length constraints (mutually exclusive with `validate`)
 
 ## [1.3.0] - 2026-06-25
 

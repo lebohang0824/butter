@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"butter/pkg/ast"
 	"butter/pkg/lexer"
@@ -179,6 +180,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	p.nextToken()
 
 	var validateLine int
+	var lengthLine int
 	for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
 		if p.curToken.Type == lexer.TokenNewline {
 			p.nextToken()
@@ -216,15 +218,27 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 				}
 				param.Validate = append(param.Validate, p.curToken.Value)
 				p.nextToken()
+			case "length":
+				p.nextToken()
+				n, err := strconv.Atoi(p.curToken.Value)
+				if err != nil || n < 1 {
+					return nil, fmt.Errorf("line %d: length must be a positive integer, got %q", p.curToken.Line, p.curToken.Value)
+				}
+				lengthLine = p.curToken.Line
+				param.Length = n
+				p.nextToken()
 			default:
-				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', 'default', or 'validate'", p.curToken.Line, p.curToken.Value)
+				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', 'default', 'validate', or 'length'", p.curToken.Line, p.curToken.Value)
 			}
 		default:
 			return nil, fmt.Errorf("line %d: unexpected token %s in parameter fields", p.curToken.Line, p.curToken.Type)
 		}
 	}
-	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" && param.Type != "length" {
-		return nil, fmt.Errorf("line %d: validate rules require numeric type (int, float, or length), got %q", validateLine, param.Type)
+	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" {
+		return nil, fmt.Errorf("line %d: validate rules require numeric type (int or float), got %q", validateLine, param.Type)
+	}
+	if param.Length > 0 && len(param.Validate) > 0 {
+		return nil, fmt.Errorf("line %d: length and validate cannot be used together on the same parameter", lengthLine)
 	}
 	p.nextToken()
 	return param, nil
