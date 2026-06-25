@@ -505,110 +505,6 @@ line 5: expected an application name after 'app'</code></pre>
 <section id="examples">
   <h2>Examples</h2>
 
-  <h3>Order Processor (Retail)</h3>
-  <p>A full retail checkout configuration with all four conditionals:</p>
-
-  <pre><code class="language-butter"># Global application declaration
-app OrderProcessor
-description "Handles high-throughput retail checkout workflows safely"
-version "2.1.0"
-
-feature ProcessPayment
-  description "Processes financial transactions through multiple payment gateways"
-  version "1.0.0"
-
-  params
-    param OrderID
-      type string
-      required true
-    param Amount
-      type float
-      required true
-    param PaymentMethod
-      type enum["CreditCard", "Crypto", "BankTransfer"]
-      default "CreditCard"
-    param AccountNotes
-      default "Standard processing sequence"
-
-  actions
-    action "Validate routing balance metrics"
-    action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
-    action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
-    action "Bypass fraud detection ledger verification" | unless "Amount > 50"
-    action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"</code></pre>
-
-  <p>Compile: <code>butter compile demo.butter</code></p>
-
-  <details>
-    <summary>View output (<code>demo.json</code>)</summary>
-  <pre><code>{
-  "app": "OrderProcessor",
-  "description": "Handles high-throughput retail checkout workflows safely",
-  "version": "2.1.0",
-  "features": [
-    {
-      "name": "ProcessPayment",
-      "description": "Processes financial transactions through multiple payment gateways",
-      "version": "1.0.0",
-      "params": [
-        { "name": "OrderID", "type": "string", "required": true },
-        { "name": "Amount", "type": "float", "required": true },
-        {
-          "name": "PaymentMethod",
-          "type": "enum[\"CreditCard\", \"Crypto\", \"BankTransfer\"]",
-          "default": "CreditCard"
-        },
-        {
-          "name": "AccountNotes",
-          "type": "string",
-          "default": "Standard processing sequence"
-        }
-      ],
-      "actions": [
-        { "statement": "Validate routing balance metrics" },
-        { "statement": "Apply cryptocurrency transaction surcharge",
-          "condition": { "type": "when", "expression": "PaymentMethod is set to Crypto" } },
-        { "statement": "Flag transaction for manual risk mitigation review",
-          "condition": { "type": "if", "expression": "Amount > 10000" } },
-        { "statement": "Bypass fraud detection ledger verification",
-          "condition": { "type": "unless", "expression": "Amount > 50" } },
-        { "statement": "Maintain continuous transaction ledger heartbeat",
-          "condition": { "type": "while", "expression": "Gateway Connection is unstable" } }
-      ]
-    }
-  ]
-}</code></pre>
-  </details>
-
-  <h3>Automated Gatekeeper (Network Security)</h3>
-  <p>A network gateway configuration with float types and enum validation:</p>
-
-  <pre><code class="language-butter">app AutomatedGatekeeper
-description "Defines network gateway configuration maps programmatically"
-version "2.2.0"
-
-feature InterceptPayload
-  description "Inspects and filters network packets based on threat analysis"
-  version "2.0.0"
-
-  params
-    param SourceIP
-      type string
-      required true
-    param ThreatVectorScore
-      type float
-      required true
-    param MitigationAction
-      type enum["Drop", "Quarantine", "Pass"]
-      default "Quarantine"
-
-  actions
-    action "Log full system payload frame data packet maps directly to disk metadata pools"
-    action "Route traffic straight into specialized network analysis pools" | if "ThreatVectorScore > 7.5"
-    action "Bypass deep validation routing checking layer parameters entirely" | unless "SourceIP == 127.0.0.1"
-    action "Halt secondary egress interfaces securely to safely isolate hardware zones" | when "MitigationAction == Drop"
-    action "Keep auditing diagnostic internal systems infrastructure pipelines active" | while "ThreatVectorScore >= 5.0"</code></pre>
-
   <h3>Minimal</h3>
   <p>The simplest valid Butter file:</p>
   <pre><code class="language-butter">app Minimal</code></pre>
@@ -711,6 +607,38 @@ feature DeleteTask
     action "Broadcast deletion event to connected clients"</code></pre>
 
   <p>Compile: <code>butter compile todo.butter</code></p>
+
+  <h3>Using the JSON output with AI</h3>
+  <p>Feed the compiled JSON to an AI model to generate application code. The actions within each feature are sequential execution steps — they must run in order, one after another, not in parallel.</p>
+
+  <pre><code class="language-text">Using this JSON specification, build the complete application. Each feature's
+actions are sequential execution steps — they must be implemented strictly one
+after the other in the listed order, never in parallel or reordered.
+
+```json
+{
+  "app": "TodoApp",
+  "description": "A full-featured todo application with task management capabilities",
+  "features": [
+    {
+      "name": "CreateTask",
+      "actions": [
+        { "statement": "Validate title is not empty" },
+        { "statement": "Assign unique identifier to the new task" },
+        { "statement": "Set creation timestamp to current time" },
+        {
+          "statement": "Send notification to assigned user",
+          "condition": { "type": "if", "expression": "Priority == urgent" }
+        },
+        {
+          "statement": "Schedule reminder for due date",
+          "condition": { "type": "when", "expression": "DueDate is not empty" }
+        }
+      ]
+    }
+  ]
+}
+```</code></pre>
 </section>
 
 <section id="changelog">

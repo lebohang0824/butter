@@ -9,9 +9,9 @@ Prism.languages.butter = {
   },
   'boolean': /\b(?:true|false)\b/,
   'app-declaration': {
-    pattern: /\b(app)\s+([A-Za-z_]\w*)/,
+    pattern: /\b(app|product)\s+([A-Za-z_]\w*)/,
     inside: {
-      'keyword': /app/,
+      'keyword': /app|product/,
       'class-name': {
         pattern: /[A-Za-z_]\w*/,
         alias: 'class-name'
@@ -39,5 +39,5 @@ Prism.languages.butter = {
     }
   },
   'conditional': /\b(?:if|unless|when|while)\b/,
-  'keyword': /\b(?:app|description|version|feature|params|param|type|required|default|actions|action)\b/
+  'keyword': /\b(?:app|product|description|version|feature|params|param|type|required|default|actions|action)\b/
 };
