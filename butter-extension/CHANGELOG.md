@@ -6,6 +6,8 @@
 - Numeric literals (e.g. `default 50`) now parse correctly
 - Parser guards against infinite loops on unexpected token types in parameter fields
 - Added `todo.butter` example using `product` with four features, enum types, and integer defaults
+- `validate` rule format now checked at parse time — must be a valid numeric comparison (operator + number)
+- `validate` only allowed on `int` or `float` parameter types
 
 ## [1.2.0] - 2026-06-24
 

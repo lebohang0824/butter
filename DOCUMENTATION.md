@@ -37,7 +37,7 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `type` | Parameter field| Dictates data constraints (e.g., `string`, `int`, `enum[...]`). |
 | `required` | Parameter field| Boolean validation rule (`true` or `false`). |
 | `default` | Parameter field| Explicit fallback value if the parameter is omitted. |
-| `validate` | Parameter field| Validation rule for numeric parameters (e.g. `>10`, `!=5`, `=<12`). Multiple lines allowed. |
+| `validate`    | Parameter field| Validation rule for numeric parameters (e.g. `>10`, `!=5`, `=<12`). Multiple lines allowed. Must be a valid numeric comparison (operator + number). Only valid on `int` or `float` types. |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
 
@@ -322,6 +322,7 @@ type ParamSpec struct {
 	Type     string      `json:"type"`
 	Required bool        `json:"required"`
 	Default  interface{} `json:"default,omitempty"`
+	Validate []string    `json:"validate,omitempty"`
 }
 
 type ActionSpec struct {
@@ -526,11 +527,14 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"butter/pkg/ast"
 	"butter/pkg/lexer"
 )
+
+var validateRuleRe = regexp.MustCompile(`^\s*(>=?|<=?|={1,2}|!=|=<)\s*[0-9]+(\.[0-9]+)?\s*$`)
 
 type Parser struct {
 	l         *lexer.Lexer
@@ -699,6 +703,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	p.nextToken() // consume Newline
 	p.nextToken() // consume INDENT
 
+	var validateLine int
 	for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
 		if p.curToken.Type == lexer.TokenNewline {
 			p.nextToken()
@@ -722,10 +727,26 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 					param.Default = p.curToken.Value
 				}
 				p.nextToken()
+			case "validate":
+				p.nextToken()
+				if p.curToken.Type != lexer.TokenString {
+					return nil, fmt.Errorf("line %d: validate rule must be a quoted string", p.curToken.Line)
+				}
+				if !validateRuleRe.MatchString(p.curToken.Value) {
+					return nil, fmt.Errorf("line %d: invalid validate rule %q — must be a numeric comparison like \">0\", \">=1\", \"=<100\", \"!=5\"", p.curToken.Line, p.curToken.Value)
+				}
+				if validateLine == 0 {
+					validateLine = p.curToken.Line
+				}
+				param.Validate = append(param.Validate, p.curToken.Value)
+				p.nextToken()
 			default:
 				return nil, fmt.Errorf("line %d: unexpected configuration keyword attribute found inside target parameter object block structural mapping list context: '%s'", p.curToken.Line, p.curToken.Value)
 			}
 		}
+	}
+	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" {
+		return nil, fmt.Errorf("line %d: validate rules require numeric type (int or float), got %q", validateLine, param.Type)
 	}
 	p.nextToken() // consume DEDENT
 	return param, nil

@@ -188,7 +188,7 @@ feature Greet
       <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>enum[...]</code>)</td></tr>
       <tr><td><code>required</code></td><td>Parameter field</td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
       <tr><td><code>default</code></td><td>Parameter field</td><td>Explicit fallback value if the parameter is omitted</td></tr>
-      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (e.g. <code>>10</code>, <code>!=5</code>, <code>=<12</code>). Multiple lines allowed.</td></tr>
+      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (e.g. <code>>10</code>, <code>!=5</code>, <code>=<12</code>). Multiple lines allowed. Must be a valid numeric comparison (operator + number). Only valid on <code>int</code> or <code>float</code> types.</td></tr>
       <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
       <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
     </tbody>
@@ -314,7 +314,7 @@ butter fmt --check demo.butter</code></pre>
   <h3><code>butter --version</code></h3>
   <p>Prints the compiler version:</p>
   <pre><code class="language-bash">butter --version
-# butter v1.2.0</code></pre>
+# butter v1.3.0</code></pre>
 
   <h3>Exit Codes</h3>
   <table>
@@ -380,7 +380,7 @@ line 5: expected an application name after 'app'</code></pre>
     <tbody>
       <tr><td><code>AppSpec</code></td><td><code>app</code>, <code>description?</code>, <code>version?</code>, <code>features[]</code></td></tr>
       <tr><td><code>FeatureSpec</code></td><td><code>name</code>, <code>description?</code>, <code>version?</code>, <code>params[]?</code>, <code>actions[]?</code></td></tr>
-      <tr><td><code>ParamSpec</code></td><td><code>name</code>, <code>type</code> (default <code>"string"</code>), <code>required</code> (default <code>false</code>), <code>default?</code></td></tr>
+      <tr><td><code>ParamSpec</code></td><td><code>name</code>, <code>type</code> (default <code>"string"</code>), <code>required</code> (default <code>false</code>), <code>default?</code>, <code>validate[]?</code></td></tr>
       <tr><td><code>ActionSpec</code></td><td><code>statement</code>, <code>condition?</code></td></tr>
       <tr><td><code>ConditionSpec</code></td><td><code>type</code> (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>), <code>expression</code></td></tr>
     </tbody>
@@ -472,8 +472,16 @@ line 5: expected an application name after 'app'</code></pre>
         <td><code>param</code> must be followed by a name (e.g. <code>param MyParam</code>).</td>
       </tr>
       <tr>
-        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', or 'default'</code></td>
-        <td>Only <code>type</code>, <code>required</code>, and <code>default</code> are valid parameter fields.</td>
+        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', 'default', or 'validate'</code></td>
+        <td>Only <code>type</code>, <code>required</code>, <code>default</code>, and <code>validate</code> are valid parameter fields.</td>
+      </tr>
+      <tr>
+        <td><code>invalid validate rule "..." — must be a numeric comparison like ">0", ">=1", "=<100", "!=5"</code></td>
+        <td>The <code>validate</code> string must be a comparison operator followed by a number (e.g. <code>&gt;=1</code>, <code>!=0</code>).</td>
+      </tr>
+      <tr>
+        <td><code>validate rules require numeric type (int or float), got "..."</code></td>
+        <td><code>validate</code> is only allowed on parameters with <code>type int</code> or <code>type float</code>.</td>
       </tr>
       <tr>
         <td><code>action statement must be a quoted string</code></td>
@@ -654,6 +662,8 @@ after the other in the listed order, never in parallel or reordered.
     <li><strong>Numeric literals in defaults</strong> — Values like <code>default 50</code> now parse correctly. The lexer now allows digits as identifier start characters.</li>
     <li><strong>Parser robustness</strong> — <code>parseParam</code> loop now guards against infinite loops on unexpected token types.</li>
     <li><strong><code>todo.butter</code> example</strong> — New complete todo application example using <code>product</code> with four features, enum types, and integer defaults.</li>
+    <li><strong>Validate rule format validation</strong> — <code>validate</code> rules are now rejected at parse time if they don't match a valid numeric comparison (operator + number). Supported operators: <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>=&lt;</code>, <code>==</code>, <code>=</code>, <code>!=</code>.</li>
+    <li><strong>Validate type restriction</strong> — <code>validate</code> rules are now rejected if the parameter type is not <code>int</code> or <code>float</code>.</li>
   </ul>
 
   <h3>v1.2.0 — 2026-06-24</h3>
