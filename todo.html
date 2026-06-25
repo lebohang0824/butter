@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TodoApp — Built from Butter spec</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; display: flex; flex-direction: column; }
+.app-header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; padding: 1.5rem 2rem; text-align: center; }
+.app-header h1 { font-size: 1.5rem; font-weight: 700; }
+.app-header p { font-size: 0.85rem; opacity: 0.75; margin-top: 0.25rem; }
+.app-header .version { font-size: 0.75rem; opacity: 0.5; margin-top: 0.15rem; }
+.container { max-width: 960px; margin: 0 auto; padding: 1.5rem; flex: 1; width: 100%; }
+.tabs { display: flex; gap: 0.25rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.tab { padding: 0.6rem 1.2rem; border: none; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: #dce0e8; color: #555; transition: all 0.2s; }
+.tab:hover { background: #c8ccd6; }
+.tab.active { background: #fff; color: #1a1a2e; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+.tab-badge { font-size: 0.65rem; background: #e74c3c; color: #fff; border-radius: 10px; padding: 0.1rem 0.45rem; margin-left: 0.3rem; vertical-align: middle; }
+.panel { display: none; background: #fff; border-radius: 0 8px 8px 8px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.panel.active { display: block; }
+.panel h2 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+.panel .feature-desc { font-size: 0.82rem; color: #666; margin-bottom: 1rem; }
+.form-group { margin-bottom: 0.85rem; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem; color: #333; }
+.form-group .required::after { content: ' *'; color: #e74c3c; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.55rem 0.75rem; border: 1.5px solid #dce0e8; border-radius: 6px; font-size: 0.88rem; outline: none; transition: border 0.2s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #1a1a2e; }
+.form-group textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+.btn { padding: 0.6rem 1.5rem; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-primary:hover { background: #16213e; transform: translateY(-1px); }
+.btn-primary:disabled { background: #999; cursor: not-allowed; transform: none; }
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-danger:hover { background: #c0392b; transform: translateY(-1px); }
+.btn-sm { padding: 0.35rem 0.85rem; font-size: 0.78rem; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+.action-log { background: #f8f9fb; border-radius: 6px; padding: 0.75rem; margin-top: 1rem; max-height: 280px; overflow-y: auto; font-size: 0.8rem; font-family: 'SF Mono', 'Fira Code', monospace; }
+.action-log .log-step { padding: 0.3rem 0; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 0.5rem; }
+.action-log .log-step:last-child { border-bottom: none; }
+.log-step .step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+.step-pending { background: #dce0e8; color: #999; }
+.step-running { background: #f39c12; }
+.step-done { background: #27ae60; }
+.step-skip { background: #95a5a6; }
+.step-error { background: #e74c3c; }
+.log-step .cond { font-size: 0.7rem; color: #888; margin-left: auto; background: #eee; padding: 0.1rem 0.4rem; border-radius: 4px; }
+.log-step .step-msg { flex: 1; }
+.task-list { margin-top: 1rem; }
+.task-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid #eee; border-radius: 6px; margin-bottom: 0.5rem; transition: all 0.2s; }
+.task-item:hover { border-color: #ccc; }
+.task-item .task-check { width: 18px; height: 18px; cursor: pointer; accent-color: #27ae60; }
+.task-item .task-info { flex: 1; }
+.task-item .task-title { font-weight: 600; font-size: 0.9rem; }
+.task-item .task-meta { font-size: 0.75rem; color: #888; margin-top: 0.15rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.task-item .task-actions { display: flex; gap: 0.3rem; }
+.priority-low { color: #27ae60; }
+.priority-medium { color: #f39c12; }
+.priority-high { color: #e67e22; }
+.priority-urgent { color: #e74c3c; }
+.status-badge { font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 10px; font-weight: 600; }
+.status-pending { background: #ffeaa7; color: #856404; }
+.status-completed { background: #d5f5e3; color: #1e8449; }
+.status-archived { background: #eee; color: #666; }
+.empty-state { text-align: center; padding: 2rem; color: #999; font-size: 0.9rem; }
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.85rem; box-shadow: 0 4px 16px rgba(0,0,0,0.2); transform: translateY(120%); transition: transform 0.3s ease; z-index: 100; }
+.toast.show { transform: translateY(0); }
+.toast.error { background: #e74c3c; }
+</style>
+</head>
+<body>
+<div class="app-header">
+  <h1>TodoApp</h1>
+  <p>A full-featured todo application with task management capabilities</p>
+  <div class="version">v1.0.0 &mdash; Built from <code>todo.butter</code></div>
+</div>
+
+<div class="container">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="create">Create Task</button>
+    <button class="tab" data-tab="list">List Tasks <span class="tab-badge" id="taskCount">0</span></button>
+    <button class="tab" data-tab="update">Update Task</button>
+    <button class="tab" data-tab="delete">Delete Task</button>
+  </div>
+
+  <div class="panel active" id="panel-create">
+    <h2>Create Task</h2>
+    <p class="feature-desc">Allows creation of new tasks with title, priority, and due date</p>
+    <div class="split">
+      <div>
+        <div class="form-group">
+          <label class="required">Title</label>
+          <input type="text" id="createTitle" placeholder="What needs to be done?">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="createDesc" placeholder="Optional details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="createPriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="createDueDate">
+        </div>
+        <button class="btn btn-primary" id="createBtn">Create Task</button>
+      </div>
+      <div>
+        <div class="action-log" id="createLog"><div class="empty-state">Actions will appear here</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-list">
+    <h2>List Tasks</h2>
+    <p class="feature-desc">Retrieves and filters tasks based on various criteria</p>
+    <div class="split">
+      <div>
+        <div class="form-group">
+          <label>Status Filter</label>
+          <select id="listFilter">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sort By</label>
+          <select id="listSort">
+            <option value="created">Date Created</option>
+            <option value="priority">Priority</option>
+            <option value="due_date">Due Date</option>
+            <option value="title">Title</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Limit</label>
+          <input type="number" id="listLimit" value="50" min="1" max="200">
+        </div>
+        <button class="btn btn-primary" id="listBtn">Refresh List</button>
+      </div>
+      <div>
+        <div class="action-log" id="listLog"><div class="empty-state">Actions will appear here</div></div>
+        <div class="task-list" id="taskList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-update">
+    <h2>Update Task</h2>
+    <p class="feature-desc">Modifies existing task attributes</p>
+    <div class="split">
+      <div>
+        <div class="form-group">
+          <label class="required">Task ID</label>
+          <select id="updateTaskId"><option value="">— Select a task —</option></select>
+        </div>
+        <div class="form-group">
+          <label>New Title</label>
+          <input type="text" id="updateTitle" placeholder="Leave blank to keep current">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="updateStatus">
+            <option value="">— No change —</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="updatePriority">
+            <option value="">— No change —</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="updateBtn">Update Task</button>
+      </div>
+      <div>
+        <div class="action-log" id="updateLog"><div class="empty-state">Actions will appear here</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-delete">
+    <h2>Delete Task</h2>
+    <p class="feature-desc">Removes a task from the system permanently</p>
+    <div class="split">
+      <div>
+        <div class="form-group">
+          <label class="required">Task ID</label>
+          <select id="deleteTaskId"><option value="">— Select a task —</option></select>
+        </div>
+        <div class="form-group">
+          <label class="required">Type the task title to confirm</label>
+          <input type="text" id="deleteConfirm" placeholder="Type the title to confirm deletion">
+        </div>
+        <button class="btn btn-danger" id="deleteBtn">Delete Task</button>
+      </div>
+      <div>
+        <div class="action-log" id="deleteLog"><div class="empty-state">Actions will appear here</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  Persistent storage (localStorage)
+// ============================================================
+const STORAGE_KEY = 'butter_todoapp';
+
+function loadTasks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  updateCounts();
+}
+
+function updateCounts() {
+  const tasks = loadTasks();
+  document.getElementById('taskCount').textContent = tasks.length;
+}
+
+function generateId() {
+  return 'task_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+}
+
+// ============================================================
+//  Action runner — executes each step sequentially
+// ============================================================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runActions(steps, logContainerId, params) {
+  const logEl = document.getElementById(logContainerId);
+  logEl.innerHTML = '';
+  const results = [];
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    await sleep(280);
+
+    // Evaluate condition
+    let shouldRun = true;
+    if (step.condition) {
+      shouldRun = evaluateCondition(step.condition, params);
+      if (!shouldRun) {
+        appendLog(logEl, i + 1, step.label, 'skipped', step.condition.display);
+        results.push({ step: step.label, status: 'skipped' });
+        continue;
+      }
+    }
+
+    appendLog(logEl, i + 1, step.label, 'running', step.condition ? step.condition.display : null);
+    await sleep(400);
+
+    try {
+      const result = step.action(params);
+      appendLog(logEl, i + 1, step.label, 'done', step.condition ? step.condition.display : null, result.msg);
+      results.push({ step: step.label, status: 'done', data: result.data });
+    } catch (err) {
+      appendLog(logEl, i + 1, step.label, 'error', step.condition ? step.condition.display : null, err.message);
+      results.push({ step: step.label, status: 'error', error: err.message });
+      showToast(err.message, 'error');
+      return results;
+    }
+  }
+
+  return results;
+}
+
+function appendLog(container, num, label, state, condition, msg) {
+  const el = container.querySelector('.empty-state');
+  if (el) el.remove();
+
+  const div = document.createElement('div');
+  div.className = 'log-step';
+  div.innerHTML = `
+    <span class="step-num step-${state}">${state === 'done' ? '✓' : state === 'skipped' ? '–' : state === 'error' ? '✗' : num}</span>
+    <span class="step-msg">${label}${msg ? '<br><span style="font-size:0.75rem;color:#666">→ ' + msg + '</span>' : ''}</span>
+    ${condition ? `<span class="cond">${condition}</span>` : ''}
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function evaluateCondition(cond, params) {
+  switch (cond.type) {
+    case 'if':       return !!resolveExpr(cond.expr, params);
+    case 'unless':   return !resolveExpr(cond.expr, params);
+    case 'when':     return !!resolveExpr(cond.expr, params);
+    case 'while':    return !!resolveExpr(cond.expr, params);
+    default:         return true;
+  }
+}
+
+function resolveExpr(expr, params) {
+  // Simple expression evaluator for common patterns
+  const eq = expr.match(/^(.+?)\s*==\s*(.+)$/);
+  if (eq) {
+    const key = eq[1].trim();
+    const val = eq[2].trim().replace(/^"(.*)"$/, '$1');
+    const paramVal = params[key];
+    if (paramVal === undefined) return false;
+    return String(paramVal).toLowerCase() === val.toLowerCase();
+  }
+
+  const neq = expr.match(/^(.+?)\s*!=\s*(.+)$/);
+  if (neq) {
+    const key = neq[1].trim();
+    const val = neq[2].trim().replace(/^"(.*)"$/, '$1');
+    const paramVal = params[key];
+    if (paramVal === undefined) return true;
+    return String(paramVal).toLowerCase() !== val.toLowerCase();
+  }
+
+  const gt = expr.match(/^(.+?)\s*>\s*(.+)$/);
+  if (gt) {
+    const key = gt[1].trim();
+    const val = parseFloat(gt[2].trim());
+    return parseFloat(params[key]) > val;
+  }
+
+  const lt = expr.match(/^(.+?)\s*<\s*(.+)$/);
+  if (lt) {
+    const key = lt[1].trim();
+    const val = parseFloat(lt[2].trim());
+    return parseFloat(params[key]) < val;
+  }
+
+  // "X is not empty" / "X is empty"
+  const notEmpty = expr.match(/^(.+?)\s+is\s+not\s+empty$/i);
+  if (notEmpty) {
+    const val = params[notEmpty[1].trim()];
+    return val !== undefined && val !== null && val !== '';
+  }
+
+  const isEmpty = expr.match(/^(.+?)\s+is\s+empty$/i);
+  if (isEmpty) {
+    const val = params[isEmpty[1].trim()];
+    return val === undefined || val === null || val === '';
+  }
+
+  // "X is set to Y"
+  const isSet = expr.match(/^(.+?)\s+is\s+set\s+to\s+(.+)$/i);
+  if (isSet) {
+    const key = isSet[1].trim();
+    const val = isSet[2].trim().replace(/^"(.*)"$/, '$1');
+    return String(params[key]).toLowerCase() === val.toLowerCase();
+  }
+
+  return true;
+}
+
+// ============================================================
+//  Feature: CreateTask
+// ============================================================
+async function executeCreateTask(params) {
+  const steps = [
+    {
+      label: 'Validate title is not empty',
+      action: (p) => {
+        if (!p.Title || !p.Title.trim()) throw new Error('Title is required');
+        return { msg: `Title "${p.Title}" is valid` };
+      }
+    },
+    {
+      label: 'Assign unique identifier to the new task',
+      action: (p) => {
+        const id = generateId();
+        p._id = id;
+        return { msg: `Assigned ID: ${id}`, data: id };
+      }
+    },
+    {
+      label: 'Set creation timestamp to current time',
+      action: (p) => {
+        const ts = new Date().toISOString();
+        p._createdAt = ts;
+        return { msg: `Timestamp: ${ts}` };
+      }
+    },
+    {
+      label: 'Send notification to assigned user',
+      condition: { type: 'if', expr: 'Priority == urgent', display: 'if "Priority == urgent"' },
+      action: (p) => {
+        showToast('URGENT: Notification sent for task "' + p.Title + '"', 'info');
+        return { msg: 'Urgent notification dispatched' };
+      }
+    },
+    {
+      label: 'Schedule reminder for due date',
+      condition: { type: 'when', expr: 'DueDate is not empty', display: 'when "DueDate is not empty"' },
+      action: (p) => {
+        return { msg: `Reminder scheduled for ${p.DueDate}` };
+      }
+    }
+  ];
+
+  const results = await runActions(steps, 'createLog', params);
+
+  const success = results.every(r => r.status === 'done' || r.status === 'skipped');
+  if (success) {
+    const tasks = loadTasks();
+    tasks.push({
+      id: params._id,
+      title: params.Title,
+      description: params.Description || '',
+      priority: params.Priority || 'medium',
+      dueDate: params.DueDate || '',
+      status: 'pending',
+      createdAt: params._createdAt,
+      updatedAt: params._createdAt
+    });
+    saveTasks(tasks);
+    populateTaskSelects();
+    showToast(`Task "${params.Title}" created successfully`);
+    document.getElementById('createTitle').value = '';
+    document.getElementById('createDesc').value = '';
+    document.getElementById('createPriority').value = 'medium';
+    document.getElementById('createDueDate').value = '';
+  }
+}
+
+document.getElementById('createBtn').addEventListener('click', async function () {
+  this.disabled = true;
+  await executeCreateTask({
+    Title: document.getElementById('createTitle').value.trim(),
+    Description: document.getElementById('createDesc').value.trim(),
+    Priority: document.getElementById('createPriority').value,
+    DueDate: document.getElementById('createDueDate').value
+  });
+  this.disabled = false;
+});
+
+// ============================================================
+//  Feature: ListTasks
+// ============================================================
+async function executeListTasks(params) {
+  const steps = [
+    {
+      label: 'Query task repository with specified filters',
+      action: (p) => {
+        let tasks = loadTasks();
+        if (p.StatusFilter && p.StatusFilter !== 'all') {
+          tasks = tasks.filter(t => t.status === p.StatusFilter);
+        }
+        p._filtered = tasks;
+        return { msg: `Found ${tasks.length} task(s)`, data: tasks };
+      }
+    },
+    {
+      label: 'Sort results according to SortBy parameter',
+      action: (p) => {
+        const sort = p.SortBy || 'created';
+        const tasks = p._filtered;
+        tasks.sort((a, b) => {
+          switch (sort) {
+            case 'priority': {
+              const order = { urgent: 0, high: 1, medium: 2, low: 3 };
+              return (order[a.priority] ?? 99) - (order[b.priority] ?? 99);
+            }
+            case 'due_date': return (a.dueDate || '').localeCompare(b.dueDate || '');
+            case 'title': return a.title.localeCompare(b.title);
+            default: return new Date(b.createdAt) - new Date(a.createdAt);
+          }
+        });
+        return { msg: `Sorted by ${sort}` };
+      }
+    },
+    {
+      label: 'Limit results to specified count',
+      action: (p) => {
+        const limit = Math.min(Math.max(parseInt(p.Limit) || 50, 1), 200);
+        p._filtered = p._filtered.slice(0, limit);
+        return { msg: `Limited to ${limit} result(s)` };
+      }
+    },
+    {
+      label: 'Apply pagination metadata to response',
+      action: (p) => {
+        const total = loadTasks().length;
+        return { msg: `Showing ${p._filtered.length} of ${total} total task(s)` };
+      }
+    }
+  ];
+
+  const results = await runActions(steps, 'listLog', params);
+
+  const success = results.every(r => r.status === 'done' || r.status === 'skipped');
+  if (success) {
+    renderTaskList(params._filtered || []);
+  }
+}
+
+function renderTaskList(tasks) {
+  const container = document.getElementById('taskList');
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="empty-state">No tasks match your criteria</div>';
+    return;
+  }
+  container.innerHTML = tasks.map(t => `
+    <div class="task-item" data-id="${t.id}">
+      <input type="checkbox" class="task-check" ${t.status === 'completed' ? 'checked' : ''} ${t.status === 'archived' ? 'disabled' : ''}>
+      <div class="task-info">
+        <div class="task-title" style="${t.status === 'completed' ? 'text-decoration:line-through;color:#999' : ''}">${escHtml(t.title)}</div>
+        <div class="task-meta">
+          <span class="status-badge status-${t.status}">${t.status}</span>
+          <span class="priority-${t.priority}">● ${t.priority}</span>
+          ${t.dueDate ? '<span>📅 ' + t.dueDate + '</span>' : ''}
+          <span>ID: ${t.id.slice(0, 16)}…</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="btn btn-sm btn-primary" onclick="quickEdit('${t.id}')">Edit</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Toggle completion on checkbox click
+  container.querySelectorAll('.task-check').forEach(cb => {
+    cb.addEventListener('change', function () {
+      const id = this.closest('.task-item').dataset.id;
+      const tasks = loadTasks();
+      const t = tasks.find(x => x.id === id);
+      if (t && t.status !== 'archived') {
+        t.status = this.checked ? 'completed' : 'pending';
+        t.updatedAt = new Date().toISOString();
+        saveTasks(tasks);
+        renderTaskList(loadTasks());
+        populateTaskSelects();
+      }
+    });
+  });
+}
+
+document.getElementById('listBtn').addEventListener('click', async function () {
+  this.disabled = true;
+  await executeListTasks({
+    StatusFilter: document.getElementById('listFilter').value,
+    SortBy: document.getElementById('listSort').value,
+    Limit: document.getElementById('listLimit').value
+  });
+  this.disabled = false;
+});
+
+// ============================================================
+//  Feature: UpdateTask
+// ============================================================
+async function executeUpdateTask(params) {
+  const steps = [
+    {
+      label: 'Look up task by TaskID',
+      action: (p) => {
+        const tasks = loadTasks();
+        const task = tasks.find(t => t.id === p.TaskID);
+        if (!task) throw new Error(`Task "${p.TaskID}" not found`);
+        p._task = task;
+        return { msg: `Found "${task.title}"` };
+      }
+    },
+    {
+      label: 'Merge provided fields into existing task record',
+      action: (p) => {
+        const task = p._task;
+        if (p.Title && p.Title.trim()) task.title = p.Title.trim();
+        if (p.Status) task.status = p.Status;
+        if (p.Priority) task.priority = p.Priority;
+        return { msg: `Merged ${[p.Title && 'title', p.Status && 'status', p.Priority && 'priority'].filter(Boolean).join(', ')}` };
+      }
+    },
+    {
+      label: 'Set last-modified timestamp to current time',
+      action: (p) => {
+        const ts = new Date().toISOString();
+        p._task.updatedAt = ts;
+        return { msg: `Timestamp: ${ts}` };
+      }
+    },
+    {
+      label: 'Reject update if task is archived',
+      condition: { type: 'unless', expr: 'Status != archived', display: 'unless "Status != archived"' },
+      action: (p) => {
+        if (p._task.status === 'archived') {
+          throw new Error('Cannot modify an archived task');
+        }
+        return { msg: 'Task is not archived — update allowed' };
+      }
+    }
+  ];
+
+  const results = await runActions(steps, 'updateLog', params);
+
+  const success = results.every(r => r.status === 'done' || r.status === 'skipped');
+  if (success) {
+    const tasks = loadTasks();
+    const idx = tasks.findIndex(t => t.id === params.TaskID);
+    if (idx !== -1) {
+      tasks[idx] = params._task;
+      saveTasks(tasks);
+      populateTaskSelects();
+      showToast(`Task "${params._task.title}" updated`);
+      document.getElementById('updateTitle').value = '';
+      document.getElementById('updateStatus').value = '';
+      document.getElementById('updatePriority').value = '';
+    }
+  }
+}
+
+document.getElementById('updateBtn').addEventListener('click', async function () {
+  this.disabled = true;
+  await executeUpdateTask({
+    TaskID: document.getElementById('updateTaskId').value,
+    Title: document.getElementById('updateTitle').value.trim(),
+    Status: document.getElementById('updateStatus').value,
+    Priority: document.getElementById('updatePriority').value
+  });
+  this.disabled = false;
+});
+
+// ============================================================
+//  Feature: DeleteTask
+// ============================================================
+async function executeDeleteTask(params) {
+  const steps = [
+    {
+      label: 'Verify TaskID exists in repository',
+      action: (p) => {
+        const tasks = loadTasks();
+        const task = tasks.find(t => t.id === p.TaskID);
+        if (!task) throw new Error(`Task "${p.TaskID}" not found`);
+        p._task = task;
+        return { msg: `Found "${task.title}"` };
+      }
+    },
+    {
+      label: 'Verify Confirmation matches task title',
+      action: (p) => {
+        if (p.Confirmation.trim() !== p._task.title) {
+          throw new Error(`Confirmation "${p.Confirmation}" does not match title "${p._task.title}"`);
+        }
+        return { msg: 'Confirmation matches' };
+      }
+    },
+    {
+      label: 'Remove task record from persistent storage',
+      action: (p) => {
+        const tasks = loadTasks();
+        const filtered = tasks.filter(t => t.id !== p.TaskID);
+        const removed = tasks.length - filtered.length;
+        if (removed === 0) throw new Error('Failed to remove task');
+        p._updatedTasks = filtered;
+        saveTasks(filtered);
+        return { msg: `Removed "${p._task.title}"` };
+      }
+    },
+    {
+      label: 'Broadcast deletion event to connected clients',
+      action: (p) => {
+        showToast(`Task "${p._task.title}" deleted permanently`, 'info');
+        return { msg: `Deletion broadcast sent` };
+      }
+    }
+  ];
+
+  const results = await runActions(steps, 'deleteLog', params);
+
+  const success = results.every(r => r.status === 'done' || r.status === 'skipped');
+  if (success) {
+    populateTaskSelects();
+    document.getElementById('deleteTaskId').value = '';
+    document.getElementById('deleteConfirm').value = '';
+  }
+}
+
+document.getElementById('deleteBtn').addEventListener('click', async function () {
+  this.disabled = true;
+  await executeDeleteTask({
+    TaskID: document.getElementById('deleteTaskId').value,
+    Confirmation: document.getElementById('deleteConfirm').value.trim()
+  });
+  this.disabled = false;
+});
+
+// ============================================================
+//  Shared helpers
+// ============================================================
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type === 'error' ? ' error' : '') + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function populateTaskSelects() {
+  const tasks = loadTasks();
+  ['updateTaskId', 'deleteTaskId'].forEach(id => {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Select a task —</option>'
+      + tasks.map(t => `<option value="${t.id}">${escHtml(t.title)} (${t.status})</option>`).join('');
+    if (current && tasks.some(t => t.id === current)) sel.value = current;
+  });
+}
+
+function quickEdit(id) {
+  document.querySelector('[data-tab="update"]').click();
+  document.getElementById('updateTaskId').value = id;
+}
+
+// ============================================================
+//  Tab switching
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+
+    // Refresh task selects when switching to update/delete
+    if (this.dataset.tab === 'update' || this.dataset.tab === 'delete') {
+      populateTaskSelects();
+    }
+    if (this.dataset.tab === 'list') {
+      document.getElementById('listBtn').click();
+    }
+  });
+});
+
+// ============================================================
+//  Init
+// ============================================================
+updateCounts();
+populateTaskSelects();
+
+// Auto-load task list on first visit
+setTimeout(() => {
+  const tasks = loadTasks();
+  if (tasks.length > 0) {
+    const listTab = document.querySelector('[data-tab="list"]');
+    listTab.click();
+  }
+}, 300);
+</script>
+</body>
+</html>

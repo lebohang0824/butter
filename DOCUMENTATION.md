@@ -82,7 +82,7 @@ feature ProcessPayment
     action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"
 ```
 
-**`todo.butter`** — Complete todo app using `product` instead of `app`, with integer defaults, enum types, and multiple features. See the file at `todo.butter` in the project root.
+**`todo.butter`** — Complete todo app using `product` instead of `app`, with integer defaults, enum types, and multiple features. See the file at `todo.butter` in the project root. A working single-page application built from this spec is available at `todo.html` — each feature's actions run as sequential execution steps, one after another.
 
 ---
 
