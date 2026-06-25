@@ -9,6 +9,8 @@ var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|fe
 
 var validateSpaceRe = regexp.MustCompile(`^(\s*validate\s+")([><=!]+)\s+(\d+(?:\.\d+)?)"`)
 
+var lengthQuoteRe = regexp.MustCompile(`^(\s*length\s+)"(\d+)"`)
+
 var blockKeywordRe = regexp.MustCompile(`^\s*(actions|params)\s*$`)
 
 var commentRe = regexp.MustCompile(`^\s*#`)
@@ -18,6 +20,7 @@ func Format(content []byte) ([]byte, error) {
 	lines = pass1(lines)
 	lines = pass2(lines)
 	lines = normalizeValidateSpaces(lines)
+	lines = normalizeLengthQuotes(lines)
 	return []byte(strings.Join(lines, "\n")), nil
 }
 
@@ -25,6 +28,14 @@ func normalizeValidateSpaces(lines []string) []string {
 	result := make([]string, len(lines))
 	for i, line := range lines {
 		result[i] = validateSpaceRe.ReplaceAllString(line, `${1}${2}${3}"`)
+	}
+	return result
+}
+
+func normalizeLengthQuotes(lines []string) []string {
+	result := make([]string, len(lines))
+	for i, line := range lines {
+		result[i] = lengthQuoteRe.ReplaceAllString(line, `${1}${2}`)
 	}
 	return result
 }

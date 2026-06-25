@@ -23,7 +23,7 @@ feature CreateTask
     param DueDate
       type string
     param RSAIdentityNumber
-      type string
+      type int
       length 13
 
   actions

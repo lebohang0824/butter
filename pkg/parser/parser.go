@@ -240,6 +240,9 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	if param.Length > 0 && len(param.Validate) > 0 {
 		return nil, fmt.Errorf("line %d: length and validate cannot be used together on the same parameter", lengthLine)
 	}
+	if param.Length > 0 && param.Type != "int" && param.Type != "float" {
+		return nil, fmt.Errorf("line %d: length requires numeric type (int or float), got %q", lengthLine, param.Type)
+	}
 	p.nextToken()
 	return param, nil
 }
