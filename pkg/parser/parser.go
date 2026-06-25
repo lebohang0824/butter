@@ -180,7 +180,8 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 			p.nextToken()
 			continue
 		}
-		if p.curToken.Type == lexer.TokenIdentifier {
+		switch {
+		case p.curToken.Type == lexer.TokenIdentifier:
 			switch p.curToken.Value {
 			case "type":
 				p.nextToken()
@@ -201,6 +202,8 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 			default:
 				return nil, fmt.Errorf("line %d: unexpected '%s' for this parameter — expected 'type', 'required', or 'default'", p.curToken.Line, p.curToken.Value)
 			}
+		default:
+			return nil, fmt.Errorf("line %d: unexpected token %s in parameter fields", p.curToken.Line, p.curToken.Type)
 		}
 	}
 	p.nextToken()

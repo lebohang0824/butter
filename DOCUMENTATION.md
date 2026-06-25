@@ -48,7 +48,9 @@ Butter expands standard evaluation logic beyond a simple `if` condition, offerin
 * **`when`**: Reactive or event-driven hook. Indicates the action triggers **asynchronously upon** an external event or state shift.
 * **`while`**: Active polling or operational state persistence. The action requires this state condition to remain continuously active throughout execution.
 
-### 2.3 Syntactic Layout Example (`demo.butter`)
+### 2.3 Syntactic Layout Examples
+
+**`demo.butter`** — Standard application declaration:
 
 ```butter
 # Global application declaration
@@ -79,6 +81,8 @@ feature ProcessPayment
     action "Bypass fraud detection ledger verification" | unless "Amount > 50"
     action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"
 ```
+
+**`todo.butter`** — Complete todo app using `product` instead of `app`, with integer defaults, enum types, and multiple features. See the file at `todo.butter` in the project root.
 
 ---
 
@@ -171,7 +175,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "1.2.0"
+	const Version = "1.3.0"
 
 var outputFile string
 var checkMode bool
@@ -554,10 +558,10 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 			continue
 		}
 
-		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "app" {
+		if p.curToken.Type == lexer.TokenIdentifier && (p.curToken.Value == "app" || p.curToken.Value == "product") {
 			p.nextToken()
 			if p.curToken.Type != lexer.TokenIdentifier {
-				return nil, fmt.Errorf("line %d: expected application identifier string name configuration directly following 'app'", p.curToken.Line)
+				return nil, fmt.Errorf("line %d: expected application name after '%s'", p.curToken.Line, p.curToken.Value)
 			}
 			appSpec.App = p.curToken.Value
 			p.nextToken()
@@ -766,7 +770,7 @@ func GenerateJSONSpec(app *ast.AppSpec) ([]byte, error) {
 Located in `pkg/formatter/formatter.go`, the formatter normalizes blank lines in `.butter` files using a two-pass algorithm:
 
 **Pass 1 — Remove blank lines after parameter keywords:**
-Lines matching `app`, `description`, `version`, `feature`, `param`, `type`, `required`, or `default` (followed by a value) have any blank lines immediately after them removed.
+Lines matching `app` (or `product`), `description`, `version`, `feature`, `param`, `type`, `required`, or `default` (followed by a value) have any blank lines immediately after them removed.
 
 **Pass 2 — Insert blank lines before `actions`/`params` and `feature`:**
 - Before `actions` or `params`: inserted unless the preceding meaningful line is a `feature` line (i.e., it's the first child of the feature block).
@@ -859,7 +863,7 @@ butter-extension/
       "name": "comment.line.number-sign.butter"
     },
     "app_name": {
-      "match": "\\b(app)\\s+([A-Za-z_]\\w*)",
+      "match": "\\b(app|product)\\s+([A-Za-z_]\\w*)",
       "captures": {
         "1": { "name": "keyword.control.butter" },
         "2": { "name": "entity.name.type.butter" }
@@ -880,7 +884,7 @@ butter-extension/
       }
     },
     "keywords": {
-      "match": "\\b(app|description|version|feature|params|param|type|required|default|actions|action)\\b",
+      "match": "\\b(app|product|description|version|feature|params|param|type|required|default|actions|action)\\b",
       "name": "keyword.control.butter"
     },
     "conditionals": {

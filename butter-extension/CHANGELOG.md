@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.3.0] - 2026-06-25
+
+- `product` keyword accepted as alias for `app` at the top level
+- Numeric literals (e.g. `default 50`) now parse correctly
+- Parser guards against infinite loops on unexpected token types in parameter fields
+- Added `todo.butter` example using `product` with four features, enum types, and integer defaults
+
 ## [1.2.0] - 2026-06-24
 
 - `butter fmt` command — automatically formats `.butter` files according to standard conventions

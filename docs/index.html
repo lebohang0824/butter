@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.2.0</div>
+    <div class="version">v1.3.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -116,7 +116,7 @@ sudo cp butter /usr/local/bin/</code></pre>
 
   <h3>Verify Installation</h3>
   <pre><code class="language-bash">butter --version
-# butter v1.2.0</code></pre>
+# butter v1.3.0</code></pre>
 </section>
 
 <section id="getting-started">
@@ -617,10 +617,112 @@ feature InterceptPayload
   "app": "Minimal",
   "features": []
 }</code></pre>
+
+  <h3>Todo App (using <code>product</code>)</h3>
+  <p>A complete todo application example using <code>product</code> instead of <code>app</code>:</p>
+
+  <pre><code class="language-butter"># TodoApp — A complete task management application
+product TodoApp
+description "A full-featured todo application with task management capabilities"
+version "1.0.0"
+
+feature CreateTask
+  description "Allows creation of new tasks with title, priority, and due date"
+  version "1.0.0"
+
+  params
+    param Title
+      type string
+      required true
+    param Description
+      type string
+      default ""
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+      default "medium"
+    param DueDate
+      type string
+
+  actions
+    action "Validate title is not empty"
+    action "Assign unique identifier to the new task"
+    action "Set creation timestamp to current time"
+    action "Send notification to assigned user" | if "Priority == urgent"
+    action "Schedule reminder for due date" | when "DueDate is not empty"
+
+feature ListTasks
+  description "Retrieves and filters tasks based on various criteria"
+  version "1.0.0"
+
+  params
+    param StatusFilter
+      type enum["all", "pending", "completed", "archived"]
+      default "all"
+    param SortBy
+      type enum["created", "priority", "due_date", "title"]
+      default "created"
+    param Limit
+      type int
+      default 50
+
+  actions
+    action "Query task repository with specified filters"
+    action "Sort results according to SortBy parameter"
+    action "Limit results to specified count"
+    action "Apply pagination metadata to response"
+
+feature UpdateTask
+  description "Modifies existing task attributes"
+  version "1.0.0"
+
+  params
+    param TaskID
+      type string
+      required true
+    param Title
+      type string
+    param Status
+      type enum["pending", "completed", "archived"]
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+
+  actions
+    action "Look up task by TaskID"
+    action "Merge provided fields into existing task record"
+    action "Set last-modified timestamp to current time"
+    action "Reject update if task is archived" | unless "Status != archived"
+
+feature DeleteTask
+  description "Removes a task from the system permanently"
+  version "1.0.0"
+
+  params
+    param TaskID
+      type string
+      required true
+    param Confirmation
+      type string
+      required true
+
+  actions
+    action "Verify TaskID exists in repository"
+    action "Verify Confirmation matches task title"
+    action "Remove task record from persistent storage"
+    action "Broadcast deletion event to connected clients"</code></pre>
+
+  <p>Compile: <code>butter compile todo.butter</code></p>
 </section>
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.3.0 — 2026-06-25</h3>
+  <ul>
+    <li><strong><code>product</code> keyword alias</strong> — <code>product</code> can now be used interchangeably with <code>app</code> at the top level, across parser, formatter, and syntax highlighting.</li>
+    <li><strong>Numeric literals in defaults</strong> — Values like <code>default 50</code> now parse correctly. The lexer now allows digits as identifier start characters.</li>
+    <li><strong>Parser robustness</strong> — <code>parseParam</code> loop now guards against infinite loops on unexpected token types.</li>
+    <li><strong><code>todo.butter</code> example</strong> — New complete todo application example using <code>product</code> with four features, enum types, and integer defaults.</li>
+  </ul>
 
   <h3>v1.2.0 — 2026-06-24</h3>
   <ul>

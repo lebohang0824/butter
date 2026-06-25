@@ -104,6 +104,8 @@ Compile it:
 butter compile demo.butter
 ```
 
+A longer example using <code>product</code> with multiple features, integer defaults, and enum parameters is available in <a href="todo.butter"><code>todo.butter</code></a>.
+
 Output (`demo.json`):
 
 ```json

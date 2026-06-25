@@ -1,0 +1,88 @@
+# TodoApp — A complete task management application
+product TodoApp
+description "A full-featured todo application with task management capabilities"
+version "1.0.0"
+
+feature CreateTask
+  description "Allows creation of new tasks with title, priority, and due date"
+  version "1.0.0"
+
+  params
+    param Title
+      type string
+      required true
+    param Description
+      type string
+      default ""
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+      default "medium"
+    param DueDate
+      type string
+
+  actions
+    action "Validate title is not empty"
+    action "Assign unique identifier to the new task"
+    action "Set creation timestamp to current time"
+    action "Send notification to assigned user" | if "Priority == urgent"
+    action "Schedule reminder for due date" | when "DueDate is not empty"
+
+feature ListTasks
+  description "Retrieves and filters tasks based on various criteria"
+  version "1.0.0"
+
+  params
+    param StatusFilter
+      type enum["all", "pending", "completed", "archived"]
+      default "all"
+    param SortBy
+      type enum["created", "priority", "due_date", "title"]
+      default "created"
+    param Limit
+      type int
+      default 50
+
+  actions
+    action "Query task repository with specified filters"
+    action "Sort results according to SortBy parameter"
+    action "Limit results to specified count"
+    action "Apply pagination metadata to response"
+
+feature UpdateTask
+  description "Modifies existing task attributes"
+  version "1.0.0"
+
+  params
+    param TaskID
+      type string
+      required true
+    param Title
+      type string
+    param Status
+      type enum["pending", "completed", "archived"]
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+
+  actions
+    action "Look up task by TaskID"
+    action "Merge provided fields into existing task record"
+    action "Set last-modified timestamp to current time"
+    action "Reject update if task is archived" | unless "Status != archived"
+
+feature DeleteTask
+  description "Removes a task from the system permanently"
+  version "1.0.0"
+
+  params
+    param TaskID
+      type string
+      required true
+    param Confirmation
+      type string
+      required true
+
+  actions
+    action "Verify TaskID exists in repository"
+    action "Verify Confirmation matches task title"
+    action "Remove task record from persistent storage"
+    action "Broadcast deletion event to connected clients"
