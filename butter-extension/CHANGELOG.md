@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.4.0] - 2026-06-25
+
+- Added `bool|boolean|length` to keyword syntax highlighting
+
 ## [1.3.0] - 2026-06-25
 
 - `product` keyword accepted as alias for `app` at the top level

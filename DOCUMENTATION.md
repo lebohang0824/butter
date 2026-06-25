@@ -34,10 +34,10 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `feature` | Block-level | Declares a sub-system module, API endpoint, or discrete capability. |
 | `params` | Block-level | A dedicated container block specifying input definitions. |
 | `param` | Item-level | Declares a discrete parameter variable name. |
-| `type` | Parameter field| Dictates data constraints (e.g., `string`, `int`, `enum[...]`). |
+| `type`        | Parameter field| Dictates data constraints (e.g., `string`, `int`, `bool`, `length`, `enum[...]`). |
 | `required` | Parameter field| Boolean validation rule (`true` or `false`). |
 | `default` | Parameter field| Explicit fallback value if the parameter is omitted. |
-| `validate`    | Parameter field| Validation rule for numeric parameters (e.g. `>10`, `!=5`, `=<12`). Multiple lines allowed. Must be a valid numeric comparison (operator + number). Only valid on `int` or `float` types. |
+| `validate`    | Parameter field| Validation rule for numeric parameters (`int`, `float`, `length`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Must be a valid numeric comparison (operator + number). |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
 
@@ -745,8 +745,8 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 			}
 		}
 	}
-	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" {
-		return nil, fmt.Errorf("line %d: validate rules require numeric type (int or float), got %q", validateLine, param.Type)
+	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" && param.Type != "length" {
+		return nil, fmt.Errorf("line %d: validate rules require numeric type (int, float, or length), got %q", validateLine, param.Type)
 	}
 	p.nextToken() // consume DEDENT
 	return param, nil

@@ -14,6 +14,9 @@ feature CreateTask
     param Description
       type string
       default ""
+    param Completed
+      type bool
+      default false
     param Priority
       type enum["low", "medium", "high", "urgent"]
       default "medium"
@@ -24,6 +27,7 @@ feature CreateTask
     action "Validate title is not empty"
     action "Assign unique identifier to the new task"
     action "Set creation timestamp to current time"
+    action "Set completed status to false"
     action "Send notification to assigned user" | if "Priority == urgent"
     action "Schedule reminder for due date" | when "DueDate is not empty"
 
@@ -39,7 +43,7 @@ feature ListTasks
       type enum["created", "priority", "due_date", "title"]
       default "created"
     param Limit
-      type int
+      type length
       default 50
       validate ">=1"
       validate "<=200"

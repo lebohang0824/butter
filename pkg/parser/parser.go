@@ -223,8 +223,8 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 			return nil, fmt.Errorf("line %d: unexpected token %s in parameter fields", p.curToken.Line, p.curToken.Type)
 		}
 	}
-	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" {
-		return nil, fmt.Errorf("line %d: validate rules require numeric type (int or float), got %q", validateLine, param.Type)
+	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" && param.Type != "length" {
+		return nil, fmt.Errorf("line %d: validate rules require numeric type (int, float, or length), got %q", validateLine, param.Type)
 	}
 	p.nextToken()
 	return param, nil
