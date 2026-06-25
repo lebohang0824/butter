@@ -34,15 +34,20 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `feature` | Block-level | Declares a sub-system module, API endpoint, or discrete capability. |
 | `params` | Block-level | A dedicated container block specifying input definitions. |
 | `param` | Item-level | Declares a discrete parameter variable name. |
-| `type`        | Parameter field| Dictates data constraints (e.g., `string`, `int`, `bool`, `enum[...]`). |
-| `required` | Parameter field| Boolean validation rule (`true` or `false`). |
-| `default` | Parameter field| Explicit fallback value if the parameter is omitted. |
-| `validate`    | Parameter field| Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
-| `length`      | Parameter field| Exact character/numeric length constraint (e.g. `length 13`). Mutually exclusive with `validate`. |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
 
-### 2.2 Semantic Conditionals
+### 2.2 Parameter Fields
+
+| Field | Purpose |
+| :--- | :--- |
+| `type` | Dictates data constraints (`string`, `int`, `float`, `bool`, `enum[...]`). |
+| `required` | Boolean validation rule (`true` or `false`). |
+| `default` | Explicit fallback value if the parameter is omitted. |
+| `validate` | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
+| `length` | Exact digit/numeric length constraint (e.g. `length 13`). Only on `int`/`float`. Mutually exclusive with `validate`. |
+
+### 2.3 Semantic Conditionals
 Butter expands standard evaluation logic beyond a simple `if` condition, offering native semantic blocks that map perfectly to backend execution engines:
 
 * **`if`**: The action executes **only if** the target predicate expression evaluates to `true`.
@@ -50,7 +55,7 @@ Butter expands standard evaluation logic beyond a simple `if` condition, offerin
 * **`when`**: Reactive or event-driven hook. Indicates the action triggers **asynchronously upon** an external event or state shift.
 * **`while`**: Active polling or operational state persistence. The action requires this state condition to remain continuously active throughout execution.
 
-### 2.3 Syntactic Layout Examples
+### 2.4 Syntactic Layout Examples
 
 **`demo.butter`** — Standard application declaration:
 

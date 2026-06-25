@@ -185,13 +185,22 @@ feature Greet
       <tr><td><code>feature</code></td><td>Block-level</td><td>Declares a sub-system module, API endpoint, or discrete capability</td></tr>
       <tr><td><code>params</code></td><td>Block-level</td><td>A container block specifying input parameter definitions</td></tr>
       <tr><td><code>param</code></td><td>Item-level</td><td>Declares a discrete parameter variable name</td></tr>
-      <tr><td><code>type</code></td><td>Parameter field</td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>enum[...]</code>)</td></tr>
-      <tr><td><code>required</code></td><td>Parameter field</td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
-      <tr><td><code>default</code></td><td>Parameter field</td><td>Explicit fallback value if the parameter is omitted</td></tr>
-      <tr><td><code>validate</code></td><td>Parameter field</td><td>Validation rule for numeric parameters (<code>int</code>, <code>float</code>). E.g. <code>&gt;10</code>, <code>!=5</code>, <code>=&lt;12</code>. Multiple lines allowed. Mutually exclusive with <code>length</code>.</td></tr>
-      <tr><td><code>length</code></td><td>Parameter field</td><td>Exact character/numeric length constraint (e.g. <code>length 13</code>). Mutually exclusive with <code>validate</code>.</td></tr>
       <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
       <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Parameter Fields</h3>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>type</code></td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>enum[...]</code>)</td></tr>
+      <tr><td><code>required</code></td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
+      <tr><td><code>default</code></td><td>Explicit fallback value if the parameter is omitted</td></tr>
+      <tr><td><code>validate</code></td><td>Validation rule for numeric parameters (<code>int</code>, <code>float</code>). E.g. <code>&gt;10</code>, <code>!=5</code>, <code>=&lt;12</code>. Multiple lines allowed. Mutually exclusive with <code>length</code>.</td></tr>
+      <tr><td><code>length</code></td><td>Exact digit/numeric length constraint (e.g. <code>length 13</code>). Only on <code>int</code>/<code>float</code>. Mutually exclusive with <code>validate</code>.</td></tr>
     </tbody>
   </table>
 
