@@ -104,7 +104,7 @@ Compile it:
 butter compile demo.butter
 ```
 
-A longer example using <code>product</code> with multiple features, integer defaults, and enum parameters is available in <a href="todo.butter"><code>todo.butter</code></a>. See the working single-page app built from this spec at <a href="docs/todo.html"><code>todo.html</code></a>. Each feature's actions run as sequential execution steps, one after another.
+A longer example using <code>product</code> with multiple features, integer defaults, and enum parameters is available in <a href="todo.butter"><code>todo.butter</code></a>. See the working single-page app built from this spec at <a href="docs/todo.html"><code>todo.html</code></a>. Each feature's actions run as sequential execution steps, one after another. Update and Delete operations are available via a modal form — click <strong>Edit</strong> on any task in the list.
 
 Output (`demo.json`):
 
