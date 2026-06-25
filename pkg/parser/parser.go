@@ -178,6 +178,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	p.nextToken()
 	p.nextToken()
 
+	var validateLine int
 	for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
 		if p.curToken.Type == lexer.TokenNewline {
 			p.nextToken()
@@ -210,6 +211,9 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 				if !validateRuleRe.MatchString(p.curToken.Value) {
 					return nil, fmt.Errorf("line %d: invalid validate rule %q — must be a numeric comparison like \">0\", \">=1\", \"=<100\", \"!=5\"", p.curToken.Line, p.curToken.Value)
 				}
+				if validateLine == 0 {
+					validateLine = p.curToken.Line
+				}
 				param.Validate = append(param.Validate, p.curToken.Value)
 				p.nextToken()
 			default:
@@ -218,6 +222,9 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 		default:
 			return nil, fmt.Errorf("line %d: unexpected token %s in parameter fields", p.curToken.Line, p.curToken.Type)
 		}
+	}
+	if len(param.Validate) > 0 && param.Type != "int" && param.Type != "float" {
+		return nil, fmt.Errorf("line %d: validate rules require numeric type (int or float), got %q", validateLine, param.Type)
 	}
 	p.nextToken()
 	return param, nil
