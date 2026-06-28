@@ -1,6 +1,6 @@
 ![Butter](butter.png)
 
-**Butter** is a high-performance, indentation-aware domain-specific language (DSL) compiler. It compiles clean, human-readable `.butter` specification files into structured, production-ready, pretty-printed JSON configurations.
+**Butter** is a high-performance, indentation-aware domain-specific language (DSL) compiler. It compiles clean, human-readable `.butter` specification files into structured, production-ready, pretty-printed JSON or YAML configurations.
 
 ---
 
@@ -28,7 +28,8 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 
 ### Core Objectives
 
-- **Zero Dependencies for Compilation** — The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities.
+- **Zero Dependencies for Core Compilation** — The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities. Output serialization (JSON/YAML) may leverage standard or third-party libraries for format flexibility.
+- **Multi-Format Output** — Compile `.butter` specifications to JSON (default) or YAML, giving you flexibility for different toolchains and workflows.
 - **Significant Indentation** — Structural scope is driven entirely by whitespace (spaces or tabs), optimizing readability.
 - **Rich Conditionals** — Built-in keywords natively capture diverse run-time semantic states (`if`, `unless`, `when`, `while`).
 - **Developer Ergonomics** — Paired with a distributable VS Code extension for rich syntax highlighting and structural auto-indentation.
@@ -212,13 +213,16 @@ butter fmt    [input file] [flags]
 
 | Flag | Shorthand | Description |
 | :--- | :--- | :--- |
-| `--output` | `-o` | Custom output path (defaults to `<input>.json`) |
+| `--output` | `-o` | Custom output path (defaults to `<input>.json` for json, `<input>.yaml` for yaml) |
+| `--format` | `-f` | Output format: `json` (default) or `yaml` |
 | `--check` | | Validate syntax without generating output |
 
 ```bash
 butter compile demo.butter
 butter compile demo.butter --output result.json
 butter compile demo.butter -o result.json
+butter compile demo.butter --format yaml
+butter compile demo.butter -f yaml -o result.yaml
 butter compile --check demo.butter
 butter --version
 ```
@@ -236,7 +240,7 @@ butter fmt demo.butter
 butter fmt --check demo.butter
 ```
 
-Only `.butter` files are accepted as input. Use `--check` to validate syntax without writing a `.json` file — useful for editor integration and CI pipelines.
+Only `.butter` files are accepted as input. Use `--check` to validate syntax without writing an output file — useful for editor integration and CI pipelines.
 
 ---
 
@@ -257,11 +261,12 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax wit
        │ (Abstract Syntax Tree)
        ▼
  ┌───────────┐
- │JSON Engine│ <--- Go json.MarshalIndent Serialization Block
+ │JSON/YAML  │ <--- Serialization Block (json.MarshalIndent / yaml.Marshal)
+ │  Engine   │
  └─────┬─────┘
        │
        ▼
- [ .json file ]
+ [ .json / .yaml file ]
 ```
 
 ### Lexical Analysis (The Off-side Rule)

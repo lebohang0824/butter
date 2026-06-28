@@ -8,6 +8,8 @@ import (
 
 	"butter/pkg/ast"
 	"butter/pkg/lexer"
+
+	"gopkg.in/yaml.v3"
 )
 
 var validateRuleRe = regexp.MustCompile(`^\s*(>=?|<=?|={1,2}|!=|=<)\s*[0-9]+(\.[0-9]+)?\s*$`)
@@ -277,4 +279,8 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 
 func GenerateJSONSpec(app *ast.AppSpec) ([]byte, error) {
 	return json.MarshalIndent(app, "", "  ")
+}
+
+func GenerateYAMLSpec(app *ast.AppSpec) ([]byte, error) {
+	return yaml.Marshal(app)
 }

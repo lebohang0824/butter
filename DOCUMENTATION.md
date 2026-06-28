@@ -2,7 +2,7 @@
 
 This document serves as the comprehensive development, architecture, and implementation blueprint for **Butter**, an indentation-aware domain-specific language (DSL) compiler. 
 
-`butter` is a high-performance command-line interface (CLI) tool written in **Go** using the **Cobra** framework. It compiles clean, human-readable specification files (`.butter`) into structured, production-ready, pretty-printed JSON configurations (`.json`).
+`butter` is a high-performance command-line interface (CLI) tool written in **Go** using the **Cobra** framework. It compiles clean, human-readable specification files (`.butter`) into structured, production-ready, pretty-printed JSON or YAML configurations.
 
 ---
 
@@ -13,7 +13,8 @@ Modern application architectures often require declarative schemas to define fea
 **Butter** solves this by providing an elegant, minimalistic language interface heavily inspired by Python’s significant indentation. It strips away syntactic noise—such as trailing commas, brackets, curly braces, and redundant tags—allowing system architects and developers to declare application specifications cleanly.
 
 ### Core Objectives
-* **Zero Dependencies for Compilation:** The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities.
+* **Zero Dependencies for Core Compilation:** The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities. Output serialization (JSON/YAML) may leverage standard or third-party libraries for format flexibility.
+* **Multi-Format Output:** Compile `.butter` specifications to JSON (default) or YAML, giving you flexibility for different toolchains and workflows.
 * **Significant Indentation:** Structural scope is driven entirely by whitespaces (spaces or tabs), optimizing readability.
 * **Rich Conditionals:** Built-in keywords natively capture diverse run-time semantic states (`if`, `unless`, `when`, `while`).
 * **Developer Ergonomics:** Paired with an easily distributable VS Code extension framework for rich syntax highlighting and structural auto-indentation.
@@ -112,11 +113,12 @@ The implementation splits the compilation phases cleanly across decoupled steps,
        │ (Abstract Syntax Tree Structure)
        ▼
  ┌───────────┐
- │JSON Engine│ <--- Go json.MarshalIndent Serialization Block
+ │JSON/YAML  │ <--- Serialization Block (json.MarshalIndent / yaml.Marshal)
+ │  Engine   │
  └─────┬─────┘
        │
        ▼
- [ .json file ]
+ [ .json / .yaml file ]
 ```
 
 ### 3.1 Lexical Analysis (The Off-side Rule)

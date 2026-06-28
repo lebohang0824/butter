@@ -13,9 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-	const Version = "1.4.0"
+const Version = "1.5.0"
 
 var outputFile string
+var outputFormat string
 var checkMode bool
 var showVersion bool
 var fmtCheckMode bool
@@ -23,7 +24,7 @@ var fmtCheckMode bool
 var rootCmd = &cobra.Command{
 	Use:   "butter",
 	Short: "Butter is a high-performance, indentation-aware specification compiler.",
-	Long:  `A clean compiler framework that turns minimalist indentation-based .butter specifications into beautifully formatted JSON structures.`,
+	Long:  `A clean compiler framework that turns minimalist indentation-based .butter specifications into beautifully formatted JSON or YAML structures.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if showVersion {
 			fmt.Printf("butter v%s\n", Version)
@@ -35,8 +36,8 @@ var rootCmd = &cobra.Command{
 
 var compileCmd = &cobra.Command{
 	Use:   "compile [input file]",
-	Short: "Compile a .butter specification file down to pretty JSON",
-	Long:  `Compile a .butter file to JSON. Use --check to validate syntax without generating output.`,
+	Short: "Compile a .butter specification file to JSON (default) or YAML",
+	Long:  `Compile a .butter file to JSON or YAML. Use --check to validate syntax without generating output.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile := args[0]
@@ -61,16 +62,30 @@ var compileCmd = &cobra.Command{
 			return nil
 		}
 
-		jsonOutput, err := parser.GenerateJSONSpec(appAST)
-		if err != nil {
-			return fmt.Errorf("json packaging generation failed: %w", err)
+		var output []byte
+		var ext string
+		switch outputFormat {
+		case "json":
+			output, err = parser.GenerateJSONSpec(appAST)
+			if err != nil {
+				return fmt.Errorf("json packaging generation failed: %w", err)
+			}
+			ext = ".json"
+		case "yaml":
+			output, err = parser.GenerateYAMLSpec(appAST)
+			if err != nil {
+				return fmt.Errorf("yaml packaging generation failed: %w", err)
+			}
+			ext = ".yaml"
+		default:
+			return fmt.Errorf("unsupported output format %q — must be 'json' or 'yaml'", outputFormat)
 		}
 
 		if outputFile == "" {
-			outputFile = strings.TrimSuffix(inputFile, filepath.Ext(inputFile)) + ".json"
+			outputFile = strings.TrimSuffix(inputFile, filepath.Ext(inputFile)) + ext
 		}
 
-		if err := os.WriteFile(outputFile, jsonOutput, 0644); err != nil {
+		if err := os.WriteFile(outputFile, output, 0644); err != nil {
 			return fmt.Errorf("failed to write compiled asset to target destination disk: %w", err)
 		}
 
@@ -119,7 +134,8 @@ var fmtCmd = &cobra.Command{
 
 func init() {
 	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Print the version number")
-	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json)")
+	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json for json, .yaml for yaml)")
+	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", "Output format: json (default) or yaml")
 	compileCmd.Flags().BoolVar(&checkMode, "check", false, "Check syntax without generating output")
 	fmtCmd.Flags().BoolVar(&fmtCheckMode, "check", false, "Check formatting without modifying")
 	rootCmd.AddCommand(compileCmd)

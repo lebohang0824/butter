@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.4.0</div>
+    <div class="version">v1.5.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -670,6 +670,12 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.5.0 — 2026-06-28</h3>
+  <ul>
+    <li><strong>YAML output</strong> — New <code>--format</code> / <code>-f</code> flag to generate YAML output (<code>butter compile demo.butter -f yaml</code>). JSON remains the default.</li>
+    <li><strong>Updated philosophy</strong> — Clarified that core compilation (lexer, parser, validator) is zero-dependency, while output serialization may leverage libraries for format flexibility.</li>
+  </ul>
 
   <h3>v1.4.0 — 2026-06-25</h3>
   <ul>
