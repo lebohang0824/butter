@@ -215,7 +215,7 @@ butter fmt    [input file] [flags]
 | :--- | :--- | :--- |
 | `--output` | `-o` | Custom output path (defaults to `<input>.json` for json, `<input>.yaml` for yaml) |
 | `--format` | `-f` | Output format: `json` (default) or `yaml` |
-| `--check` | | Validate syntax without generating output |
+| `--check` | | Validate syntax and semantics without generating output |
 
 ```bash
 butter compile demo.butter
@@ -240,7 +240,7 @@ butter fmt demo.butter
 butter fmt --check demo.butter
 ```
 
-Only `.butter` files are accepted as input. Use `--check` to validate syntax without writing an output file — useful for editor integration and CI pipelines.
+Only `.butter` files are accepted as input. Use `--check` to validate syntax and semantics without writing an output file — useful for editor integration and CI pipelines.
 
 ---
 
@@ -261,6 +261,13 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax wit
        │ (Abstract Syntax Tree)
        ▼
  ┌───────────┐
+ │ Semantic  │ <--- Checks: duplicate names, type-default
+ │  Analysis │       mismatches, undefined condition refs,
+ │           │       enum defaults, redundant fields
+ └─────┬─────┘
+       │ (Validated AST)
+       ▼
+ ┌───────────┐
  │JSON/YAML  │ <--- Serialization Block (json.MarshalIndent / yaml.Marshal)
  │  Engine   │
  └─────┬─────┘
@@ -268,6 +275,21 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax wit
        ▼
  [ .json / .yaml file ]
 ```
+
+### Semantic Analysis
+
+After parsing, a dedicated semantic analysis pass validates the AST against the following rules:
+
+| Check | Severity | Description |
+| :--- | :--- | :--- |
+| Duplicate feature names | Error | Two features with the same name (includes first-definition line) |
+| Duplicate parameter names | Error | Two params with the same name within a feature |
+| Undefined condition references | Error | Condition expression references a param name that doesn't exist in the feature |
+| Default type mismatch | Error | Default value doesn't match the declared type (e.g. `type int` with `default "hello"`) |
+| Enum default not in list | Error | Default value isn't one of the declared `enum[...]` values |
+| Required param with default | Warning | `required: true` paired with `default` is redundant |
+
+Errors block output generation; warnings are reported but output is still produced.
 
 ### Lexical Analysis (The Off-side Rule)
 

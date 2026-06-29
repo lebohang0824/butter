@@ -13,6 +13,7 @@ type FeatureSpec struct {
 	Version     string       `json:"version,omitempty" yaml:"version,omitempty"`
 	Params      []ParamSpec  `json:"params,omitempty" yaml:"params,omitempty"`
 	Actions     []ActionSpec `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Line        int          `json:"-"`
 }
 
 type ParamSpec struct {
@@ -22,14 +23,17 @@ type ParamSpec struct {
 	Default  interface{} `json:"default,omitempty" yaml:"default,omitempty"`
 	Validate []string    `json:"validate,omitempty" yaml:"validate,omitempty"`
 	Length   int         `json:"length,omitempty" yaml:"length,omitempty"`
+	Line     int         `json:"-"`
 }
 
 type ActionSpec struct {
 	Statement string         `json:"statement" yaml:"statement"`
 	Condition *ConditionSpec `json:"condition,omitempty" yaml:"condition,omitempty"`
+	Line      int            `json:"-"`
 }
 
 type ConditionSpec struct {
 	Type       string `json:"type" yaml:"type"`
 	Expression string `json:"expression" yaml:"expression"`
+	Line       int    `json:"-"`
 }

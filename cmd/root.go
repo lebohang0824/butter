@@ -9,11 +9,12 @@ import (
 	"butter/pkg/formatter"
 	"butter/pkg/lexer"
 	"butter/pkg/parser"
+	"butter/pkg/semantic"
 
 	"github.com/spf13/cobra"
 )
 
-const Version = "1.5.0"
+const Version = "1.6.0"
 
 var outputFile string
 var outputFormat string
@@ -39,6 +40,7 @@ var compileCmd = &cobra.Command{
 	Short: "Compile a .butter specification file to JSON (default) or YAML",
 	Long:  `Compile a .butter file to JSON or YAML. Use --check to validate syntax without generating output.`,
 	Args:  cobra.ExactArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile := args[0]
 		if !strings.HasSuffix(inputFile, ".butter") {
@@ -57,9 +59,25 @@ var compileCmd = &cobra.Command{
 			return fmt.Errorf("compilation syntax compilation error:\n%w", err)
 		}
 
+		diags := semantic.Analyze(appAST)
+		hasErrors := false
+		for _, d := range diags {
+			fmt.Fprintf(os.Stderr, "%s\n", d)
+			if d.Severity == semantic.SemError {
+				hasErrors = true
+			}
+		}
+
 		if checkMode {
+			if hasErrors {
+				return fmt.Errorf("semantic analysis found errors")
+			}
 			fmt.Println("OK")
 			return nil
+		}
+
+		if hasErrors {
+			return fmt.Errorf("semantic analysis failed — output not generated")
 		}
 
 		var output []byte

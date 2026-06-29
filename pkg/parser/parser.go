@@ -82,7 +82,7 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 		return nil, fmt.Errorf("line %d: expected a feature name after 'feature'", p.curToken.Line)
 	}
 
-	feat := &ast.FeatureSpec{Name: p.curToken.Value}
+	feat := &ast.FeatureSpec{Name: p.curToken.Value, Line: p.curToken.Line}
 	p.nextToken()
 
 	if p.curToken.Type != lexer.TokenNewline {
@@ -176,7 +176,7 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	if p.curToken.Type != lexer.TokenIdentifier {
 		return nil, fmt.Errorf("line %d: expected a parameter name after 'param'", p.curToken.Line)
 	}
-	param := &ast.ParamSpec{Name: p.curToken.Value, Type: "string", Required: false}
+	param := &ast.ParamSpec{Name: p.curToken.Value, Type: "string", Required: false, Line: p.curToken.Line}
 	p.nextToken()
 	p.nextToken()
 	p.nextToken()
@@ -250,11 +250,12 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 }
 
 func (p *Parser) parseAction() (*ast.ActionSpec, error) {
+	actionLine := p.curToken.Line
 	p.nextToken()
 	if p.curToken.Type != lexer.TokenString {
 		return nil, fmt.Errorf("line %d: action statement must be a quoted string", p.curToken.Line)
 	}
-	action := &ast.ActionSpec{Statement: p.curToken.Value}
+	action := &ast.ActionSpec{Statement: p.curToken.Value, Line: actionLine}
 	p.nextToken()
 
 	if p.curToken.Type == lexer.TokenPipe {
@@ -263,6 +264,7 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 		if condType != "if" && condType != "unless" && condType != "when" && condType != "while" {
 			return nil, fmt.Errorf("line %d: unsupported condition '%s' after '|' — expected if, unless, when, or while", p.curToken.Line, condType)
 		}
+		condLine := p.curToken.Line
 		p.nextToken()
 		if p.curToken.Type != lexer.TokenString {
 			return nil, fmt.Errorf("line %d: condition expression after '|' must be a quoted string", p.curToken.Line)
@@ -270,6 +272,7 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 		action.Condition = &ast.ConditionSpec{
 			Type:       condType,
 			Expression: p.curToken.Value,
+			Line:       condLine,
 		}
 		p.nextToken()
 	}

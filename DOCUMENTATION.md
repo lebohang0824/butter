@@ -113,6 +113,12 @@ The implementation splits the compilation phases cleanly across decoupled steps,
        │ (Abstract Syntax Tree Structure)
        ▼
  ┌───────────┐
+ │ Semantic  │ <--- Validates: duplicate names, type-default
+ │  Analysis │       mismatches, condition references, etc.
+ └─────┬─────┘
+       │ (Validated AST)
+       ▼
+ ┌───────────┐
  │JSON/YAML  │ <--- Serialization Block (json.MarshalIndent / yaml.Marshal)
  │  Engine   │
  └─────┬─────┘
@@ -129,6 +135,17 @@ Because Butter uses whitespace indentation to mark boundaries, the Lexer reads f
 
 ### 3.2 Abstract Syntax Tree (AST) Model
 The parser constructs a strict root AST graph mapped instantly to Go structures for seamless native serialization.
+
+### 3.3 Semantic Analysis Pass
+A dedicated semantic analysis pass runs after parsing and validates the AST against logical rules that the parser cannot enforce:
+
+- **Duplicate detection**: duplicate feature names and duplicate parameter names within a feature are reported with first-definition line references.
+- **Condition reference validation**: action conditions (e.g. `if "Priority == urgent"`) are tokenized and each PascalCase identifier is cross-referenced against the feature's declared parameter names. Undefined references are flagged.
+- **Type-default consistency**: default values are checked against the declared type (`int`, `float`, `bool`). Mismatches (e.g. `type int` with `default "hello"`) are errors.
+- **Enum validation**: `enum[...]` type parameters must have a default value that appears in the declared value list.
+- **Redundant field warnings**: a parameter with both `required: true` and a `default` value triggers a warning — the default is never used.
+
+Semantic errors block output generation; warnings are printed to stderr but output is still produced.
 
 ---
 

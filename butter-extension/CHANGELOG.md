@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.6.0] - 2026-06-29
+
+- Semantic analysis pass: catches duplicate feature/param names, undefined param references in conditions, type-default mismatches, enum defaults, and redundant required+default combos
+- `butter compile --check` now validates semantics in addition to syntax
+- Source location tracking in AST for precise error reporting
+
 ## [1.4.0] - 2026-06-25
 
 - Added `bool|boolean|length` to keyword syntax highlighting
