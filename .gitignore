@@ -2,10 +2,12 @@
 butter
 butter.exe
 
-# Generated JSON output
-demo.json
-test.json
-output.json
+# Generated JSON/YAML output
+**/*.json
+**/*.yaml
+!butter-extension/package.json
+!butter-extension/language-configuration.json
+!butter-extension/syntaxes/butter.tmLanguage.json
 
 # VS Code extension build artifact
 butter-extension.vsix

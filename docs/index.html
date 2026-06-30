@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.5.0</div>
+    <div class="version">v1.6.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -670,6 +670,13 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.6.0 — 2026-06-29</h3>
+  <ul>
+    <li><strong>Semantic analysis pass</strong> — Catches duplicate feature/param names, type-default mismatches, enum defaults, and redundant required+default combos.</li>
+    <li><strong>Enhanced <code>--check</code></strong> — <code>butter compile --check</code> now validates semantics in addition to syntax.</li>
+    <li><strong>Source location tracking</strong> — AST nodes carry precise line numbers for accurate error reporting.</li>
+  </ul>
 
   <h3>v1.5.0 — 2026-06-28</h3>
   <ul>

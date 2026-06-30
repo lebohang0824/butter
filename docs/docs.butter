@@ -1,0 +1,97 @@
+# Butter Documentation System
+product Docs
+description "The official documentation site and demo applications for the Butter compiler."
+version "1.6.0"
+
+feature DocumentationSite
+  description "The primary documentation website — a single-page HTML reference with syntax-highlighted code examples."
+  version "1.6.0"
+
+  params
+    param Theme
+      type enum["light", "dark"]
+      default "light"
+    param SidebarVisible
+      type bool
+      default true
+
+  actions
+    action "Render hero section with Butter tagline and quick-start code snippet"
+    action "Display Design Philosophy section explaining indentation-driven DSL approach"
+    action "Show installation instructions for Linux, macOS, and Windows via install scripts"
+    action "Render Getting Started guide with a hello world example and compile workflow"
+    action "Render Language Guide with tables for keywords, parameter fields, types, and conditionals"
+    action "Render CLI Reference documenting compile and fmt commands with all flags"
+    action "Render Compiler Architecture diagram showing the lexer-parser-semantic pipeline"
+    action "Render VS Code Extension section with installation and feature list"
+    action "Render Error Reference table mapping all parser and semantic error messages"
+    action "Render changelog and version history"
+
+feature SyntaxHighlighter
+  description "Custom Prism.js-based syntax highlighting for the Butter language in code blocks."
+  version "1.0.0"
+
+  params
+    param LanguageID
+      type string
+      default "butter"
+    param ThemeScope
+      type string
+      default "source.butter"
+
+  actions
+    action "Tokenize Butter keywords: app, product, description, version, feature, params, param, actions, action"
+    action "Tokenize type keywords: string, int, float, bool, enum"
+    action "Tokenize parameter field keywords: type, required, default, validate, length"
+    action "Tokenize conditionals: if, unless, when, while"
+    action "Tokenize comment lines starting with #"
+    action "Tokenize double-quoted string literals"
+    action "Tokenize pipe operators for action conditions"
+
+feature TodoDemoApp
+  description "A working single-page todo application generated from the todo.butter specification."
+  version "1.0.0"
+
+  params
+    param TaskTitle
+      type string
+      required true
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+      default "medium"
+    param StatusFilter
+      type enum["all", "pending", "completed", "archived"]
+      default "all"
+
+  actions
+    action "Render tabbed interface with feature panels: CreateTask, ListTasks, UpdateTask, DeleteTask"
+    action "Populate CreateTask form with Title, Description, Priority, DueDate fields"
+    action "Execute validation: title required, priority defaults to medium"
+    action "Assign unique identifier and creation timestamp on task creation"
+    action "Render ListTasks panel with filter and sort controls"
+    action "Query and display task list with status badges and Edit buttons"
+    action "Open update modal with pre-filled fields from existing task"
+    action "Apply status changes and update modification timestamp"
+    action "Open delete confirmation modal with TaskID lookup and title verification"
+    action "Broadcast task lifecycle events to connected clients"
+    action "Execute sequential action steps with visual step-log showing pending, running, done, skip, and error states"
+    action "Evaluate semantic conditions: skip actions when conditions are not met, mark them with skip indicator"
+
+feature ErrorReference
+  description "Comprehensive error message reference documenting all compiler error conditions."
+
+  params
+    param ShowSource
+      type bool
+      default true
+    param GroupByStage
+      type bool
+      default true
+
+  actions
+    action "Document lexer errors: unexpected characters and indentation mismatch"
+    action "Document parser errors: unexpected tokens, missing keywords, invalid validate rules"
+    action "Document semantic errors: duplicate names, type mismatches, enum defaults"
+    action "Document semantic warnings: required param with redundant default"
+    action "Group errors by compiler stage: lexer, parser, semantic"
+    action "Show affected line number and suggested fix for each error"

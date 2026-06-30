@@ -1,0 +1,94 @@
+# Butter VS Code Extension Documentation
+product ButterExtension
+description "VS Code extension providing syntax highlighting, formatting, linting, and language configuration for the Butter DSL."
+version "1.6.0"
+
+feature SyntaxHighlighting
+  description "TextMate grammar providing tokenization and named capture highlighting for .butter files."
+  version "1.6.0"
+
+  params
+    param ScopeName
+      type string
+      default "source.butter"
+    param LanguageID
+      type string
+      default "butter"
+
+  actions
+    action "Highlight comment lines starting with # using comment.line.number-sign.butter scope"
+    action "Highlight app and product declarations with keyword and entity.name.type captures"
+    action "Highlight feature declarations with keyword and entity.name.function captures"
+    action "Highlight param declarations with keyword and variable.parameter captures"
+    action "Highlight keywords: app, product, description, version, feature, params, param, type, required, default, validate, bool, boolean, length, actions, action"
+    action "Highlight conditionals: if, unless, when, while with conditional keyword scope"
+    action "Highlight double-quoted string literals with string.quoted.double scope"
+    action "Highlight boolean constants: true, false"
+
+feature LanguageConfiguration
+  description "Editor configuration for indentation, bracket matching, auto-closing pairs, and comment toggling."
+  version "1.6.0"
+
+  params
+    param LineComment
+      type string
+      default "#"
+    param IncreaseIndentPattern
+      type string
+      default "feature|params|actions|param"
+    param DecreaseIndentPattern
+      type string
+      default "blank lines"
+
+  actions
+    action "Configure # as line comment token for comment toggle and block commenting"
+    action "Configure square brackets as matching bracket pairs"
+    action "Configure auto-closing pairs for double-quote strings and square brackets"
+    action "Set indentation rules: increase indent on feature, params, actions, and param declarations"
+    action "Set indentation rules: decrease indent on blank lines and dedented content"
+
+feature LintingEngine
+  description "On-save and on-open linting that runs butter compile --check and surfaces errors as diagnostics."
+  version "1.6.0"
+
+  params
+    param CompilerPath
+      type string
+      default "butter"
+    param LintOnOpen
+      type bool
+      default true
+    param LintOnSave
+      type bool
+      default true
+
+  actions
+    action "Lint document on open: execute butter compile --check against the file"
+    action "Lint document on save: execute butter compile --check against the file"
+    action "Parse compiler stderr output for line-prefixed error messages using regex"
+    action "Surface errors as VS Code diagnostics with red squiggly underlines at the affected line"
+    action "Clear diagnostics when the file passes all checks"
+    action "Provide Butter: Lint current file command in the command palette"
+    action "Respect configurable compiler binary path via butter.compilerPath setting"
+
+feature FormattingEngine
+  description "On-save formatting that runs butter fmt and applies edits to the document."
+  version "1.6.0"
+
+  params
+    param FormatOnSave
+      type bool
+      default true
+    param TempDir
+      type string
+      default "system temp directory"
+
+  actions
+    action "Format document on save: execute butter fmt on a temporary copy of the file"
+    action "Write unformatted content to temp file before invoking the compiler"
+    action "Read formatted output from temp file after compiler finishes"
+    action "Replace full document text with formatted content using WorkspaceEdit"
+    action "Re-save the document after applying formatting edits"
+    action "Skip lint pass when formatting changes were applied to avoid redundant checks"
+    action "Provide Butter: Format current file command in the command palette"
+    action "Fall back to lint-only when formatting fails or produces no changes"

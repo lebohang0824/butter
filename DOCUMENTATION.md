@@ -201,7 +201,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-	const Version = "1.3.0"
+	const Version = "1.6.0"
 
 var outputFile string
 var checkMode bool

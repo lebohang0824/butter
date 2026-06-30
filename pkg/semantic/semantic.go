@@ -20,7 +20,6 @@ func Analyze(app *ast.AppSpec) []Diagnostic {
 	a := &Analyzer{app: app}
 	a.checkDuplicateFeatures()
 	a.checkDuplicateParams()
-	a.checkConditionRefs()
 	a.checkDefaultTypes()
 	a.checkEnumDefaults()
 	a.checkRequiredDefault()

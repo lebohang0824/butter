@@ -6,6 +6,13 @@
 - `butter compile --check` now validates semantics in addition to syntax
 - Source location tracking in AST for precise error reporting
 
+## [1.5.0] - 2026-06-26
+
+- YAML output support via `--format yaml` or `-f yaml` flag
+- `butter compile --check` now reports semantic errors separately from syntax errors
+- Documentation site at `docs/index.html` with full language guide and CLI reference
+- `compiler.butter` self-documenting spec describes all four compilation stages
+
 ## [1.4.0] - 2026-06-25
 
 - Added `bool|boolean|length` to keyword syntax highlighting

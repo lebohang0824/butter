@@ -32,6 +32,12 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
+func (p *Parser) skipNewlines() {
+	for p.curToken.Type == lexer.TokenNewline {
+		p.nextToken()
+	}
+}
+
 func (p *Parser) Parse() (*ast.AppSpec, error) {
 	appSpec := &ast.AppSpec{}
 
@@ -88,7 +94,7 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 	if p.curToken.Type != lexer.TokenNewline {
 		return nil, fmt.Errorf("line %d: expected a newline after the feature name", p.curToken.Line)
 	}
-	p.nextToken()
+	p.skipNewlines()
 
 	if p.curToken.Type != lexer.TokenIndent {
 		return nil, fmt.Errorf("line %d: expected an indented block under this feature", p.curToken.Line)
@@ -120,7 +126,7 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 			if p.curToken.Type != lexer.TokenNewline {
 				return nil, fmt.Errorf("line %d: expected a newline after 'params'", p.curToken.Line)
 			}
-			p.nextToken()
+			p.skipNewlines()
 			if p.curToken.Type != lexer.TokenIndent {
 				return nil, fmt.Errorf("line %d: expected an indented block under 'params'", p.curToken.Line)
 			}
@@ -142,8 +148,10 @@ func (p *Parser) parseFeature() (*ast.FeatureSpec, error) {
 			p.nextToken()
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "actions" {
 			p.nextToken()
-			p.nextToken()
-			p.nextToken()
+			p.skipNewlines()
+			if p.curToken.Type == lexer.TokenIndent {
+				p.nextToken()
+			}
 
 			for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
 				if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "action" {
@@ -178,8 +186,10 @@ func (p *Parser) parseParam() (*ast.ParamSpec, error) {
 	}
 	param := &ast.ParamSpec{Name: p.curToken.Value, Type: "string", Required: false, Line: p.curToken.Line}
 	p.nextToken()
-	p.nextToken()
-	p.nextToken()
+	p.skipNewlines()
+	if p.curToken.Type == lexer.TokenIndent {
+		p.nextToken()
+	}
 
 	var validateLine int
 	var lengthLine int
