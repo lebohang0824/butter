@@ -118,6 +118,12 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   text-decoration: none;
 }
 
+.sidebar nav a.external::after {
+  content: " ↗";
+  font-size: 0.7em;
+  opacity: 0.6;
+}
+
 .sidebar nav a.active {
   background: var(--accent);
   color: var(--bg);

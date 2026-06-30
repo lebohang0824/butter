@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>compiler.butter — Butter Spec Reference</title>
+<meta name="description" content="Complete breakdown of the compiler.butter file — every parameter and action explained to help you write your own Butter scripts.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.6.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#raw-file">The compiler.butter File</a>
+    <a href="#params">Parameters Explained</a>
+    <a href="#stage1">Stage 1: Lexical Analysis</a>
+    <a href="#stage2">Stage 2: Recursive Descent Parsing</a>
+    <a href="#stage3">Stage 3: Semantic Analysis</a>
+    <a href="#stage4">Stage 4: Output Generation</a>
+    <a href="#compiled">Compiled Output (JSON)</a>
+    <a href="#writing">Writing Your Own Butter</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>compiler.butter</h1>
+    <p class="subtitle">The Butter compiler is itself described in Butter. This page breaks down every line — showing you how the language works from the inside out.</p>
+  </div>
+
+  <p>The <code>compiler.butter</code> file at the project root is a self-describing specification. It declares the Butter compiler using the same DSL it compiles. This means every <code>param</code>, <code>action</code>, and <code>condition</code> in that file maps directly to a real stage in the compiler pipeline.</p>
+
+  <p>By studying this file you learn how to write your own <code>.butter</code> specifications: the same <code>product</code>/<code>app</code> header, <code>feature</code> blocks, <code>params</code> with typed fields, and <code>actions</code> with <code>if</code>/<code>when</code> conditions apply to any project you describe.</p>
+</section>
+
+<section id="raw-file">
+  <h2>The compiler.butter File</h2>
+  <p>Below is the complete source. Every element is explained in the sections that follow.</p>
+
+<pre><code class="language-butter"># Butter Project Documentation
+product ButterCompiler
+description "A high-performance, indentation-aware DSL compiler
+  that converts clean .butter specifications into structured
+  JSON or YAML."
+version "1.6.0"
+
+feature CompilationPipeline
+  description "The strictly sequential end-to-end execution
+    flow of the Butter compiler."
+  version "1.6.0"
+
+  params
+    param InputFile
+      type string
+      required true
+    param OutputFormat
+      type enum["json", "yaml"]
+      default "json"
+    param CheckOnly
+      type bool
+      default false
+
+  actions
+    # Stage 1: Lexical Analysis (The Off-side Rule)
+    action "Read file sequentially and track whitespace
+      with a LIFO indentation stack"
+    action "Emit INDENT token when leading whitespace
+      exceeds stack top"
+    action "Emit DEDENT tokens when leading whitespace
+      is less than stack top"
+    action "Emit NEWLINE, IDENTIFIER, STRING, PIPE,
+      EOF, and ERROR tokens"
+    action "Halt compilation with exit code 1"
+      | when "Indentation mismatch is detected"
+    # Stage 2: Recursive Descent Parsing
+    action "Consume token stream to construct
+      Abstract Syntax Tree (AST)"
+    action "Map root tokens to AppSpec struct
+      (app/product, description, version)"
+    action "Map nested blocks to FeatureSpec structs"
+    action "Map parameter definitions to ParamSpec structs
+      (string, int, float, bool, enum)"
+    action "Map execution steps to ActionSpec and
+      ConditionSpec structs (if, unless, when, while)"
+    action "Halt compilation with exit code 1"
+      | when "Syntax validation fails"
+    # Stage 3: Semantic Analysis
+    action "Check AST for duplicate feature names"
+    action "Check AST for duplicate parameter names
+      within features"
+    action "Verify default values match their declared types"
+    action "Verify default values for enum types
+      exist in the defined list"
+    action "Enforce mutual exclusion between
+      'length' and 'validate' constraints"
+    action "Emit warning but continue"
+      | if "A parameter is marked required but has a default"
+    action "Halt compilation with exit code 1"
+      | when "Any semantic error is found"
+    # Stage 4: Output Generation
+    action "Skip output generation and exit with code 0"
+      | if "CheckOnly == true"
+    action "Serialize AST to pretty-printed JSON
+      via json.MarshalIndent" | if "OutputFormat == json"
+    action "Serialize AST to YAML via yaml.Marshal"
+      | if "OutputFormat == yaml"
+    action "Write compiled data to disk and exit with code 0"
+</code></pre>
+</section>
+
+<section id="params">
+  <h2>Parameters Explained</h2>
+  <p>The <code>params</code> block inside a <code>feature</code> declares the inputs that feature accepts. Each <code>param</code> is a named variable with a type and optional constraints.</p>
+
+  <h3>InputFile <code style="font-size:0.85em; font-weight:normal;">type: string, required: true</code></h3>
+  <p>The path to the source <code>.butter</code> file. This is the only required parameter — without it the compiler has nothing to read. In the CLI this maps to the positional argument <code>butter compile &lt;file&gt;</code>.</p>
+
+  <h3>OutputFormat <code style="font-size:0.85em; font-weight:normal;">type: enum["json", "yaml"], default: "json"</code></h3>
+  <p>Controls the serialization format. When set to <code>"json"</code> the compiler produces pretty-printed JSON via <code>json.MarshalIndent</code>. When <code>"yaml"</code> it uses the <code>gopkg.in/yaml.v3</code> library. The default is JSON. Maps to the <code>--format</code> / <code>-f</code> CLI flag.</p>
+  <p><strong>Why an enum?</strong> — The <code>enum[...]</code> type restricts values to an explicit allow-list. Any value outside <code>"json"</code> or <code>"yaml"</code> is rejected at the semantic analysis stage. This is how you constrain input to a fixed set of options in your own specs.</p>
+
+  <h3>CheckOnly <code style="font-size:0.85em; font-weight:normal;">type: bool, default: false</code></h3>
+  <p>When <code>true</code>, the compiler validates syntax and semantics but skips file output. The exit code is 0 on success, 1 on failure. This is the <code>--check</code> flag — useful for CI pipelines and editor integration (the VS Code extension calls <code>butter compile --check</code> on every save).</p>
+
+  <h3>Param Field Reference</h3>
+  <p>Every <code>param</code> in a Butter spec supports these fields:</p>
+  <table>
+    <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td><code>type</code></td><td>Data type: <code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, or <code>enum[...]</code></td><td><code>type float</code></td></tr>
+    <tr><td><code>required</code></td><td>Whether the parameter must be provided (<code>true</code> or <code>false</code>)</td><td><code>required true</code></td></tr>
+    <tr><td><code>default</code></td><td>Fallback value when the parameter is omitted</td><td><code>default "json"</code></td></tr>
+    <tr><td><code>validate</code></td><td>Numeric comparison rule for <code>int</code>/<code>float</code> params. Mutually exclusive with <code>length</code>.</td><td><code>validate ">=1"</code></td></tr>
+    <tr><td><code>length</code></td><td>Exact digit length for <code>int</code>/<code>float</code> params. Mutually exclusive with <code>validate</code>.</td><td><code>length 13</code></td></tr>
+  </table>
+
+  <blockquote><strong>Note:</strong> If a <code>param</code> has no explicit <code>type</code>, it defaults to <code>string</code>. If <code>required</code> is not set, it defaults to <code>false</code>. A parameter that is both <code>required: true</code> and has a <code>default</code> triggers a warning — the default is never used.</blockquote>
+</section>
+
+<section id="stage1">
+  <h2>Stage 1: Lexical Analysis <span style="font-size:0.7em; font-weight:400; color:var(--fg-muted);">(The Off-side Rule)</span></h2>
+  <p>The lexer reads the input file character by character and produces a stream of tokens. Because Butter uses indentation for structure (inspired by Python), the lexer maintains a LIFO indentation stack.</p>
+
+  <table>
+    <tr><th>#</th><th>Action</th><th>Intention</th></tr>
+    <tr>
+      <td>1</td>
+      <td><code>Read file sequentially and track whitespace with a LIFO indentation stack</code></td>
+      <td>The lexer walks the file from start to finish. Every time it encounters a newline, it measures the leading whitespace of the next line and pushes or pops the indentation stack accordingly. This is the foundation of Butter's scoping — no braces, no <code>begin</code>/<code>end</code>, just indentation.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>Emit INDENT token when leading whitespace exceeds stack top</code></td>
+      <td>When a line is indented deeper than the current level, the lexer emits an <code>INDENT</code> token and pushes the new depth. This signals the parser to enter a nested block (e.g. inside a <code>feature</code> or <code>params</code>).</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>Emit DEDENT tokens when leading whitespace is less than stack top</code></td>
+      <td>When a line is at a shallower indentation, the lexer pops levels from the stack and emits a <code>DEDENT</code> token for each. This closes the open blocks. If no matching indentation level is found, it's an error.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>Emit NEWLINE, IDENTIFIER, STRING, PIPE, EOF, and ERROR tokens</code></td>
+      <td>These are the remaining token types. <code>NEWLINE</code> separates lines. <code>IDENTIFIER</code> captures keywords (<code>feature</code>, <code>param</code>, <code>type</code>, etc.) and names. <code>STRING</code> captures quoted values. <code>PIPE</code> (<code>|</code>) separates actions from their conditions. <code>EOF</code> marks end of file. <code>ERROR</code> reports unexpected characters.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><code>Halt compilation with exit code 1</code> <strong>| when</strong> <code>"Indentation mismatch is detected"</code></td>
+      <td>If the indentation stack can't find a matching level for a line's indentation, the lexer stops and returns an error. This catches inconsistent indentation (e.g. mixing 2-space and 4-space blocks).</td>
+    </tr>
+  </table>
+
+  <blockquote><strong>Writing tip:</strong> Always use consistent indentation — either spaces or tabs, never both. The lexer normalises tabs to 4 spaces, but mixing causes hard-to-debug mismatch errors.</blockquote>
+</section>
+
+<section id="stage2">
+  <h2>Stage 2: Recursive Descent Parsing</h2>
+  <p>The parser consumes the token stream produced by the lexer and constructs an Abstract Syntax Tree (AST). It is a hand-written recursive descent parser — no parser generators, no grammar files.</p>
+
+  <table>
+    <tr><th>#</th><th>Action</th><th>Intention</th></tr>
+    <tr>
+      <td>6</td>
+      <td><code>Consume token stream to construct Abstract Syntax Tree (AST)</code></td>
+      <td>The parser's main loop repeatedly reads tokens and builds structured Go types (<code>AppSpec</code>, <code>FeatureSpec</code>, <code>ParamSpec</code>, <code>ActionSpec</code>). Each <code>INDENT</code>/<code>DEDENT</code> pair opens/closes a scope, mirroring the indentation structure directly in the tree.</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><code>Map root tokens to AppSpec struct (app/product, description, version)</code></td>
+      <td>At the top level, the parser expects either <code>app</code> or <code>product</code> (they are aliases) followed by a name, then optionally <code>description</code> and <code>version</code>. These become the root <code>AppSpec</code> node — the outermost container of your spec.</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><code>Map nested blocks to FeatureSpec structs</code></td>
+      <td>Every <code>feature</code> keyword starts a new <code>FeatureSpec</code>. The feature name becomes the <code>Name</code> field, and the indented block under it contains its <code>description</code>, <code>version</code>, <code>params</code>, and <code>actions</code>. Features are the primary organisational unit in Butter — think of them as modules, APIs, or sub-systems.</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td><code>Map parameter definitions to ParamSpec structs</code></td>
+      <td>Inside a <code>params</code> block, each <code>param</code> becomes a <code>ParamSpec</code> with fields like <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, and <code>length</code>. The parser validates field names and their values at this stage.</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><code>Map execution steps to ActionSpec and ConditionSpec structs</code></td>
+      <td>Inside an <code>actions</code> block, each <code>action</code> becomes an <code>ActionSpec</code> with a statement string. If the action has a <code>| if</code>, <code>| unless</code>, <code>| when</code>, or <code>| while</code> suffix, a <code>ConditionSpec</code> is attached with the condition type and expression.</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><code>Halt compilation with exit code 1</code> <strong>| when</strong> <code>"Syntax validation fails"</code></td>
+      <td>If any token sequence doesn't match the expected grammar (e.g. a <code>param</code> with no name, or an unexpected keyword), the parser returns an error with the exact line number and a human-readable message.</td>
+    </tr>
+  </table>
+
+  <blockquote><strong>Writing tip:</strong> Every <code>feature</code> block must be indented under the <code>app</code>/<code>product</code> header. Every <code>params</code> and <code>actions</code> block must be indented under its feature. Every <code>param</code> must be indented under <code>params</code>. Consistent indentation = correct parsing.</blockquote>
+</section>
+
+<section id="stage3">
+  <h2>Stage 3: Semantic Analysis</h2>
+  <p>After the AST is built, a dedicated semantic analysis pass checks logical rules that the parser cannot enforce. Unlike syntax errors, semantic errors are about meaning and consistency.</p>
+
+  <table>
+    <tr><th>#</th><th>Action</th><th>Intention</th></tr>
+    <tr>
+      <td>12</td>
+      <td><code>Check AST for duplicate feature names</code></td>
+      <td>Two features cannot share the same name. If a duplicate is found, the error includes the line number of both the duplicate and the first definition. This prevents ambiguous references.</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><code>Check AST for duplicate parameter names within features</code></td>
+      <td>Within a single feature, parameter names must be unique. Duplicate params are flagged with their first-definition line for easy correction.</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><code>Verify default values match their declared types</code></td>
+      <td>A default of <code>"hello"</code> on an <code>int</code> parameter is a type mismatch. The analyser checks that <code>int</code> defaults parse as integers, <code>float</code> as numbers, and <code>bool</code> as <code>true</code> or <code>false</code>. String and enum types accept any string value.</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td><code>Verify default values for enum types exist in the defined list</code></td>
+      <td>If a parameter has <code>type enum["a", "b", "c"]</code> and <code>default "d"</code>, the semantic analyser rejects it because <code>"d"</code> is not in the enum list. This guarantees that defaults are always valid choices.</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td><code>Enforce mutual exclusion between 'length' and 'validate' constraints</code></td>
+      <td>A parameter cannot have both a <code>length</code> constraint and a <code>validate</code> rule — they are conflicting approaches to validation. If both are present, the analyser reports an error. (The parser also checks this earlier as a safety net.)</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td><code>Emit warning but continue</code> <strong>| if</strong> <code>"A parameter is marked required but has a default"</code></td>
+      <td>A required parameter with a default is contradictory: if the value must always be provided, the default is never used. This is a warning, not an error — the output is still generated. It's the only semantic warning; all others block compilation.</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td><code>Halt compilation with exit code 1</code> <strong>| when</strong> <code>"Any semantic error is found"</code></td>
+      <td>If any semantic check produces an error (not a warning), the compiler exits with code 1 and no output is written. This ensures that only semantically valid specs produce output.</td>
+    </tr>
+  </table>
+
+  <blockquote><strong>Writing tip:</strong> Run <code>butter compile --check yourfile.butter</code> to catch both syntax and semantic errors before generating output. This is especially useful in CI pipelines and editor save hooks.</blockquote>
+</section>
+
+<section id="stage4">
+  <h2>Stage 4: Output Generation</h2>
+  <p>The final stage serialises the validated AST to disk. No semantic analysis runs here — by this point the AST is guaranteed to be valid.</p>
+
+  <table>
+    <tr><th>#</th><th>Action</th><th>Intention</th></tr>
+    <tr>
+      <td>19</td>
+      <td><code>Skip output generation and exit with code 0</code> <strong>| if</strong> <code>"CheckOnly == true"</code></td>
+      <td>When the <code>--check</code> flag is set, the compiler validates everything but writes nothing. Exit code 0 means the file is valid. This is the path used by the VS Code extension for on-save linting.</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td><code>Serialize AST to pretty-printed JSON via json.MarshalIndent</code> <strong>| if</strong> <code>"OutputFormat == json"</code></td>
+      <td>JSON is the default output format. The AST is serialised with two-space indentation, producing clean, readable JSON that mirrors the structure of the original Butter spec.</td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td><code>Serialize AST to YAML via yaml.Marshal</code> <strong>| if</strong> <code>"OutputFormat == yaml"</code></td>
+      <td>When <code>--format yaml</code> is used, the AST is serialised using the <code>gopkg.in/yaml.v3</code> library. The YAML output preserves the same structure as JSON but uses YAML's minimal syntax.</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td><code>Write compiled data to disk and exit with code 0</code></td>
+      <td>The serialised output is written to the target file (default: <code>&lt;input&gt;.json</code> or <code>&lt;input&gt;.yaml</code>, customisable with <code>-o</code>). The compiler then exits with code 0, signalling success.</td>
+    </tr>
+  </table>
+</section>
+
+<section id="compiled">
+  <h2>Compiled Output (JSON)</h2>
+  <p>Running <code>butter compile compiler.butter</code> produces the following JSON. Notice how every <code>param</code> and <code>action</code> in the Butter source maps directly to a JSON object.</p>
+
+<pre><code class="language-json">{
+  "app": "ButterCompiler",
+  "description": "A high-performance, indentation-aware DSL compiler
+    that converts clean .butter specifications into structured
+    JSON or YAML.",
+  "version": "1.6.0",
+  "features": [
+    {
+      "name": "CompilationPipeline",
+      "description": "The strictly sequential end-to-end execution
+        flow of the Butter compiler.",
+      "version": "1.6.0",
+      "params": [
+        {
+          "name": "InputFile",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "OutputFormat",
+          "type": "enum[\"json\", \"yaml\"]",
+          "required": false,
+          "default": "json"
+        },
+        {
+          "name": "CheckOnly",
+          "type": "bool",
+          "required": false,
+          "default": "false"
+        }
+      ],
+      "actions": [
+        { "statement": "Read file sequentially and track whitespace
+            with a LIFO indentation stack" },
+        { "statement": "Emit INDENT token when leading whitespace
+            exceeds stack top" },
+        { "statement": "Emit DEDENT tokens when leading whitespace
+            is less than stack top" },
+        { "statement": "Emit NEWLINE, IDENTIFIER, STRING, PIPE,
+            EOF, and ERROR tokens" },
+        { "statement": "Halt compilation with exit code 1",
+          "condition": { "type": "when",
+            "expression": "Indentation mismatch is detected" } },
+        { "statement": "Consume token stream to construct
+            Abstract Syntax Tree (AST)" },
+        { "statement": "Map root tokens to AppSpec struct
+            (app/product, description, version)" },
+        { "statement": "Map nested blocks to FeatureSpec structs" },
+        { "statement": "Map parameter definitions to ParamSpec
+            structs (string, int, float, bool, enum)" },
+        { "statement": "Map execution steps to ActionSpec
+            and ConditionSpec structs (if, unless, when, while)" },
+        { "statement": "Halt compilation with exit code 1",
+          "condition": { "type": "when",
+            "expression": "Syntax validation fails" } },
+        { "statement": "Check AST for duplicate feature names" },
+        { "statement": "Check AST for duplicate parameter
+            names within features" },
+        { "statement": "Verify default values match
+            their declared types" },
+        { "statement": "Verify default values for enum types
+            exist in the defined list" },
+        { "statement": "Enforce mutual exclusion between
+            'length' and 'validate' constraints" },
+        { "statement": "Emit warning but continue",
+          "condition": { "type": "if",
+            "expression": "A parameter is marked required
+              but has a default" } },
+        { "statement": "Halt compilation with exit code 1",
+          "condition": { "type": "when",
+            "expression": "Any semantic error is found" } },
+        { "statement": "Skip output generation and exit
+            with code 0",
+          "condition": { "type": "if",
+            "expression": "CheckOnly == true" } },
+        { "statement": "Serialize AST to pretty-printed JSON
+            via json.MarshalIndent",
+          "condition": { "type": "if",
+            "expression": "OutputFormat == json" } },
+        { "statement": "Serialize AST to YAML via yaml.Marshal",
+          "condition": { "type": "if",
+            "expression": "OutputFormat == yaml" } },
+        { "statement": "Write compiled data to disk
+            and exit with code 0" }
+      ]
+    }
+  ]
+}
+</code></pre>
+
+  <p>The same file can be compiled to YAML with <code>butter compile compiler.butter -f yaml -o compiler.yaml</code>. The structure is identical — only the syntax differs.</p>
+</section>
+
+<section id="writing">
+  <h2>Writing Your Own Butter Specs</h2>
+  <p>The <code>compiler.butter</code> file follows the same rules as any Butter spec. Here is a checklist you can use for your own files:</p>
+
+  <table>
+    <tr><th>Element</th><th>Rule</th><th>Example</th></tr>
+    <tr>
+      <td>Root declaration</td>
+      <td>Start with <code>app</code> or <code>product</code> followed by a name</td>
+      <td><code>app MyApp</code></td>
+    </tr>
+    <tr>
+      <td>Description</td>
+      <td>Optional quoted string at root or feature level</td>
+      <td><code>description "My app does X"</code></td>
+    </tr>
+    <tr>
+      <td>Version</td>
+      <td>Optional quoted version string</td>
+      <td><code>version "2.0.0"</code></td>
+    </tr>
+    <tr>
+      <td>Features</td>
+      <td>Indented block under root, one <code>feature</code> per line</td>
+      <td><code>feature Login</code> then indented content</td>
+    </tr>
+    <tr>
+      <td>Parameters</td>
+      <td><code>params</code> block with indented <code>param</code> entries</td>
+      <td><code>param Username</code> then indented fields</td>
+    </tr>
+    <tr>
+      <td>Param fields</td>
+      <td>Supported: <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, <code>length</code></td>
+      <td><code>type int</code>, <code>required true</code></td>
+    </tr>
+    <tr>
+      <td>Actions</td>
+      <td><code>actions</code> block with indented <code>action</code> entries</td>
+      <td><code>action "Do something"</code></td>
+    </tr>
+    <tr>
+      <td>Conditions</td>
+      <td>Append <code>| if</code>, <code>| unless</code>, <code>| when</code>, or <code>| while</code> with a quoted expression</td>
+      <td><code>| if "x > 10"</code></td>
+    </tr>
+    <tr>
+      <td>Comments</td>
+      <td>Lines starting with <code>#</code> are ignored</td>
+      <td><code># This is a comment</code></td>
+    </tr>
+    <tr>
+      <td>Indentation</td>
+      <td>Must be consistent — spaces or tabs, not mixed. Tabs normalize to 4 spaces.</td>
+      <td>Use 2 or 4 spaces consistently</td>
+    </tr>
+  </table>
+
+  <h3>Quick-start template</h3>
+  <p>Copy this to get started with your own Butter spec:</p>
+
+<pre><code class="language-butter"># My Project
+app MyProject
+description "What my project does"
+version "1.0.0"
+
+feature MyFeature
+  description "What this feature does"
+  version "1.0.0"
+
+  params
+    param MyInput
+      type string
+      required true
+    param MyOption
+      type enum["a", "b", "c"]
+      default "a"
+
+  actions
+    action "First step of the feature"
+    action "Conditional step" | if "MyInput is set"
+    action "Reactive step" | when "Some event occurs"
+</code></pre>
+
+  <p>Compile it: <code>butter compile myproject.butter</code></p>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>
