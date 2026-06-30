@@ -1,11 +1,11 @@
 # Butter Project Documentation
 product ButterCompiler
 description "A high-performance, indentation-aware DSL compiler that converts clean .butter specifications into structured JSON or YAML."
-version "1.6.0"
+version "1.7.0"
 
 feature CompilationPipeline
 	description "The strictly sequential end-to-end execution flow of the Butter compiler."
-	version "1.6.0"
+	version "1.7.0"
 
 	params
 		param InputFile

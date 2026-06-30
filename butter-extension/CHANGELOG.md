@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.7.0] - 2026-06-30
+
+- Pluggable output extension system: JSON and YAML refactored into standalone `Extension` implementations
+- New `pkg/output` package with registry pattern — third-party formats can be added via a single-file Go implementation
+- Dynamic `--format` help text lists all registered extensions
+- Cleaner YAML output: internal line numbers no longer leak into generated files
+
 ## [1.6.0] - 2026-06-29
 
 - Semantic analysis pass: catches duplicate feature/param names, undefined param references in conditions, type-default mismatches, enum defaults, and redundant required+default combos

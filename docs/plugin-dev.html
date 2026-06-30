@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Butter — Writing Output Extensions</title>
+<meta name="description" content="Developer guide for writing custom output extensions for the Butter compiler. Add support for TOML, XML, Protobuf, or any format.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.7.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#interface">The Extension Interface</a>
+    <a href="#walkthrough">Walkthrough: TOML Extension</a>
+    <a href="#register">How Registration Works</a>
+    <a href="#cli">CLI Integration</a>
+    <a href="#existing">Existing Extensions</a>
+    <a href="#publishing">Publishing Your Extension</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Writing Output Extensions</h1>
+    <p class="subtitle">Add support for any output format by implementing one Go interface. No changes to the compiler core required.</p>
+  </div>
+
+  <p>Butter's output layer is fully pluggable. The built-in JSON and YAML serializers are just two implementations of a simple <code>Extension</code> interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, HTML, or any custom format — and plug it into the compiler with a single import.</p>
+
+  <p>This guide walks through the entire process, from the interface contract to publishing your extension.</p>
+</section>
+
+<section id="interface">
+  <h2>The Extension Interface</h2>
+  <p>The contract lives in <code>pkg/output/extension.go</code>. Three methods to implement:</p>
+
+<pre><code class="language-go">package output
+
+import "butter/pkg/ast"
+
+type Extension interface {
+    // Name returns the format identifier used with --format / -f (e.g. "toml").
+    Name() string
+
+    // FileExtension returns the output file extension including the dot (e.g. ".toml").
+    FileExtension() string
+
+    // Serialize converts the validated AST into the target format and returns bytes.
+    Serialize(spec *ast.AppSpec) ([]byte, error)
+}</code></pre>
+
+  <p>That's all. <code>Serialize</code> receives a validated <code>*ast.AppSpec</code> — the same typed AST that JSON and YAML serialise. You have full access to:</p>
+
+  <ul>
+    <li><code>spec.App</code> — The app/product name</li>
+    <li><code>spec.Description</code> — Root description string</li>
+    <li><code>spec.Version</code> — Root version string</li>
+    <li><code>spec.Features</code> — Slice of <code>FeatureSpec</code>, each containing <code>Name</code>, <code>Description</code>, <code>Version</code>, <code>Params</code> (<code>[]ParamSpec</code>), and <code>Actions</code> (<code>[]ActionSpec</code>)</li>
+  </ul>
+
+  <p>Every field has <code>json</code> and <code>yaml</code> struct tags for standard serialisation, but you can walk the struct tree manually for complete control over the output format.</p>
+</section>
+
+<section id="walkthrough">
+  <h2>Walkthrough: Writing a TOML Extension</h2>
+  <p>This step-by-step example adds TOML output support. The finished result is three files and about 40 lines of code.</p>
+
+  <h3>Step 1: Create the package</h3>
+
+<pre><code class="language-bash">mkdir -p pkg/output/toml</code></pre>
+
+  <h3>Step 2: Implement the Extension</h3>
+
+<pre><code class="language-go">// pkg/output/toml/toml.go
+package toml
+
+import (
+    "bytes"
+    "fmt"
+
+    "butter/pkg/ast"
+    "butter/pkg/output"
+
+    "github.com/BurntSushi/toml"
+)
+
+func init() {
+    output.Register(tomlExt{})
+}
+
+type tomlExt struct{}
+
+func (tomlExt) Name() string          { return "toml" }
+func (tomlExt) FileExtension() string { return ".toml" }
+
+func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    var buf bytes.Buffer
+    enc := toml.NewEncoder(&buf)
+    if err := enc.Encode(spec); err != nil {
+        return nil, fmt.Errorf("toml encode: %w", err)
+    }
+    return buf.Bytes(), nil
+}</code></pre>
+
+  <p>Key points:</p>
+  <ul>
+    <li>The <code>init()</code> function calls <code>output.Register()</code>. This is automatic — importing the package is enough to register it.</li>
+    <li><code>Name()</code> returns <code>"toml"</code> — this is the value the user passes to <code>--format toml</code>.</li>
+    <li><code>FileExtension()</code> returns <code>".toml"</code> — used for the default output filename.</li>
+    <li><code>Serialize()</code> uses the TOML library's encoder. Since AST types have <code>toml</code> struct tags, <code>toml.Encode</code> works directly.</li>
+  </ul>
+
+  <blockquote>
+    <strong>Note on struct tags:</strong> AST types currently have <code>json</code> and <code>yaml</code> tags. If your format uses different tag keys (e.g. <code>toml</code>), you can either add the tags to <code>pkg/ast/types.go</code> or implement <code>Marshaler</code> interfaces for custom serialisation.
+  </blockquote>
+
+  <h3>Step 3: Add the dependency</h3>
+
+<pre><code class="language-bash">go get github.com/BurntSushi/toml</code></pre>
+
+  <h3>Step 4: Register in the CLI</h3>
+  <p>Add a blank import to <code>cmd/root.go</code>:</p>
+
+<pre><code class="language-go">import (
+    _ "butter/pkg/output/json"
+    _ "butter/pkg/output/toml"   // &lt;-- new
+    _ "butter/pkg/output/yaml"
+)</code></pre>
+
+  <h3>Step 5: Build and use</h3>
+
+<pre><code class="language-bash">go build -o butter main.go
+butter compile demo.butter -f toml -o demo.toml</code></pre>
+
+  <p>The <code>--format</code> flag description and error messages automatically reflect the new extension:</p>
+
+<pre><code class="language-text">$ butter compile --help
+...
+  -f, --format string   Output format (default: json). Supported: json, toml, yaml
+
+$ butter compile demo.butter -f toml
+Successfully compiled: demo.butter ──> demo.toml</code></pre>
+</section>
+
+<section id="register">
+  <h2>How Registration Works</h2>
+  <p>The registry is a simple <code>map[string]Extension</code> in <code>pkg/output/extension.go</code>:</p>
+
+<pre><code class="language-go">var registry = map[string]Extension{}
+
+func Register(ext Extension) {
+    name := ext.Name()
+    if _, ok := registry[name]; ok {
+        panic(fmt.Sprintf("output extension %q already registered", name))
+    }
+    registry[name] = ext
+}
+
+func Get(name string) (Extension, bool) {
+    ext, ok := registry[name]
+    return ext, ok
+}
+
+func Names() []string {
+    names := make([]string, 0, len(registry))
+    for n := range registry {
+        names = append(names, n)
+    }
+    sort.Strings(names)
+    return names
+}</code></pre>
+
+  <p>Go's <code>init()</code> ordering guarantees that all imported extension packages register themselves before <code>cmd</code>'s <code>init()</code> runs, so the flag description is always up to date.</p>
+</section>
+
+<section id="cli">
+  <h2>CLI Integration</h2>
+  <p>The <code>compile</code> command's output stage was refactored from a hardcoded <code>switch</code> to a registry lookup:</p>
+
+<pre><code class="language-go">extIface, ok := output.Get(outputFormat)
+if !ok {
+    return fmt.Errorf("unsupported output format %q — supported: %s",
+        outputFormat, formatList())
+}
+outputData, err := extIface.Serialize(appAST)
+ext := extIface.FileExtension()</code></pre>
+
+  <p>This means every registered extension:</p>
+  <ul>
+    <li>Appears in <code>--format</code> help text automatically</li>
+    <li>Is listed in error messages for invalid formats</li>
+    <li>Gets its <code>FileExtension</code> used for default output filenames</li>
+    <li>Works with <code>--check</code> (validation only, no serialisation)</li>
+  </ul>
+</section>
+
+<section id="existing">
+  <h2>Existing Extensions</h2>
+  <p>The two built-in extensions live in the <code>pkg/output/</code> directory and serve as reference implementations:</p>
+
+  <table>
+    <tr><th>Package</th><th>Name</th><th>Extension</th><th>Library</th></tr>
+    <tr>
+      <td><code>pkg/output/json/json.go</code></td>
+      <td><code>"json"</code></td>
+      <td><code>.json</code></td>
+      <td><code>encoding/json</code> (stdlib)</td>
+    </tr>
+    <tr>
+      <td><code>pkg/output/yaml/yaml.go</code></td>
+      <td><code>"yaml"</code></td>
+      <td><code>.yaml</code></td>
+      <td><code>gopkg.in/yaml.v3</code></td>
+    </tr>
+  </table>
+
+  <p>Each is roughly 20 lines: a struct, three methods, and an <code>init()</code> registration call.</p>
+</section>
+
+<section id="publishing">
+  <h2>Publishing Your Extension</h2>
+  <p>Extensions are regular Go packages — publish them like any other Go library:</p>
+
+  <ol>
+    <li><strong>Publish to GitHub/GitLab</strong> — Push your package to a repository. The package should be importable as <code>github.com/you/butter-formatname</code>.</li>
+    <li><strong>Document the dependency</strong> — Tell users to <code>go get</code> your package and add the blank import to <code>cmd/root.go</code> (or <code>main.go</code>).</li>
+    <li><strong>Name conventions</strong> — Use a descriptive module name like <code>butter-toml</code> or <code>butter-protobuf</code>. Keep the package simple — one <code>init()</code> registration, one <code>Extension</code> implementation.</li>
+  </ol>
+
+  <blockquote>
+    <strong>Tip:</strong> Extensions are compiled into the binary. There is no runtime plugin loading, no Wasm, no shared libraries. This keeps the compiler a single static binary while maintaining zero-core-dependency extensibility.
+  </blockquote>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>

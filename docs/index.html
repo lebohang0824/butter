@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.6.0</div>
+    <div class="version">v1.7.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -33,6 +33,7 @@
     <a href="#examples">Examples</a>
     <a href="#changelog">Changelog</a>
     <a href="compiler-spec.html" class="external">compiler.butter Spec</a>
+    <a href="plugin-dev.html" class="external">Writing Extensions</a>
   </nav>
 </aside>
 
@@ -671,6 +672,16 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.7.0 — 2026-06-30</h3>
+  <ul>
+    <li><strong>Pluggable output extensions</strong> — Output formats are now registered via a Go <code>Extension</code> interface. Writing a new format is a single-file, three-method implementation.</li>
+    <li><strong>Extension registry</strong> — <code>pkg/output.Extension</code> interface with <code>Register()</code>/<code>Get()</code>/<code>Names()</code>. Extensions auto-register via <code>init()</code>.</li>
+    <li><strong>JSON and YAML refactored as extensions</strong> — Moved from hardcoded functions in <code>parser.go</code> to standalone extension packages.</li>
+    <li><strong>Dynamic help text</strong> — <code>--format</code> flag description and error messages automatically list all registered extensions.</li>
+    <li><strong>Cleaner YAML output</strong> — Internal line numbers no longer leak into YAML output (<code>yaml:"-"</code> tags added).</li>
+    <li><strong>Developer documentation</strong> — New <a href="plugin-dev.html">Writing Extensions</a> guide with a complete TOML extension walkthrough.</li>
+  </ul>
 
   <h3>v1.6.0 — 2026-06-29</h3>
   <ul>

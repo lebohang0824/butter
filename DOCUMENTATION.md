@@ -201,7 +201,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-	const Version = "1.6.0"
+	const Version = "1.7.0"
 
 var outputFile string
 var checkMode bool
@@ -953,6 +953,87 @@ butter-extension/
   }
 }
 ```
+
+---
+
+## 5. Output Extensions (Plugin Architecture)
+
+Butter's output layer is fully pluggable. The built-in JSON and YAML serialisers implement a simple `Extension` interface, and anyone can add support for new formats without modifying the compiler core.
+
+### 5.1 The Extension Interface
+
+```go
+// pkg/output/extension.go
+type Extension interface {
+    Name() string
+    FileExtension() string
+    Serialize(spec *ast.AppSpec) ([]byte, error)
+}
+```
+
+- `Name()` returns the format identifier used with `--format` (e.g. `"json"`, `"yaml"`).
+- `FileExtension()` returns the output file extension including the dot (e.g. `".json"`).
+- `Serialize()` receives the validated AST and returns bytes in the target format.
+
+### 5.2 Registry Pattern
+
+Extensions register themselves via `init()`:
+
+```go
+func init() { output.Register(myExt{}) }
+```
+
+The registry (`map[string]Extension`) is queried by the CLI at compile time. All registered formats appear automatically in `--format` help text and error messages.
+
+### 5.3 Writing a Custom Extension
+
+Create a new package under `pkg/output/` (or in an external repository):
+
+```go
+// pkg/output/toml/toml.go
+package toml
+
+import (
+    "butter/pkg/ast"
+    "butter/pkg/output"
+)
+
+func init() { output.Register(tomlExt{}) }
+
+type tomlExt struct{}
+
+func (tomlExt) Name() string          { return "toml" }
+func (tomlExt) FileExtension() string { return ".toml" }
+
+func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    // use any Go library to encode spec
+}
+```
+
+Then add a blank import in `cmd/root.go`:
+
+```go
+import (
+    _ "butter/pkg/output/json"
+    _ "butter/pkg/output/toml"  // your extension
+    _ "butter/pkg/output/yaml"
+)
+```
+
+Rebuild the binary. The new format is available immediately:
+
+```bash
+butter compile demo.butter -f toml
+```
+
+### 5.4 Built-in Extensions
+
+| Package | Name | Extension | Library |
+| :--- | :--- | :--- | :--- |
+| `pkg/output/json/json.go` | `"json"` | `.json` | `encoding/json` (stdlib) |
+| `pkg/output/yaml/yaml.go` | `"yaml"` | `.yaml` | `gopkg.in/yaml.v3` |
+
+Each is roughly 20 lines and serves as a reference implementation.
 
 ---
 

@@ -214,7 +214,7 @@ butter fmt    [input file] [flags]
 | Flag | Shorthand | Description |
 | :--- | :--- | :--- |
 | `--output` | `-o` | Custom output path (defaults to `<input>.json` for json, `<input>.yaml` for yaml) |
-| `--format` | `-f` | Output format: `json` (default) or `yaml` |
+| `--format` | `-f` | Output format (default: `json`). Run `butter compile --help` to see all registered formats |
 | `--check` | | Validate syntax and semantics without generating output |
 
 ```bash
@@ -244,6 +244,31 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax and
 
 ---
 
+### Output Extensions
+
+Butter's output layer is fully pluggable. The built-in JSON and YAML serialisers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
+
+To write an extension, implement the `output.Extension` interface and call `output.Register()`:
+
+```go
+package toml
+
+import "butter/pkg/output"
+
+func init() { output.Register(tomlExt{}) }
+
+type tomlExt struct{}
+func (tomlExt) Name() string          { return "toml" }
+func (tomlExt) FileExtension() string { return ".toml" }
+func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    // your serialization logic
+}
+```
+
+Then add a blank import in `cmd/root.go` and rebuild. The extension appears automatically in `--format` help text and error messages.
+
+Full walkthrough: [Writing Extensions](plugin-dev.html)
+
 ## Compiler Architecture
 
 ```
@@ -267,13 +292,14 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax and
  └─────┬─────┘
        │ (Validated AST)
        ▼
- ┌───────────┐
- │JSON/YAML  │ <--- Serialization Block (json.MarshalIndent / yaml.Marshal)
- │  Engine   │
- └─────┬─────┘
-       │
-       ▼
- [ .json / .yaml file ]
+  ┌──────────────┐
+  │ Output       │ <--- Pluggable Extension Registry
+  │ Extension    │       (json, yaml, + custom)
+  │  Registry    │
+  └──────┬───────┘
+         │
+         ▼
+  [ .json / .yaml / custom file ]
 ```
 
 ### Semantic Analysis

@@ -8,13 +8,20 @@ import (
 
 	"butter/pkg/formatter"
 	"butter/pkg/lexer"
+	"butter/pkg/output"
+	_ "butter/pkg/output/json"
+	_ "butter/pkg/output/yaml"
 	"butter/pkg/parser"
 	"butter/pkg/semantic"
 
 	"github.com/spf13/cobra"
 )
 
-const Version = "1.6.0"
+func formatList() string {
+	return strings.Join(output.Names(), ", ")
+}
+
+const Version = "1.7.0"
 
 var outputFile string
 var outputFormat string
@@ -80,30 +87,21 @@ var compileCmd = &cobra.Command{
 			return fmt.Errorf("semantic analysis failed — output not generated")
 		}
 
-		var output []byte
-		var ext string
-		switch outputFormat {
-		case "json":
-			output, err = parser.GenerateJSONSpec(appAST)
-			if err != nil {
-				return fmt.Errorf("json packaging generation failed: %w", err)
-			}
-			ext = ".json"
-		case "yaml":
-			output, err = parser.GenerateYAMLSpec(appAST)
-			if err != nil {
-				return fmt.Errorf("yaml packaging generation failed: %w", err)
-			}
-			ext = ".yaml"
-		default:
-			return fmt.Errorf("unsupported output format %q — must be 'json' or 'yaml'", outputFormat)
+		extIface, ok := output.Get(outputFormat)
+		if !ok {
+			return fmt.Errorf("unsupported output format %q — supported: %s", outputFormat, formatList())
 		}
+		outputData, err := extIface.Serialize(appAST)
+		if err != nil {
+			return fmt.Errorf("%s serialization failed: %w", outputFormat, err)
+		}
+		ext := extIface.FileExtension()
 
 		if outputFile == "" {
 			outputFile = strings.TrimSuffix(inputFile, filepath.Ext(inputFile)) + ext
 		}
 
-		if err := os.WriteFile(outputFile, output, 0644); err != nil {
+		if err := os.WriteFile(outputFile, outputData, 0644); err != nil {
 			return fmt.Errorf("failed to write compiled asset to target destination disk: %w", err)
 		}
 
@@ -153,7 +151,7 @@ var fmtCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Print the version number")
 	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json for json, .yaml for yaml)")
-	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", "Output format: json (default) or yaml")
+	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", fmt.Sprintf("Output format (default: json). Supported: %s", formatList()))
 	compileCmd.Flags().BoolVar(&checkMode, "check", false, "Check syntax without generating output")
 	fmtCmd.Flags().BoolVar(&fmtCheckMode, "check", false, "Check formatting without modifying")
 	rootCmd.AddCommand(compileCmd)
