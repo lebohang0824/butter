@@ -79,7 +79,213 @@ type Extension interface {
 
 <section id="walkthrough">
   <h2>Walkthrough: Writing a TOML Extension</h2>
-  <p>This step-by-step example adds TOML output support. The finished result is three files and about 40 lines of code.</p>
+  <p>This step-by-step example adds TOML output support. The finished result is one Go file and about 40 lines of code.</p>
+
+  <h3>0. The Extension Described in Butter</h3>
+  <p>Before we write Go code, let's write a Butter spec that describes the TOML extension itself. This is the same pattern used by <code>compiler.butter</code> (the compiler's self-description) and <code>butter-extension.butter</code> (the VS Code extension's self-description). We use Butter to define the extension's behaviour:</p>
+
+<pre><code class="language-butter"># TOML Output Extension for Butter
+product TomlExtension
+description "Butter output extension that serializes AppSpec AST into TOML format using github.com/BurntSushi/toml"
+version "1.0.0"
+
+feature CoreSerialization
+  description "Top-level AppSpec struct serialization."
+  version "1.0.0"
+
+  params
+    param Library
+      type string
+      default "BurntSushi/toml"
+    param EncoderType
+      type string
+      default "toml.NewEncoder"
+
+  actions
+    action "Encode spec.App as the app top-level key"
+    action "Encode spec.Description as the description top-level key"
+    action "Encode spec.Version as the version top-level key"
+    action "Encode spec.Features as the [[features]] array of tables"
+
+feature FeatureSerialization
+  description "Serialization of each FeatureSpec into a TOML table."
+  version "1.0.0"
+
+  params
+    param ParamsAsArray
+      type bool
+      default true
+    param ActionsAsArray
+      type bool
+      default true
+
+  actions
+    action "Encode feature.Name as the name key"
+    action "Encode feature.Description as the description key"
+    action "Encode feature.Version as the version key"
+    action "Encode feature.Params as [[features.params]] sub-array"
+    action "Encode feature.Actions as [[features.actions]] sub-array"
+
+feature ParamSerialization
+  description "Serialization of each ParamSpec into a TOML table."
+  version "1.0.0"
+
+  params
+    param ValidateAsArray
+      type bool
+      default true
+
+  actions
+    action "Encode param.Name as the name key"
+    action "Encode param.Type as the type key"
+    action "Encode param.Required as the required bool key"
+    action "Encode param.Default as the default key with inferred TOML type"
+    action "Encode param.Validate as a string array" | if "len(param.Validate) > 0"
+
+feature ActionSerialization
+  description "Serialization of each ActionSpec and its optional ConditionSpec."
+  version "1.0.0"
+
+  params
+    param ConditionTableKey
+      type string
+      default "condition"
+
+  actions
+    action "Encode action.Statement as the statement key"
+    action "Encode action.Condition.Type as condition.type" | when "action.Condition != nil"
+    action "Encode action.Condition.Expression as condition.expression" | when "action.Condition != nil"
+    action "Omit the entire condition sub-table" | unless "action.Condition != nil"</code></pre>
+
+  <p>This <code>toml.butter</code> spec lives alongside the implementation as documentation — it defines <em>what</em> the extension does. When compiled with the TOML extension itself (dogfooding), it produces the extension's own manifest:</p>
+
+<pre><code class="language-toml">app = "TomlExtension"
+description = "Butter output extension that serializes AppSpec AST into TOML format using github.com/BurntSushi/toml"
+version = "1.0.0"
+
+[[features]]
+name = "CoreSerialization"
+description = "Top-level AppSpec struct serialization."
+version = "1.0.0"
+
+  [[features.params]]
+  name = "Library"
+  type = "string"
+  required = false
+  default = "BurntSushi/toml"
+
+  [[features.params]]
+  name = "EncoderType"
+  type = "string"
+  required = false
+  default = "toml.NewEncoder"
+
+  [[features.actions]]
+  statement = "Encode spec.App as the app top-level key"
+
+  [[features.actions]]
+  statement = "Encode spec.Description as the description top-level key"
+
+  [[features.actions]]
+  statement = "Encode spec.Version as the version top-level key"
+
+  [[features.actions]]
+  statement = "Encode spec.Features as the [[features]] array of tables"
+
+[[features]]
+name = "FeatureSerialization"
+description = "Serialization of each FeatureSpec into a TOML table."
+version = "1.0.0"
+
+  [[features.params]]
+  name = "ParamsAsArray"
+  type = "bool"
+  required = false
+  default = true
+
+  [[features.params]]
+  name = "ActionsAsArray"
+  type = "bool"
+  required = false
+  default = true
+
+  [[features.actions]]
+  statement = "Encode feature.Name as the name key"
+
+  [[features.actions]]
+  statement = "Encode feature.Description as the description key"
+
+  [[features.actions]]
+  statement = "Encode feature.Version as the version key"
+
+  [[features.actions]]
+  statement = "Encode feature.Params as [[features.params]] sub-array"
+
+  [[features.actions]]
+  statement = "Encode feature.Actions as [[features.actions]] sub-array"
+
+[[features]]
+name = "ParamSerialization"
+description = "Serialization of each ParamSpec into a TOML table."
+version = "1.0.0"
+
+  [[features.params]]
+  name = "ValidateAsArray"
+  type = "bool"
+  required = false
+  default = true
+
+  [[features.actions]]
+  statement = "Encode param.Name as the name key"
+
+  [[features.actions]]
+  statement = "Encode param.Type as the type key"
+
+  [[features.actions]]
+  statement = "Encode param.Required as the required bool key"
+
+  [[features.actions]]
+  statement = "Encode param.Default as the default key with inferred TOML type"
+
+  [[features.actions]]
+  statement = "Encode param.Validate as a string array"
+  [features.actions.condition]
+  type = "if"
+  expression = "len(param.Validate) > 0"
+
+[[features]]
+name = "ActionSerialization"
+description = "Serialization of each ActionSpec and its optional ConditionSpec."
+version = "1.0.0"
+
+  [[features.params]]
+  name = "ConditionTableKey"
+  type = "string"
+  required = false
+  default = "condition"
+
+  [[features.actions]]
+  statement = "Encode action.Statement as the statement key"
+
+  [[features.actions]]
+  statement = "Encode action.Condition.Type as condition.type"
+  [features.actions.condition]
+  type = "when"
+  expression = "action.Condition != nil"
+
+  [[features.actions]]
+  statement = "Encode action.Condition.Expression as condition.expression"
+  [features.actions.condition]
+  type = "when"
+  expression = "action.Condition != nil"
+
+  [[features.actions]]
+  statement = "Omit the entire condition sub-table"
+  [features.actions.condition]
+  type = "unless"
+  expression = "action.Condition != nil"</code></pre>
+
+  <p>This is Butter describing itself — the same extension that produces this TOML output is documented and defined in a <code>.butter</code> spec. Now let's build the extension that makes it work.</p>
 
   <h3>Step 1: Create the package</h3>
 
@@ -244,7 +450,7 @@ ext := extIface.FileExtension()</code></pre>
   </ol>
 
   <blockquote>
-    <strong>Tip:</strong> Extensions are compiled into the binary. There is no runtime plugin loading, no Wasm, no shared libraries. This keeps the compiler a single static binary while maintaining zero-core-dependency extensibility.
+    <strong>Tip:</strong> Extensions are compiled into the binary. There is no runtime extension loading, no Wasm, no shared libraries. This keeps the compiler a single static binary while maintaining zero-core-dependency extensibility.
   </blockquote>
 </section>
 

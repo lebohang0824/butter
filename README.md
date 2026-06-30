@@ -267,7 +267,7 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 
 Then add a blank import in `cmd/root.go` and rebuild. The extension appears automatically in `--format` help text and error messages.
 
-Full walkthrough: [Writing Extensions](plugin-dev.html)
+Full walkthrough: [Writing Extensions](extension-dev.html)
 
 ## Compiler Architecture
 
