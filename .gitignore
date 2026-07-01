@@ -10,6 +10,9 @@ butter.exe
 !butter-extension/syntaxes/butter.tmLanguage.json
 !butter-extension/themes/butter-docs-color-theme.json
 
+# Generated HTML tree view output (root-level only)
+/*.html
+
 # VS Code extension build artifact
 butter-extension.vsix
 
