@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.7.0</div>
+    <div class="version">v1.8.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -189,6 +189,7 @@ feature Greet
       <tr><td><code>param</code></td><td>Item-level</td><td>Declares a discrete parameter variable name</td></tr>
       <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
       <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
+      <tr><td><code>enforce</code></td><td>Item-level</td><td>Declares a condition that must hold for the action to succeed</td></tr>
     </tbody>
   </table>
 
@@ -394,7 +395,7 @@ line 5: expected an application name after 'app'</code></pre>
       <tr><td><code>AppSpec</code></td><td><code>app</code>, <code>description?</code>, <code>version?</code>, <code>features[]</code></td></tr>
       <tr><td><code>FeatureSpec</code></td><td><code>name</code>, <code>description?</code>, <code>version?</code>, <code>params[]?</code>, <code>actions[]?</code></td></tr>
       <tr><td><code>ParamSpec</code></td><td><code>name</code>, <code>type</code> (default <code>"string"</code>), <code>required</code> (default <code>false</code>), <code>default?</code>, <code>validate[]?</code></td></tr>
-      <tr><td><code>ActionSpec</code></td><td><code>statement</code>, <code>condition?</code></td></tr>
+      <tr><td><code>ActionSpec</code></td><td><code>statement</code>, <code>enforce[]</code>, <code>condition?</code></td></tr>
       <tr><td><code>ConditionSpec</code></td><td><code>type</code> (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>), <code>expression</code></td></tr>
     </tbody>
   </table>
@@ -672,6 +673,14 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.8.0 — 2026-07-01</h3>
+  <ul>
+    <li><strong>Action <code>enforce</code> field</strong> — Actions now support zero or more <code>enforce</code> strings as indented children, specifying conditions that must hold for the action to succeed. Stored as <code>Enforce []string</code> in the AST.</li>
+    <li><strong>Updated syntax highlighting</strong> — <code>enforce</code> added to TextMate grammar (VS Code) and Prism (docs) keyword lists. Token color customizations match docs: amber keywords, green strings, blue functions, purple variables.</li>
+    <li><strong>Compiler spec alignment</strong> — <code>compiler.butter</code> and <code>docs/compiler-spec.html</code> synced to v1.8.0 with enforce examples.</li>
+    <li><strong>Updated extension</strong> — <code>butter-extension</code> v1.8.0 with <code>enforce</code> highlighting and color customizations.</li>
+  </ul>
 
   <h3>v1.7.0 — 2026-06-30</h3>
   <ul>

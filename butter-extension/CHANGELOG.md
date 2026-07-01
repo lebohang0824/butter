@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.8.0] - 2026-07-01
+
+- `enforce` keyword added to syntax highlighting — recognized as a keyword in both TextMate grammar and Prism docs highlighter
+- Updated grammar with `contributes.tokenColorCustomizations` matching docs color scheme: amber keywords, green strings, blue functions/names, purple params, slate-blue booleans, gray italic comments
+- Extended `ActionSpec` struct with optional `Enforce []string` field — zero or more enforce strings can appear as indented children under an action
+- Updated `compiler.butter` self-documenting spec with enforce examples and aligned to v1.8.0
+
 ## [1.7.0] - 2026-06-30
 
 - Pluggable output extension system: JSON and YAML refactored into standalone `Extension` implementations

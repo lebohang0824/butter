@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.7.0</div>
+    <div class="version">v1.8.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -344,8 +344,9 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
   <p>Add a blank import to <code>cmd/root.go</code>:</p>
 
 <pre><code class="language-go">import (
+    _ "butter/pkg/output/htmltree" // &lt;-- experimental
     _ "butter/pkg/output/json"
-    _ "butter/pkg/output/toml"   // &lt;-- new
+    _ "butter/pkg/output/toml"     // &lt;-- new
     _ "butter/pkg/output/yaml"
 )</code></pre>
 
@@ -434,9 +435,15 @@ ext := extIface.FileExtension()</code></pre>
       <td><code>.yaml</code></td>
       <td><code>gopkg.in/yaml.v3</code></td>
     </tr>
+    <tr>
+      <td><code>pkg/output/htmltree/htmltree.go</code></td>
+      <td><code>"htmltree"</code></td>
+      <td><code>.html</code></td>
+      <td><code>html/template</code> (stdlib)</td>
+    </tr>
   </table>
 
-  <p>Each is roughly 20 lines: a struct, three methods, and an <code>init()</code> registration call.</p>
+  <p>Each is roughly 20 lines: a struct, three methods, and an <code>init()</code> registration call. The <code>htmltree</code> extension is an experimental format that renders the AST as an interactive, zoomable HTML tree — see it in action with <code>butter compile spec.butter -f htmltree -o spec.html</code>.</p>
 </section>
 
 <section id="publishing">

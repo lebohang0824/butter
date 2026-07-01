@@ -8,6 +8,7 @@ butter.exe
 !butter-extension/package.json
 !butter-extension/language-configuration.json
 !butter-extension/syntaxes/butter.tmLanguage.json
+!butter-extension/themes/butter-docs-color-theme.json
 
 # VS Code extension build artifact
 butter-extension.vsix

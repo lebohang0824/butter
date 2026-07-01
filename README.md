@@ -9,6 +9,8 @@
 - [Design Philosophy](#design-philosophy)
 - [Language Specification](#language-specification)
   - [Keywords](#keywords)
+  - [Parameter Fields](#parameter-fields)
+  - [Action Fields](#action-fields)
   - [Semantic Conditionals](#semantic-conditionals)
 - [Example](#example)
 - [Installation](#installation)
@@ -50,6 +52,7 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 | `param`       | Item-level    | Declares a discrete parameter variable name |
 | `actions`     | Block-level   | A dedicated container block specifying execution routines |
 | `action`      | Item-level    | Declares a logical execution string or mutation step |
+| `enforce`     | Item-level    | Declares a condition that must hold for the action to succeed |
 
 ### Parameter Fields
 
@@ -60,6 +63,12 @@ Butter solves this by providing an elegant, minimalistic language interface heav
 | `default`     | Explicit fallback value if the parameter is omitted |
 | `validate`    | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
 | `length`      | Exact digit/numeric length constraint (e.g. `length 13`). Only on `int`/`float`. Mutually exclusive with `validate`. |
+
+### Action Fields
+
+| Field         | Purpose |
+| :---          | :--- |
+| `enforce` | Optional quoted string specifying what must be enforced for the action to be successful. Multiple `enforce` lines are allowed under a single action. |
 
 ### Semantic Conditionals
 
@@ -100,6 +109,8 @@ feature ProcessPayment
 
   actions
     action "Validate routing balance metrics"
+      enforce "The payment gateway must have sufficient routing capacity before processing"
+      enforce "Failed validations must log the routing error before halting"
     action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
     action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
     action "Bypass fraud detection ledger verification" | unless "Amount > 50"
@@ -332,7 +343,7 @@ The parser constructs a typed AST graph mapped directly to Go structures:
 - **AppSpec** — Root node: app name, description, version, and features
 - **FeatureSpec** — Named feature with optional description, version, params, and actions
 - **ParamSpec** — Parameter with name, type, required flag, and default value
-- **ActionSpec** — Action statement with an optional condition (type + expression)
+- **ActionSpec** — Action statement with optional enforce(s) and optional condition (type + expression)
 - **ConditionSpec** — One of `if`, `unless`, `when`, `while` plus a predicate expression
 
 ---
@@ -343,6 +354,7 @@ A VS Code extension providing syntax highlighting, indentation support, and lang
 
 **Features:**
 - Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
+- **Butter Docs Colors** theme — a VS Code color theme that matches the docs color scheme (amber keywords, green strings, blue functions, purple params). Select "Butter Docs Colors" from the theme picker.
 - On-save formatting — automatically applies `butter fmt` every time a file is saved, no configuration needed
 - On-save linting — validates syntax via `butter compile --check` after formatting and surfaces errors with red squiggly underlines
 - `Butter: Lint current file` command in the command palette

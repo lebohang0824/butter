@@ -39,5 +39,5 @@ Prism.languages.butter = {
     }
   },
   'conditional': /\b(?:if|unless|when|while)\b/,
-  'keyword': /\b(?:app|product|description|version|feature|params|param|type|required|default|validate|bool|boolean|length|actions|action)\b/
+  'keyword': /\b(?:app|product|description|version|feature|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action)\b/
 };

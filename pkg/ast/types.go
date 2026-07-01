@@ -27,9 +27,10 @@ type ParamSpec struct {
 }
 
 type ActionSpec struct {
-	Statement string         `json:"statement" yaml:"statement"`
-	Condition *ConditionSpec `json:"condition,omitempty" yaml:"condition,omitempty"`
-	Line      int            `json:"-" yaml:"-"`
+	Statement string           `json:"statement" yaml:"statement"`
+	Enforce   []string         `json:"enforce,omitempty" yaml:"enforce,omitempty"`
+	Condition *ConditionSpec   `json:"condition,omitempty" yaml:"condition,omitempty"`
+	Line      int              `json:"-" yaml:"-"`
 }
 
 type ConditionSpec struct {

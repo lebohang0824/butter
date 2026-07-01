@@ -37,6 +37,7 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `param` | Item-level | Declares a discrete parameter variable name. |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
+| `enforce` | Item-level | Declares a condition that must hold for the action to succeed. |
 
 ### 2.2 Parameter Fields
 
@@ -48,7 +49,13 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `validate` | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
 | `length` | Exact digit/numeric length constraint (e.g. `length 13`). Only on `int`/`float`. Mutually exclusive with `validate`. |
 
-### 2.3 Semantic Conditionals
+### 2.3 Action Fields
+
+| Field | Purpose |
+| :--- | :--- |
+| `enforce` | Optional quoted string specifying what must be enforced for the action to be considered successful. Multiple `enforce` lines are allowed. Appears as an indented child under the action line. |
+
+### 2.4 Semantic Conditionals
 Butter expands standard evaluation logic beyond a simple `if` condition, offering native semantic blocks that map perfectly to backend execution engines:
 
 * **`if`**: The action executes **only if** the target predicate expression evaluates to `true`.
@@ -56,7 +63,7 @@ Butter expands standard evaluation logic beyond a simple `if` condition, offerin
 * **`when`**: Reactive or event-driven hook. Indicates the action triggers **asynchronously upon** an external event or state shift.
 * **`while`**: Active polling or operational state persistence. The action requires this state condition to remain continuously active throughout execution.
 
-### 2.4 Syntactic Layout Examples
+### 2.5 Syntactic Layout Examples
 
 **`demo.butter`** — Standard application declaration:
 
@@ -84,6 +91,8 @@ feature ProcessPayment
       
   actions
     action "Validate routing balance metrics"
+      enforce "The payment gateway must have sufficient routing capacity before processing"
+      enforce "Failed validations must log the routing error before halting"
     action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
     action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
     action "Bypass fraud detection ledger verification" | unless "Amount > 50"
@@ -201,7 +210,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-	const Version = "1.7.0"
+	const Version = "1.8.0"
 
 var outputFile string
 var checkMode bool
@@ -351,8 +360,9 @@ type ParamSpec struct {
 }
 
 type ActionSpec struct {
-	Statement string         `json:"statement"`
-	Condition *ConditionSpec `json:"condition,omitempty"`
+	Statement   string           `json:"statement"`
+	Enforce     []string         `json:"enforce,omitempty"`
+	Condition   *ConditionSpec   `json:"condition,omitempty"`
 }
 
 type ConditionSpec struct {
@@ -805,6 +815,30 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 		p.nextToken()
 	}
 	p.nextToken() // consume Newline
+
+	// optional indented enforce child block
+	if p.curToken.Type == lexer.TokenIndent {
+		p.nextToken()
+
+		for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+			if p.curToken.Type == lexer.TokenNewline {
+				p.nextToken()
+				continue
+			}
+			if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "enforce" {
+				p.nextToken()
+				if p.curToken.Type != lexer.TokenString {
+					return nil, fmt.Errorf("line %d: action enforce must be a quoted string", p.curToken.Line)
+				}
+				action.Enforce = append(action.Enforce, p.curToken.Value)
+				p.nextToken()
+				continue
+			}
+			return nil, fmt.Errorf("line %d: unexpected '%s' inside action block", p.curToken.Line, p.curToken.Value)
+		}
+		p.nextToken()
+	}
+
 	return action, nil
 }
 

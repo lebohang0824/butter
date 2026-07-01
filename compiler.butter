@@ -1,11 +1,11 @@
 # Butter Project Documentation
 product ButterCompiler
 description "A high-performance, indentation-aware DSL compiler that converts clean .butter specifications into structured JSON or YAML."
-version "1.7.0"
+version "1.8.0"
 
 feature CompilationPipeline
 	description "The strictly sequential end-to-end execution flow of the Butter compiler."
-	version "1.7.0"
+	version "1.8.0"
 
 	params
 		param InputFile
@@ -14,6 +14,9 @@ feature CompilationPipeline
 		param OutputFormat
 			type enum["json", "yaml"]
 			default "json"
+		param OutputPath
+			type string
+			default ""
 		param CheckOnly
 			type bool
 			default false
@@ -21,6 +24,8 @@ feature CompilationPipeline
 	actions
 		# Stage 1: Lexical Analysis (The Off-side Rule)
 		action "Read file sequentially and track whitespace with a LIFO indentation stack"
+			enforce "The lexer must maintain an indentation stack to track scope boundaries"
+			enforce "Mismatched indentation must halt compilation with a meaningful error"
 		action "Emit INDENT token when leading whitespace exceeds stack top"
 		action "Emit DEDENT tokens when leading whitespace is less than stack top"
 		action "Emit NEWLINE, IDENTIFIER, STRING, PIPE, EOF, and ERROR tokens"
@@ -42,6 +47,6 @@ feature CompilationPipeline
 		action "Halt compilation with exit code 1" | when "Any semantic error is found"
 		# Stage 4: Output Generation
 		action "Skip output generation and exit with code 0" | if "CheckOnly == true"
-		action "Serialize AST to pretty-printed JSON via json.MarshalIndent" | if "OutputFormat == json"
-		action "Serialize AST to YAML via yaml.Marshal" | if "OutputFormat == yaml"
-		action "Write compiled data to disk and exit with code 0"
+		action "Look up the registered output extension by name from the extension registry" | unless "CheckOnly == true"
+		action "Dispatch serialization to the extension's Serialize method" | unless "CheckOnly == true"
+		action "Write serialized bytes to output path and exit with code 0" | unless "CheckOnly == true"

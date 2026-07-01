@@ -1,0 +1,35 @@
+{
+  "name": "Butter Docs Colors",
+  "type": "dark",
+  "colors": {},
+  "tokenColors": [
+    {
+      "scope": "keyword.control.butter, keyword.control.conditional.butter",
+      "settings": { "foreground": "#D4A24C" }
+    },
+    {
+      "scope": "string.quoted.double.butter",
+      "settings": { "foreground": "#7ABA7A" }
+    },
+    {
+      "scope": "entity.name.function.butter",
+      "settings": { "foreground": "#5A9ABA" }
+    },
+    {
+      "scope": "variable.parameter.butter",
+      "settings": { "foreground": "#AA7A9A" }
+    },
+    {
+      "scope": "constant.language.boolean.butter",
+      "settings": { "foreground": "#8A7ADA" }
+    },
+    {
+      "scope": "entity.name.type.butter",
+      "settings": { "foreground": "#5A9ABA" }
+    },
+    {
+      "scope": "comment.line.number-sign.butter",
+      "settings": { "foreground": "#64748B", "fontStyle": "italic" }
+    }
+  ]
+}

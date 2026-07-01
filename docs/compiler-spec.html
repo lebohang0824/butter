@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.7.0</div>
+    <div class="version">v1.8.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -57,12 +57,12 @@ product ButterCompiler
 description "A high-performance, indentation-aware DSL compiler
   that converts clean .butter specifications into structured
   JSON or YAML."
-version "1.6.0"
+version "1.8.0"
 
 feature CompilationPipeline
   description "The strictly sequential end-to-end execution
     flow of the Butter compiler."
-  version "1.6.0"
+  version "1.8.0"
 
   params
     param InputFile
@@ -79,6 +79,10 @@ feature CompilationPipeline
     # Stage 1: Lexical Analysis (The Off-side Rule)
     action "Read file sequentially and track whitespace
       with a LIFO indentation stack"
+      enforce "The lexer must maintain an indentation stack
+        to track scope boundaries"
+      enforce "Mismatched indentation must halt compilation
+        with a meaningful error"
     action "Emit INDENT token when leading whitespace
       exceeds stack top"
     action "Emit DEDENT tokens when leading whitespace
@@ -115,11 +119,15 @@ feature CompilationPipeline
     # Stage 4: Output Generation
     action "Skip output generation and exit with code 0"
       | if "CheckOnly == true"
-    action "Serialize AST to pretty-printed JSON
-      via json.MarshalIndent" | if "OutputFormat == json"
-    action "Serialize AST to YAML via yaml.Marshal"
-      | if "OutputFormat == yaml"
-    action "Write compiled data to disk and exit with code 0"
+    action "Look up the registered output extension
+      by name from the extension registry"
+      | unless "CheckOnly == true"
+    action "Dispatch serialization to the extension's
+      Serialize method"
+      | unless "CheckOnly == true"
+    action "Write serialized bytes to output path
+      and exit with code 0"
+      | unless "CheckOnly == true"
 </code></pre>
 </section>
 
@@ -131,8 +139,7 @@ feature CompilationPipeline
   <p>The path to the source <code>.butter</code> file. This is the only required parameter — without it the compiler has nothing to read. In the CLI this maps to the positional argument <code>butter compile &lt;file&gt;</code>.</p>
 
   <h3>OutputFormat <code style="font-size:0.85em; font-weight:normal;">type: enum["json", "yaml"], default: "json"</code></h3>
-  <p>Controls the serialization format. When set to <code>"json"</code> the compiler produces pretty-printed JSON via <code>json.MarshalIndent</code>. When <code>"yaml"</code> it uses the <code>gopkg.in/yaml.v3</code> library. The default is JSON. Maps to the <code>--format</code> / <code>-f</code> CLI flag.</p>
-  <p><strong>Why an enum?</strong> — The <code>enum[...]</code> type restricts values to an explicit allow-list. Any value outside <code>"json"</code> or <code>"yaml"</code> is rejected at the semantic analysis stage. This is how you constrain input to a fixed set of options in your own specs.</p>
+  <p>Controls the serialization format. The compiler maintains a registry of <code>output.Extension</code> implementations, each providing a <code>Name()</code> and <code>Serialize()</code> method. Built-in extensions include JSON and YAML; third-party formats can be added by implementing the <code>Extension</code> interface and registering via <code>output.Register()</code>. Maps to the <code>--format</code> / <code>-f</code> CLI flag.</p>
 
   <h3>CheckOnly <code style="font-size:0.85em; font-weight:normal;">type: bool, default: false</code></h3>
   <p>When <code>true</code>, the compiler validates syntax and semantics but skips file output. The exit code is 0 on success, 1 on failure. This is the <code>--check</code> flag — useful for CI pipelines and editor integration (the VS Code extension calls <code>butter compile --check</code> on every save).</p>
@@ -216,7 +223,7 @@ feature CompilationPipeline
     <tr>
       <td>10</td>
       <td><code>Map execution steps to ActionSpec and ConditionSpec structs</code></td>
-      <td>Inside an <code>actions</code> block, each <code>action</code> becomes an <code>ActionSpec</code> with a statement string. If the action has a <code>| if</code>, <code>| unless</code>, <code>| when</code>, or <code>| while</code> suffix, a <code>ConditionSpec</code> is attached with the condition type and expression.</td>
+      <td>Inside an <code>actions</code> block, each <code>action</code> becomes an <code>ActionSpec</code> with a statement string. Zero or more <code>enforce</code> strings may appear as indented children, specifying conditions that must hold for success. If the action has a <code>| if</code>, <code>| unless</code>, <code>| when</code>, or <code>| while</code> suffix, a <code>ConditionSpec</code> is attached with the condition type and expression.</td>
     </tr>
     <tr>
       <td>11</td>
@@ -287,18 +294,23 @@ feature CompilationPipeline
     </tr>
     <tr>
       <td>20</td>
-      <td><code>Serialize AST to pretty-printed JSON via json.MarshalIndent</code> <strong>| if</strong> <code>"OutputFormat == json"</code></td>
-      <td>JSON is the default output format. The AST is serialised with two-space indentation, producing clean, readable JSON that mirrors the structure of the original Butter spec.</td>
+      <td><code>Look up the registered output extension by name from the extension registry</code> <strong>| unless</strong> <code>"CheckOnly == true"</code></td>
+      <td>The <code>--format</code> value is used to look up an <code>output.Extension</code> in the global registry (registered via <code>init()</code>). If no extension matches, compilation halts with an error listing all registered formats.</td>
     </tr>
     <tr>
       <td>21</td>
-      <td><code>Serialize AST to YAML via yaml.Marshal</code> <strong>| if</strong> <code>"OutputFormat == yaml"</code></td>
-      <td>When <code>--format yaml</code> is used, the AST is serialised using the <code>gopkg.in/yaml.v3</code> library. The YAML output preserves the same structure as JSON but uses YAML's minimal syntax.</td>
+      <td><code>Dispatch serialization to the extension's Serialize method</code> <strong>| unless</strong> <code>"CheckOnly == true"</code></td>
+      <td>The selected extension's <code>Serialize(*ast.AppSpec)</code> method produces the output bytes. JSON and YAML are built-in extensions; third-party formats can be added by implementing the <code>Extension</code> interface.</td>
     </tr>
     <tr>
       <td>22</td>
-      <td><code>Write compiled data to disk and exit with code 0</code></td>
-      <td>The serialised output is written to the target file (default: <code>&lt;input&gt;.json</code> or <code>&lt;input&gt;.yaml</code>, customisable with <code>-o</code>). The compiler then exits with code 0, signalling success.</td>
+      <td><code>Parse optional enforce fields as indented child blocks under actions</code></td>
+      <td>Actions may have zero or more <code>enforce</code> strings indented beneath them, specifying conditions that must hold for the action to succeed. The parser appends each to the action's <code>Enforce</code> slice.</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td><code>Write serialized bytes to output path and exit with code 0</code> <strong>| unless</strong> <code>"CheckOnly == true"</code></td>
+      <td>The serialised output is written to the target file (default: <code>&lt;input&gt;.json</code> or <code>&lt;input&gt;.&lt;ext&gt;</code>, customisable with <code>-o</code>). The compiler then exits with code 0, signalling success.</td>
     </tr>
   </table>
 </section>
@@ -312,13 +324,13 @@ feature CompilationPipeline
   "description": "A high-performance, indentation-aware DSL compiler
     that converts clean .butter specifications into structured
     JSON or YAML.",
-  "version": "1.6.0",
+  "version": "1.8.0",
   "features": [
     {
       "name": "CompilationPipeline",
       "description": "The strictly sequential end-to-end execution
         flow of the Butter compiler.",
-      "version": "1.6.0",
+      "version": "1.8.0",
       "params": [
         {
           "name": "InputFile",
@@ -336,11 +348,23 @@ feature CompilationPipeline
           "type": "bool",
           "required": false,
           "default": "false"
+        },
+        {
+          "name": "OutputPath",
+          "type": "string",
+          "required": false,
+          "default": ""
         }
       ],
       "actions": [
         { "statement": "Read file sequentially and track whitespace
-            with a LIFO indentation stack" },
+            with a LIFO indentation stack",
+          "enforce": [
+            "The lexer must maintain an indentation stack
+              to track scope boundaries",
+            "Mismatched indentation must halt compilation
+              with a meaningful error"
+          ] },
         { "statement": "Emit INDENT token when leading whitespace
             exceeds stack top" },
         { "statement": "Emit DEDENT tokens when leading whitespace
@@ -382,15 +406,18 @@ feature CompilationPipeline
             with code 0",
           "condition": { "type": "if",
             "expression": "CheckOnly == true" } },
-        { "statement": "Serialize AST to pretty-printed JSON
-            via json.MarshalIndent",
-          "condition": { "type": "if",
-            "expression": "OutputFormat == json" } },
-        { "statement": "Serialize AST to YAML via yaml.Marshal",
-          "condition": { "type": "if",
-            "expression": "OutputFormat == yaml" } },
-        { "statement": "Write compiled data to disk
-            and exit with code 0" }
+        { "statement": "Look up the registered output
+            extension by name from the extension registry",
+          "condition": { "type": "unless",
+            "expression": "CheckOnly == true" } },
+        { "statement": "Dispatch serialization to the
+            extension's Serialize method",
+          "condition": { "type": "unless",
+            "expression": "CheckOnly == true" } },
+        { "statement": "Write serialized bytes to output
+            path and exit with code 0",
+          "condition": { "type": "unless",
+            "expression": "CheckOnly == true" } }
       ]
     }
   ]

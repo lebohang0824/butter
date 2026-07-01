@@ -284,6 +284,29 @@ func (p *Parser) parseAction() (*ast.ActionSpec, error) {
 		p.nextToken()
 	}
 	p.nextToken()
+
+	if p.curToken.Type == lexer.TokenIndent {
+		p.nextToken()
+
+		for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+			if p.curToken.Type == lexer.TokenNewline {
+				p.nextToken()
+				continue
+			}
+			if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "enforce" {
+				p.nextToken()
+				if p.curToken.Type != lexer.TokenString {
+					return nil, fmt.Errorf("line %d: action enforce must be a quoted string", p.curToken.Line)
+				}
+				action.Enforce = append(action.Enforce, p.curToken.Value)
+				p.nextToken()
+				continue
+			}
+			return nil, fmt.Errorf("line %d: unexpected '%s' inside action block", p.curToken.Line, p.curToken.Value)
+		}
+		p.nextToken()
+	}
+
 	return action, nil
 }
 

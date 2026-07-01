@@ -9,6 +9,7 @@ import (
 	"butter/pkg/formatter"
 	"butter/pkg/lexer"
 	"butter/pkg/output"
+	_ "butter/pkg/output/htmltree"
 	_ "butter/pkg/output/json"
 	_ "butter/pkg/output/yaml"
 	"butter/pkg/parser"
@@ -21,7 +22,7 @@ func formatList() string {
 	return strings.Join(output.Names(), ", ")
 }
 
-const Version = "1.7.0"
+const Version = "1.8.0"
 
 var outputFile string
 var outputFormat string

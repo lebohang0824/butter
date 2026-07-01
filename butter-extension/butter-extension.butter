@@ -1,11 +1,11 @@
 # Butter VS Code Extension Documentation
 product ButterExtension
 description "VS Code extension providing syntax highlighting, formatting, linting, and language configuration for the Butter DSL."
-version "1.7.0"
+version "1.8.0"
 
 feature SyntaxHighlighting
   description "TextMate grammar providing tokenization and named capture highlighting for .butter files."
-  version "1.7.0"
+  version "1.8.0"
 
   params
     param ScopeName
@@ -27,7 +27,7 @@ feature SyntaxHighlighting
 
 feature LanguageConfiguration
   description "Editor configuration for indentation, bracket matching, auto-closing pairs, and comment toggling."
-  version "1.7.0"
+  version "1.8.0"
 
   params
     param LineComment
@@ -49,7 +49,7 @@ feature LanguageConfiguration
 
 feature LintingEngine
   description "On-save and on-open linting that runs butter compile --check and surfaces errors as diagnostics."
-  version "1.7.0"
+  version "1.8.0"
 
   params
     param CompilerPath
@@ -73,7 +73,7 @@ feature LintingEngine
 
 feature FormattingEngine
   description "On-save formatting that runs butter fmt and applies edits to the document."
-  version "1.7.0"
+  version "1.8.0"
 
   params
     param FormatOnSave

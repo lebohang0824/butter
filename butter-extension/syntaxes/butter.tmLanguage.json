@@ -39,7 +39,7 @@
       }
     },
     "keywords": {
-      "match": "\\b(app|product|description|version|feature|params|param|type|required|default|validate|bool|boolean|length|actions|action)\\b",
+      "match": "\\b(app|product|description|version|feature|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action)\\b",
       "name": "keyword.control.butter"
     },
     "conditionals": {
