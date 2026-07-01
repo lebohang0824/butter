@@ -1,197 +1,67 @@
-# Butter Project — Ecosystem Management Spec
+# Butter Project — Release Workflow for AI Agents
 product ButterProject
-description "High-level orchestration spec for the entire Butter project: compiler, VS Code extension, documentation site, and release workflows."
+description "Release workflow for the Butter project. AI agents follow this spec to decide what actions to take based on which files changed."
 version "1.8.0"
 
-feature Compiler
-  description "The core Butter DSL compiler — lexer, parser, semantic analysis, and pluggable output extensions. Detailed changes tracked in compiler.butter."
-  version "1.8.0"
-
-  params
-    param Language
-      type string
-      default "Go"
-    param OutputDir
-      type string
-      default "pkg/"
-    param SpecFile
-      type string
-      default "compiler.butter"
-
-  actions
-    action "Bump version in cmd/root.go and compiler.butter" | when "Compiler version changes"
-    action "Update OutputFormat enum" | when "New output extension is registered"
-    action "Add keyword to lexer token map and TextMate grammar" | when "New language keyword is introduced"
-    action "Add AST struct field for new construct" | when "New language construct is added"
-    action "Add parser branch for new construct" | when "New language construct is added"
-    action "Add semantic check rule" | when "New validation constraint is introduced"
-    action "Implement output.Extension interface in pkg/output/<name>/" | when "New output format is added"
-    action "Register blank import in cmd/root.go" | when "New output extension is added"
-    action "Sync compiler.butter actions with actual compiler stages" | unless "compiler.butter is up to date"
-
-feature VSCodeExtension
-  description "VS Code extension providing syntax highlighting, linting, formatting, and a docs-matching color theme. Detailed changes tracked in butter-extension/butter-extension.butter."
-  version "1.8.0"
-
-  params
-    param ExtensionDir
-      type string
-      default "butter-extension/"
-    param PackageVersion
-      type string
-      default "1.8.0"
-    param VSCodeMinVersion
-      type string
-      default "^1.85.0"
-
-  actions
-    action "Bump version in package.json and butter-extension.butter" | when "Extension version changes"
-    action "Add keyword to TextMate grammar in syntaxes/butter.tmLanguage.json" | when "New keyword is added to the language"
-    action "Add theme scope color in themes/butter-docs-color-theme.json" | when "New token scope is introduced"
-    action "Add contribution point in package.json contributes block" | when "New VS Code capability is added"
-    action "Update activation events in package.json" | when "New language feature needs activation"
-    action "Regenerate butter-extension.json from butter-extension.butter" | when "Extension spec changes"
-    action "Update CHANGELOG.md with new version entry" | when "Extension is published"
-
-feature DocumentationSite
-  description "The documentation website and developer guides. Detailed changes tracked in docs/docs.butter."
-  version "1.8.0"
-
-  params
-    param DocsDir
-      type string
-      default "docs/"
-    param SpecFile
-      type string
-      default "docs/docs.butter"
-
-  actions
-    action "Update version badge in sidebar of all doc pages" | when "Project version changes"
-    action "Add keyword to keywords table in index.html and README.md" | when "New keyword is added to the language"
-    action "Add new language construct to language guide" | when "Language specification changes"
-    action "Update CLI reference tables with new flags and commands" | when "CLI interface changes"
-    action "Update compiler-spec.html Stage 4 section" | when "Output extension system changes"
-    action "Update extension-dev.html walkthrough" | when "Extension API changes"
-    action "Add entry to changelog in index.html" | when "New version is released"
-    action "Update Prism grammar in docs/prism-butber.js" | when "New keyword is added"
-    action "Regenerate docs.json from docs/docs.butter" | when "Docs spec changes"
-
-feature SyntaxHighlighter
-  description "Cross-platform syntax highlighting: TextMate grammar for VS Code and Prism.js for the docs site. Both must stay in sync."
-  version "1.8.0"
-
-  params
-    param TextMateGrammar
-      type string
-      default "butter-extension/syntaxes/butter.tmLanguage.json"
-    param PrismGrammar
-      type string
-      default "docs/prism-butber.js"
-    param DocPages
-      type string
-      default "index.html, docs/compiler-spec.html, docs/extension-dev.html"
-    param README
-      type string
-      default "README.md"
-
-  actions
-    action "Add keyword regex to both TextMate and Prism grammars" | when "New keyword is added"
-    action "Add token scope to TextMate grammar" | when "New named capture is introduced"
-    action "Add Prism token pattern for the new scope" | when "New named capture is introduced"
-    action "Sync enforce keyword across all grammar files" | when "enforce syntax is modified"
-    action "Verify keyword list matches between compiler lexer and grammars" | when "Any grammar changes"
-
-feature MarkdownDocumentation
-  description "All Markdown documentation files — README.md (root), DOCUMENTATION.md (dev/arch guide), butter-extension/README.md (extension), and butter-extension/CHANGELOG.md (release notes). These must stay consistent with each other and with the HTML docs."
-  version "1.8.0"
-
-  params
-    param RootReadme
-      type string
-      default "README.md"
-    param DevGuide
-      type string
-      default "DOCUMENTATION.md"
-    param ExtensionReadme
-      type string
-      default "butter-extension/README.md"
-    param Changelog
-      type string
-      default "butter-extension/CHANGELOG.md"
-
-  actions
-    action "Add keyword to keywords table in README.md and DOCUMENTATION.md" | when "New keyword is added"
-    action "Add language construct to language guide in README.md and DOCUMENTATION.md" | when "Language specification changes"
-    action "Add flag to CLI reference table in README.md and DOCUMENTATION.md" | when "CLI interface changes"
-    action "Sync VS Code extension features list between README.md, DOCUMENTATION.md, and butter-extension/README.md" | when "Extension capabilities change"
-    action "Bump version in code snippets (const Version) in DOCUMENTATION.md" | when "Compiler version changes"
-    action "Add changelog entry to butter-extension/CHANGELOG.md" | when "Extension version changes"
-    action "Update install instructions in README.md, DOCUMENTATION.md" | when "Build or install process changes"
-    action "Update compiler architecture diagram text in README.md and DOCUMENTATION.md" | when "Compiler pipeline changes"
-    action "Sync output extensions documentation between README.md and DOCUMENTATION.md" | when "Extension registry changes"
-    action "Verify cross-reference links between .md files and docs/ pages are valid" | unless "All links are checked"
-  description "Coordinated release process — version bumps, changelog entries, cross-component sync, and artifact generation."
+feature ReleaseWorkflow
+  description "Actions an AI agent must follow to release changes to production. Agent inspects git diff to determine which files changed, then executes the matching actions."
   version "1.8.0"
 
   params
     param CurrentVersion
       type string
       default "1.8.0"
-    param ReleaseDate
+    param MainBranch
       type string
-      default "2026-07-01"
+      default "main"
     param GitHubRepo
       type string
       default "github.com/lebohang0824/butter"
 
   actions
-    action "Bump version constant in cmd/root.go" | when "Release is cut"
-    action "Bump product version in compiler.butter" | when "Release is cut"
-    action "Bump version in butter-extension/package.json" | when "Release is cut"
-    action "Bump version in butter-extension/butter-extension.butter" | when "Release is cut"
-    action "Bump version in project.butter" | when "Release is cut"
-    action "Bump version in docs/docs.butter" | when "Release is cut"
-    action "Bump version badge in docs/index.html sidebar" | when "Release is cut"
-    action "Bump version badge in docs/compiler-spec.html sidebar" | when "Release is cut"
-    action "Bump version badge in docs/extension-dev.html sidebar" | when "Release is cut"
-    action "Add changelog entry to butter-extension/CHANGELOG.md" | when "Release is cut"
-    action "Add changelog entry to docs/index.html changelog section" | when "Release is cut"
-    action "Regenerate all compiled outputs from .butter sources" | when "Any spec changes before release"
-    action "Build VS Code extension .vsix artifact" | when "Extension changes are finalized"
-    action "Run go build ./... && go vet ./..." | unless "All checks pass"
-    action "Commit all changes with descriptive message" | when "Release is ready"
+    # ── Go source changes ──────────────────────────────────────
+    action "Run go build ./... && go vet ./..." | when "*.go, go.mod, go.sum, or main.go changed"
+    action "Run go test ./..." | when "*.go or go.mod changed"
+    action "Bump Version const in cmd/root.go to next semver" | when "Compiler behaviour or CLI interface changed"
 
-feature DevelopmentStream
-  description "The development workflow — branching strategy, commit conventions, CI checks, and the release pipeline from feature branch to production."
-  version "1.8.0"
+    # ── Compiler spec changes ──────────────────────────────────
+    action "Bump product version in compiler.butter" | when "compiler.butter changed"
+    action "Sync compiler.butter actions with actual compiler stages" | when "compiler.butter or pkg/ changed"
+    action "Regenerate compiler.butter compiled output" | when "compiler.butter changed"
 
-  params
-    param MainBranch
-      type string
-      default "main"
-    param FeatureBranchPrefix
-      type string
-      default "feature/"
-    param FixBranchPrefix
-      type string
-      default "fix/"
-    param CommitStyle
-      type enum["conventional", "freeform"]
-      default "conventional"
-    param CITool
-      type string
-      default "GitHub Actions"
+    # ── Extension changes ──────────────────────────────────────
+    action "Bump version in butter-extension/package.json" | when "butter-extension/ changed"
+    action "Bump version in butter-extension/butter-extension.butter" | when "butter-extension/ changed"
+    action "Regenerate butter-extension.json from butter-extension.butter" | when "butter-extension.butter changed"
+    action "Add entry to butter-extension/CHANGELOG.md" | when "Extension behaviour or capabilities changed"
+    action "Rebuild butter-extension.vsix" | when "butter-extension/ changed and release is being prepared"
 
-  actions
-    action "Create feature branch from main" | when "New feature work begins"
-    action "Create fix branch from main" | when "Bug fix work begins"
-    action "Format commit messages as 'type(scope): description'" | unless "CommitStyle == freeform"
-    action "Use types: feat, fix, docs, refactor, test, chore" | unless "CommitStyle == freeform"
-    action "Run go build ./... && go vet ./..." | when "Code changes are staged"
-    action "Run butter compile --check on all .butter files" | when "Code changes are staged"
-    action "Run all Go tests" | when "Push is being prepared"
-    action "Verify changelog entries exist for new version" | when "Release commit is prepared"
-    action "Build and attach butter-extension.vsix to release" | when "Release tag is pushed"
-    action "Generate compiled JSON outputs from all .butter specs" | when "Release commit is pushed"
-    action "<file>.butter generated output files are put in .gitignore" | when "Release commit is prepared"
-      enforce "Extension outputFormat files are not committed"
+    # ── Grammar changes ────────────────────────────────────────
+    action "Add keyword regex to TextMate grammar in syntaxes/butter.tmLanguage.json" | when "New keyword was added to the lexer"
+    action "Add keyword regex to Prism grammar in docs/prism-butber.js" | when "New keyword was added to the lexer"
+    action "Verify keyword list matches between lexer token map, TextMate grammar, and Prism grammar" | when "Any grammar file or lexer token map changed"
+    action "Add new token scope to themes/butter-docs-color-theme.json" | when "New named capture scope is introduced in TextMate grammar"
+
+    # ── Documentation changes ──────────────────────────────────
+    action "Add keyword to keywords table in README.md, DOCUMENTATION.md, and docs/index.html" | when "New keyword was added"
+    action "Bump version badge in docs/index.html, docs/compiler-spec.html, docs/extension-dev.html sidebars" | when "Project version changed"
+    action "Update docs/compiler-spec.html Stage 4 section to match output extension system" | when "Output extension system or pkg/output/ changed"
+    action "Update docs/extension-dev.html walkthrough to match output API" | when "output.Extension interface or registration changed"
+    action "Add entry to docs/index.html changelog section" | when "New version is released"
+    action "Update CLI reference tables in README.md, DOCUMENTATION.md, and docs/index.html" | when "CLI flags or commands changed"
+    action "Update compiler architecture diagram in README.md and DOCUMENTATION.md" | when "Compiler pipeline stages changed"
+    action "Sync VS Code extension features list across README.md, DOCUMENTATION.md, butter-extension/README.md" | when "Extension capabilities changed"
+
+    # ── Markdown documentation changes ─────────────────────────
+    action "Bump version in code snippet const Version in DOCUMENTATION.md" | when "cmd/root.go Version const changed"
+    action "Update install instructions in README.md and DOCUMENTATION.md" | when "Build or install process changed"
+    action "Sync output extensions documentation between README.md and DOCUMENTATION.md" | when "Extension registry changed"
+    action "Verify cross-reference links between .md files and docs/ pages are valid" | unless "All documentation links were verified"
+
+    # ── Release finalization ───────────────────────────────────
+    action "Bump version in project.butter and docs/docs.butter" | when "Release is being cut"
+    action "Regenerate all compiled JSON outputs from all .butter source files" | when "Any .butter spec changed"
+    action "Stage all changed files" | when "Release is ready"
+    action "Verify git status shows only intended changes" | when "Release is ready"
+    action "Commit with conventional message format 'type(scope): description'" | when "Release is ready"
+    action "Push to main branch" | when "Release commit is ready"

@@ -1,11 +1,11 @@
 # Butter Documentation System
 product Docs
 description "The official documentation site and demo applications for the Butter compiler."
-version "1.6.0"
+version "1.8.0"
 
 feature DocumentationSite
   description "The primary documentation website — a single-page HTML reference with syntax-highlighted code examples."
-  version "1.6.0"
+  version "1.8.0"
 
   params
     param Theme
