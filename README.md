@@ -1,12 +1,13 @@
 ![Butter](butter.png)
 
-**Butter** is a high-performance, indentation-aware domain-specific language (DSL) compiler. It compiles clean, human-readable `.butter` specification files into structured, production-ready, pretty-printed JSON or YAML configurations.
+**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to JSON or YAML and feed it to an AI agent. The agent follows the spec and produces implementations that match **up to 100% of expected results** in a single shot. Less hallucination, less token waste, less back-and-forth.
 
 ---
 
 ## Table of Contents
 
 - [Design Philosophy](#design-philosophy)
+- [AI Workflow](#ai-workflow)
 - [Language Specification](#language-specification)
   - [Keywords](#keywords)
   - [Parameter Fields](#parameter-fields)
@@ -24,17 +25,21 @@
 
 ## Design Philosophy
 
-Modern application architectures often require declarative schemas to define features, validation rules, application parameters, or workflows. While JSON and YAML are industry standards for data exchange, they can become verbose, deeply nested, error-prone, and visually exhausting for human engineers to write and maintain from scratch.
+AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and configuration formats like JSON/YAML describe data, not intent.
 
-Butter solves this by providing an elegant, minimalistic language interface heavily inspired by Python's significant indentation. It strips away syntactic noise — trailing commas, brackets, curly braces, and redundant tags — letting you declare application specifications cleanly.
+Butter is a **specification language for AI intent**. It sits between you and the AI: you write a structured `.butter` spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, enforcement conditions, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.
 
-### Core Objectives
+### Core Principles
 
-- **Zero Dependencies for Core Compilation** — The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities. Output serialization (JSON/YAML) may leverage standard or third-party libraries for format flexibility.
-- **Multi-Format Output** — Compile `.butter` specifications to JSON (default) or YAML, giving you flexibility for different toolchains and workflows.
-- **Significant Indentation** — Structural scope is driven entirely by whitespace (spaces or tabs), optimizing readability.
-- **Rich Conditionals** — Built-in keywords natively capture diverse run-time semantic states (`if`, `unless`, `when`, `while`).
-- **Developer Ergonomics** — Paired with a distributable VS Code extension for rich syntax highlighting and structural auto-indentation.
+- **Intent over data** — JSON and YAML describe *what* data looks like. Butter describes *what to do*: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps that must run one after another, and conditions (`if`/`unless`/`when`/`while`) decide which actions run. The AI gets a complete execution model, not a data schema.
+
+- **Sequential actions, deterministic results** — Actions inside a feature are synchronous, ordered steps. Each step performs one discrete operation. No parallel execution, no reordering, no guessing. This eliminates the most common source of AI hallucination: ambiguous sequencing.
+
+- **Constrained output space** — Types (`string`, `int`, `float`, `bool`, `enum[...]`), required flags, defaults, validate rules, length constraints, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
+
+- **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: "Implement this spec." The agent produces code that matches up to 100% of expected results in a single pass. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
+
+- **Zero-dependency core** — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, no bloat, predictable compilation every time.
 
 ---
 
@@ -279,6 +284,43 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 Then add a blank import in `cmd/root.go` and rebuild. The extension appears automatically in `--format` help text and error messages.
 
 Full walkthrough: [Writing Extensions](extension-dev.html)
+
+## AI Workflow
+
+Butter's true value emerges when you feed the compiled output to an AI agent. Here's the workflow:
+
+1. **Write a `.butter` spec** — Declare your features, their parameters (with types, defaults, validation), and the sequential actions that implement each feature.
+
+2. **Compile it** — `butter compile spec.butter` produces `spec.json` (or YAML).
+
+3. **Feed the JSON to an AI agent** — Include the compiled JSON in your prompt with a simple instruction: *"Implement every feature in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all conditions, types, constraints, and enforce rules."*
+
+4. **Get up to 100% alignment in one shot** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and under what conditions. Hallucination drops, token waste drops, and you get working code on the first try.
+
+### Example
+
+```text
+Using this JSON specification, build the complete application. Each feature's
+actions are sequential execution steps — they must be implemented strictly one
+after the other in the listed order, never in parallel or reordered.
+
+\`\`\`json
+{
+  "app": "TodoApp",
+  "features": [
+    {
+      "name": "CreateTask",
+      "actions": [
+        { "statement": "Validate title is not empty" },
+        { "statement": "Assign unique identifier to the new task" }
+      ]
+    }
+  ]
+}
+\`\`\`
+```
+
+The spec defines *what* to build. The AI figures out *how*. That's the division of labour.
 
 ## Compiler Architecture
 

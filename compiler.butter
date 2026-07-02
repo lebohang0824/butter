@@ -1,11 +1,11 @@
 # Butter Project Documentation
 product ButterCompiler
-description "A high-performance, indentation-aware DSL compiler that converts clean .butter specifications into structured JSON or YAML."
-version "1.8.0"
+description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to JSON/YAML, and feed the output to AI agents who produce implementations matching up to 100% of expected results in a single shot."
+version "1.9.0"
 
 feature CompilationPipeline
-	description "The strictly sequential end-to-end execution flow of the Butter compiler."
-	version "1.8.0"
+	description "The strictly sequential end-to-end execution flow of the Butter compiler — from lexing and parsing to semantic validation and output generation."
+	version "1.9.0"
 
 	params
 		param InputFile

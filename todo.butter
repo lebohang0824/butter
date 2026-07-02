@@ -1,10 +1,13 @@
 # TodoApp — A complete task management application
-product TodoApp
-description "A full-featured todo application with task management capabilities"
+# AI agents: implement every feature below. Each feature's actions are sequential
+# execution steps — run them one after another in the listed order. Respect all
+# conditions (if/unless/when/while), types, constraints, and enforce rules.
+app TodoApp
+description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching up to 100% of expected behaviour in a single shot."
 version "1.0.0"
 
 feature CreateTask
-  description "Allows creation of new tasks with title, priority, and due date"
+  description "Allows creation of new tasks with title, priority, and due date. AI agents: this feature's actions are sequential — validate, then assign ID, then timestamp, then notify/schedule based on conditions."
   version "1.0.0"
 
   params
@@ -22,9 +25,6 @@ feature CreateTask
       default "medium"
     param DueDate
       type string
-    param RSAIdentityNumber
-      type int
-      length 13
 
   actions
     action "Validate title is not empty"
@@ -35,7 +35,7 @@ feature CreateTask
     action "Schedule reminder for due date" | when "DueDate is not empty"
 
 feature ListTasks
-  description "Retrieves and filters tasks based on various criteria; each task provides an Edit button that opens a modal for update and delete operations"
+  description "Retrieves and filters tasks based on various criteria; each task provides an Edit button that opens a modal for update and delete operations. AI agents: query first, then sort, then validate limits, then limit, then paginate — sequential, never parallel."
   version "1.0.0"
 
   params
@@ -58,7 +58,7 @@ feature ListTasks
     action "Apply pagination metadata to response"
 
 feature UpdateTask
-  description "Modifies existing task attributes via a modal form opened from the task list"
+  description "Modifies existing task attributes via a modal form opened from the task list. AI agents: look up, pre-fill form, merge changes, timestamp, reject-archived check — each step is one discrete operation."
   version "1.0.0"
   # When rendering the update form, pre-fill each field with the task's current
   # values so the user can see what they are changing before modifying them.
@@ -82,7 +82,7 @@ feature UpdateTask
     action "Reject update if task is archived" | unless "Status != archived"
 
 feature DeleteTask
-  description "Removes a task from the system permanently via a confirmation modal"
+  description "Removes a task from the system permanently via a confirmation modal. AI agents: verify existence, verify confirmation matches title, remove, broadcast — strictly sequential."
   version "1.0.0"
 
   params

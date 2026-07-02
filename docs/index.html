@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Butter — Indentation-Aware DSL Compiler</title>
-<meta name="description" content="Butter is a high-performance, indentation-aware DSL compiler that converts clean .butter specification files into structured JSON configurations.">
+<title>Butter — Specification Language for AI Agents</title>
+<meta name="description" content="Butter is a specification language that communicates intent to AI agents. Write .butter specs, compile to JSON, and feed to AI agents who produce implementations matching up to 100% of expected results in a single shot.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,13 +18,14 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.8.0</div>
+    <div class="version">v1.9.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
     <a href="#philosophy">Design Philosophy</a>
     <a href="#installation">Installation</a>
     <a href="#getting-started">Getting Started</a>
+    <a href="#ai-workflow">AI Workflow</a>
     <a href="#language-guide">Language Guide</a>
     <a href="#cli-reference">CLI Reference</a>
     <a href="#architecture">Compiler Architecture</a>
@@ -32,8 +33,8 @@
     <a href="#errors">Error Reference</a>
     <a href="#examples">Examples</a>
     <a href="#changelog">Changelog</a>
-    <a href="compiler-spec.html" class="external">compiler.butter Spec</a>
-    <a href="extension-dev.html" class="external">Writing Extensions</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
   </nav>
 </aside>
 
@@ -43,10 +44,9 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>Butter</h1>
-    <p class="subtitle">A high-performance, indentation-aware DSL compiler that converts clean <code>.butter</code> specifications into structured, production-ready JSON.</p>
+    <p class="subtitle">A specification language that communicates intent to AI agents. Write <code>.butter</code> specs, compile to JSON, and feed to AI agents who produce implementations matching <strong>up to 100% of expected results</strong> in a single shot.</p>
   </div>
-  <p>Modern application architectures often require declarative schemas to define features, validation rules, application parameters, or workflows. While JSON and YAML are industry standards, they can become verbose, deeply nested, and visually exhausting to write and maintain from scratch.</p>
-  <p>Butter solves this with an elegant, minimalistic language inspired by Python's significant indentation — stripping away trailing commas, brackets, curly braces, and redundant tags.</p>
+  <p>AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and JSON/YAML describe data, not intent. Butter is a <strong>specification language for AI intent</strong>: you write a <code>.butter</code> spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.</p>
   <pre><code class="language-butter"># Quick taste of Butter
 app OrderProcessor
 description "Handles high-throughput retail checkout workflows"
@@ -70,16 +70,30 @@ feature ProcessPayment
 <section id="philosophy">
   <h2>Design Philosophy</h2>
 
-  <h3>Core Objectives</h3>
+  <h3>Core Principles</h3>
   <ul>
-    <li><strong>Zero Dependencies for Compilation</strong> — The lexer, parser, and semantic validation engines are entirely hand-written in native Go, ensuring extreme speed, predictable compilation, and zero supply-chain vulnerabilities.</li>
-    <li><strong>Significant Indentation</strong> — Structural scope is driven entirely by whitespace (spaces or tabs), optimizing readability and eliminating delimiter noise.</li>
-    <li><strong>Rich Conditionals</strong> — Four native keywords (<code>if</code>, <code>unless</code>, <code>when</code>, <code>while</code>) naturally capture diverse semantic states.</li>
-    <li><strong>Developer Ergonomics</strong> — Paired with a VS Code extension for syntax highlighting, auto-indentation, and on-save linting.</li>
+    <li><strong>Intent over data</strong> — JSON/YAML describe <em>what data looks like</em>. Butter describes <em>what to do</em>: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps, and conditions decide which actions run. The AI gets a complete execution model, not a data schema.</li>
+    <li><strong>Sequential actions, deterministic results</strong> — Actions inside a feature are synchronous, ordered steps — one after another, never in parallel. This eliminates the most common source of AI hallucination: ambiguous sequencing.</li>
+    <li><strong>Constrained output space</strong> — Types, required flags, defaults, validation rules, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip required steps. Fewer degrees of freedom means fewer surprises.</li>
+    <li><strong>One-shot prompting</strong> — Feed the compiled spec to an AI agent with a simple instruction: <em>"Implement this spec."</em> The agent produces code matching <strong>up to 100% of expected results</strong> in a single pass. No iterative back-and-forth, no wasted tokens.</li>
+    <li><strong>Zero-dependency core</strong> — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, predictable compilation every time.</li>
   </ul>
 
   <h3>Why not just use JSON / YAML?</h3>
-  <p>JSON's syntactic overhead (braces, commas, quotes) makes manual authoring tedious. YAML's implicit typing and complex rules (anchors, aliases, multi-document support) can produce surprising results. Butter sits in the middle: explicit enough to be unambiguous, minimal enough to be pleasant to write.</p>
+  <p>JSON's syntactic overhead makes manual authoring tedious. YAML's implicit typing can produce surprising results. More importantly, neither format captures <em>intent</em> — they describe structure, not behaviour. Butter sits in the middle: explicit enough to be unambiguous, minimal enough to be pleasant to write, and structured enough to guide an AI agent toward a deterministic outcome.</p>
+
+</section>
+
+<section id="ai-workflow">
+  <h2>AI Workflow</h2>
+  <p>Butter's true value emerges when you feed the compiled output to an AI agent. Here's the workflow:</p>
+  <ol>
+    <li><strong>Write</strong> a <code>.butter</code> spec declaring features, parameters, constraints, and sequential actions.</li>
+    <li><strong>Compile</strong> with <code>butter compile spec.butter</code> to produce <code>spec.json</code>.</li>
+    <li><strong>Feed</strong> the JSON to an AI agent with the instruction: <em>"Implement every feature in this specification. Actions are sequential — run them one after another. Respect all conditions, types, and constraints."</em></li>
+    <li><strong>Get up to 100% alignment</strong> in one shot — less hallucination, less token waste, less back-and-forth.</li>
+  </ol>
+  <p>The spec defines <em>what</em> to build. The AI figures out <em>how</em>. That's the division of labour.</p>
 </section>
 
 <section id="installation">
@@ -226,7 +240,9 @@ feature FeatureA
 
   actions
     action "Do something"
-    action "Do something else" | if "condition"</code></pre>
+    action "Do something else" | if "condition"
+      enforce "Precondition must be verified before proceeding"
+      enforce "Fallback mechanism must be available on failure"</code></pre>
 
   <h3>Block Nesting &amp; Indentation</h3>
   <p>Blocks are defined by indentation. The first level after <code>app</code> has no indent. Each nested block (<code>feature</code>, <code>params</code>, <code>param</code>, <code>actions</code>) increases the indent level. Use 2 or 4 spaces (or tabs — tabs are normalized to 4 spaces).</p>
@@ -541,16 +557,19 @@ line 5: expected an application name after 'app'</code></pre>
   "features": []
 }</code></pre>
 
-  <h3>Todo App (using <code>product</code>)</h3>
-  <p>A complete todo application example using <code>product</code> instead of <code>app</code>:</p>
+  <h3>Todo App</h3>
+  <p>A complete todo application example:</p>
 
   <pre><code class="language-butter"># TodoApp — A complete task management application
-product TodoApp
-description "A full-featured todo application with task management capabilities"
+# AI agents: implement every feature below. Each feature's actions are sequential
+# execution steps — run them one after another in the listed order. Respect all
+# conditions (if/unless/when/while), types, constraints, and enforce rules.
+app TodoApp
+description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching up to 100% of expected behaviour in a single shot."
 version "1.0.0"
 
 feature CreateTask
-  description "Allows creation of new tasks with title, priority, and due date"
+  description "Allows creation of new tasks with title, priority, and due date. AI agents: this feature's actions are sequential — validate, then assign ID, then timestamp, then notify/schedule based on conditions."
   version "1.0.0"
 
   params
@@ -560,6 +579,9 @@ feature CreateTask
     param Description
       type string
       default ""
+    param Completed
+      type bool
+      default false
     param Priority
       type enum["low", "medium", "high", "urgent"]
       default "medium"
@@ -570,11 +592,12 @@ feature CreateTask
     action "Validate title is not empty"
     action "Assign unique identifier to the new task"
     action "Set creation timestamp to current time"
+    action "Set completed status to false"
     action "Send notification to assigned user" | if "Priority == urgent"
     action "Schedule reminder for due date" | when "DueDate is not empty"
 
 feature ListTasks
-  description "Retrieves and filters tasks based on various criteria"
+  description "Retrieves and filters tasks based on various criteria; each task provides an Edit button that opens a modal for update and delete operations. AI agents: query first, then sort, then validate limits, then limit, then paginate — sequential, never parallel."
   version "1.0.0"
 
   params
@@ -597,8 +620,10 @@ feature ListTasks
     action "Apply pagination metadata to response"
 
 feature UpdateTask
-  description "Modifies existing task attributes"
+  description "Modifies existing task attributes via a modal form opened from the task list. AI agents: look up, pre-fill form, merge changes, timestamp, reject-archived check — each step is one discrete operation."
   version "1.0.0"
+  # When rendering the update form, pre-fill each field with the task's current
+  # values so the user can see what they are changing before modifying them.
 
   params
     param TaskID
@@ -613,12 +638,13 @@ feature UpdateTask
 
   actions
     action "Look up task by TaskID"
+    action "Populate form fields with current task values for reference"
     action "Merge provided fields into existing task record"
     action "Set last-modified timestamp to current time"
     action "Reject update if task is archived" | unless "Status != archived"
 
 feature DeleteTask
-  description "Removes a task from the system permanently"
+  description "Removes a task from the system permanently via a confirmation modal. AI agents: verify existence, verify confirmation matches title, remove, broadcast — strictly sequential."
   version "1.0.0"
 
   params
@@ -639,7 +665,7 @@ feature DeleteTask
   <p>See the working app: <a href="todo.html"><code>todo.html</code></a> — a complete single-page application built from this spec, with each feature's actions running as sequential steps. Update and Delete are accessed via a modal form by clicking <strong>Edit</strong> on any task in the list.</p>
 
   <h3>Using the JSON output with AI</h3>
-  <p>Feed the compiled JSON to an AI model to generate application code. The actions within each feature are sequential execution steps — they must run in order, one after another, not in parallel.</p>
+  <p>This is the heart of Butter's philosophy. Feed the compiled JSON to an AI agent with the instruction to implement every feature. The actions within each feature are sequential execution steps — they must run in order, one after another, not in parallel. The conditions (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>) decide which actions are relevant, so the AI never wastes tokens on irrelevant paths.</p>
 
   <pre><code class="language-text">Using this JSON specification, build the complete application. Each feature's
 actions are sequential execution steps — they must be implemented strictly one
@@ -673,6 +699,13 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.9.0 — 2026-07-02</h3>
+  <ul>
+    <li><strong>IntelliSense code completion</strong> — Context-aware autocomplete for Butter keywords, types, parameter fields, and conditionals. Completion analyses indentation and parent block context to suggest only valid keywords for the current position. Snippets for <code>app</code>, <code>product</code>, <code>feature</code>, <code>param</code>, <code>action</code>, <code>enum[...]</code>.</li>
+    <li><strong>Hover documentation</strong> — Hover over any Butter keyword, type, or conditional to see a markdown description with syntax examples.</li>
+    <li><strong>Refined philosophy</strong> — All documentation now consistently communicates Butter's purpose: a specification language that communicates intent to AI agents for up to 100% one-shot results. The <code>todo.butter</code> example uses <code>app</code> instead of <code>product</code> and is fully aligned with the working <code>todo.html</code> demo.</li>
+  </ul>
 
   <h3>v1.8.0 — 2026-07-01</h3>
   <ul>

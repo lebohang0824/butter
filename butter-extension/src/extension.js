@@ -3,6 +3,7 @@ const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { ButterCompletionProvider, ButterHoverProvider } = require('./completion');
 
 function activate(context) {
   const diagnostics = vscode.languages.createDiagnosticCollection('butter');
@@ -119,7 +120,9 @@ function activate(context) {
       if (editor) {
         vscode.commands.executeCommand('editor.action.formatDocument');
       }
-    })
+    }),
+    vscode.languages.registerCompletionItemProvider('butter', new ButterCompletionProvider(), '|', ' ', '['),
+    vscode.languages.registerHoverProvider('butter', new ButterHoverProvider())
   );
 
   vscode.workspace.textDocuments.forEach(lint);

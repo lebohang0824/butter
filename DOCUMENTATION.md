@@ -1,23 +1,31 @@
 # Butter Development & Architecture Documentation
 
-This document serves as the comprehensive development, architecture, and implementation blueprint for **Butter**, an indentation-aware domain-specific language (DSL) compiler. 
+This document serves as the comprehensive development, architecture, and implementation blueprint for **Butter** — a specification language designed to communicate intent to AI agents.
 
-`butter` is a high-performance command-line interface (CLI) tool written in **Go** using the **Cobra** framework. It compiles clean, human-readable specification files (`.butter`) into structured, production-ready, pretty-printed JSON or YAML configurations.
+`butter` is a command-line interface (CLI) tool written in **Go** using the **Cobra** framework. It compiles clean, human-readable specification files (`.butter`) into structured JSON or YAML that AI agents consume to produce implementations matching **up to 100% of expected results** in a single shot.
 
 ---
 
 ## 1. Executive Summary & Design Philosophy
 
-Modern application architectures often require declarative schemas to define features, validation rules, application parameters, or workflows. While JSON and YAML are industry standards for data exchange, they can become verbose, deeply nested, error-prone, and visually exhausting for human engineers to write and maintain from scratch.
+AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and configuration formats like JSON/YAML describe data, not intent.
 
-**Butter** solves this by providing an elegant, minimalistic language interface heavily inspired by Python’s significant indentation. It strips away syntactic noise—such as trailing commas, brackets, curly braces, and redundant tags—allowing system architects and developers to declare application specifications cleanly.
+**Butter** is a specification language for AI intent. It sits between you and the AI: you write a structured `.butter` spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, enforcement conditions, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.
 
-### Core Objectives
-* **Zero Dependencies for Core Compilation:** The lexing, parsing, and semantic validation engines are entirely hand-written in native Go, ensuring extreme runtime speed, predictable compilation pathways, and zero supply-chain vulnerabilities. Output serialization (JSON/YAML) may leverage standard or third-party libraries for format flexibility.
-* **Multi-Format Output:** Compile `.butter` specifications to JSON (default) or YAML, giving you flexibility for different toolchains and workflows.
-* **Significant Indentation:** Structural scope is driven entirely by whitespaces (spaces or tabs), optimizing readability.
-* **Rich Conditionals:** Built-in keywords natively capture diverse run-time semantic states (`if`, `unless`, `when`, `while`).
-* **Developer Ergonomics:** Paired with an easily distributable VS Code extension framework for rich syntax highlighting and structural auto-indentation.
+### Core Principles
+* **Intent over data** — JSON and YAML describe *what* data looks like. Butter describes *what to do*: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps that must run one after another, and conditions (`if`/`unless`/`when`/`while`) decide which actions run. The AI gets a complete execution model, not a data schema.
+* **Sequential actions, deterministic results** — Actions inside a feature are synchronous, ordered steps. Each step performs one discrete operation. No parallel execution, no reordering, no guessing. This eliminates the most common source of AI hallucination: ambiguous sequencing.
+* **Constrained output space** — Types (`string`, `int`, `float`, `bool`, `enum[...]`), required flags, defaults, validate rules, length constraints, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
+* **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: *"Implement this spec."* The agent produces code that matches up to 100% of expected results in a single pass. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
+* **Zero-dependency core** — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. Output serialization (JSON/YAML) may leverage standard libraries for format flexibility. No supply-chain risk, no bloat, predictable compilation every time.
+
+### AI Workflow
+Butter's true value emerges when the compiled output is fed to an AI agent:
+
+1. **Write** a `.butter` spec declaring features, parameters, constraints, and sequential actions.
+2. **Compile** with `butter compile spec.butter` to produce structured JSON (or YAML).
+3. **Feed** the JSON to an AI agent with the instruction: *"Implement every feature in this specification. Actions are sequential — run them one after another. Respect all conditions, types, and constraints."*
+4. **Get up to 100% alignment** in one shot — the AI's implementation matches the spec's intent because the spec removes ambiguity, constrains the output space, and defines deterministic execution order.
 
 ---
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Butter — Writing Output Extensions</title>
-<meta name="description" content="Developer guide for writing custom output extensions for the Butter compiler. Add support for TOML, XML, Protobuf, or any format.">
+<meta name="description" content="Developer guide for writing custom output extensions for the Butter specification language compiler. Add support for TOML, XML, Protobuf, or any format.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.8.0</div>
+    <div class="version">v1.9.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -41,7 +41,7 @@
     <p class="subtitle">Add support for any output format by implementing one Go interface. No changes to the compiler core required.</p>
   </div>
 
-  <p>Butter's output layer is fully pluggable. The built-in JSON and YAML serializers are just two implementations of a simple <code>Extension</code> interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, HTML, or any custom format — and plug it into the compiler with a single import.</p>
+  <p>Butter's output layer is fully pluggable. The built-in JSON and YAML serializers are just two implementations of a simple <code>Extension</code> interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, HTML, or any custom format — and plug it into the compiler with a single import. The JSON output is what you feed to AI agents; adding more output formats means more ways to communicate intent.</p>
 
   <p>This guide walks through the entire process, from the interface contract to publishing your extension.</p>
 </section>

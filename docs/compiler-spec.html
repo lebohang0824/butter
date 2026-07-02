@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>compiler.butter — Butter Spec Reference</title>
-<meta name="description" content="Complete breakdown of the compiler.butter file — every parameter and action explained to help you write your own Butter scripts.">
+<meta name="description" content="Complete breakdown of the compiler.butter file — the Butter compiler described in its own language. Learn how every parameter and action maps to a real compiler stage.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.8.0</div>
+    <div class="version">v1.9.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -40,12 +40,12 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>compiler.butter</h1>
-    <p class="subtitle">The Butter compiler is itself described in Butter. This page breaks down every line — showing you how the language works from the inside out.</p>
+    <p class="subtitle">Butter is a specification language for AI intent — and the compiler itself is described in its own language. This page breaks down every line, showing you how to write specs that guide AI agents toward deterministic, one-shot results.</p>
   </div>
 
-  <p>The <code>compiler.butter</code> file at the project root is a self-describing specification. It declares the Butter compiler using the same DSL it compiles. This means every <code>param</code>, <code>action</code>, and <code>condition</code> in that file maps directly to a real stage in the compiler pipeline.</p>
+  <p>The <code>compiler.butter</code> file at the project root is a self-describing specification. It declares the Butter compiler using the same DSL it compiles — every <code>param</code>, <code>action</code>, and <code>condition</code> maps directly to a real stage in the compiler pipeline. This is Butter's philosophy in action: a structured spec that an AI agent could follow to rebuild the compiler from scratch.</p>
 
-  <p>By studying this file you learn how to write your own <code>.butter</code> specifications: the same <code>product</code>/<code>app</code> header, <code>feature</code> blocks, <code>params</code> with typed fields, and <code>actions</code> with <code>if</code>/<code>when</code> conditions apply to any project you describe.</p>
+  <p>By studying this file you learn how to write your own <code>.butter</code> specifications for AI agents: the same <code>product</code>/<code>app</code> header, <code>feature</code> blocks, <code>params</code> with typed fields and constraints, and <code>actions</code> with <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> conditions apply to any project you describe. When compiled to JSON and fed to an AI agent, the agent produces implementations that match <strong>up to 100% of expected results</strong> in a single shot.</p>
 </section>
 
 <section id="raw-file">
@@ -57,12 +57,12 @@ product ButterCompiler
 description "A high-performance, indentation-aware DSL compiler
   that converts clean .butter specifications into structured
   JSON or YAML."
-version "1.8.0"
+version "1.9.0"
 
 feature CompilationPipeline
   description "The strictly sequential end-to-end execution
     flow of the Butter compiler."
-  version "1.8.0"
+  version "1.9.0"
 
   params
     param InputFile
@@ -324,13 +324,13 @@ feature CompilationPipeline
   "description": "A high-performance, indentation-aware DSL compiler
     that converts clean .butter specifications into structured
     JSON or YAML.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "features": [
     {
       "name": "CompilationPipeline",
       "description": "The strictly sequential end-to-end execution
         flow of the Butter compiler.",
-      "version": "1.8.0",
+      "version": "1.9.0",
       "params": [
         {
           "name": "InputFile",

@@ -1,11 +1,11 @@
 # Butter Documentation System
 product Docs
-description "The official documentation site and demo applications for the Butter compiler."
-version "1.8.0"
+description "The official documentation site and demo applications for the Butter specification language — a language designed to communicate intent to AI agents by compiling structured specs that produce up to 100% expected results in a single shot."
+version "1.9.0"
 
 feature DocumentationSite
   description "The primary documentation website — a single-page HTML reference with syntax-highlighted code examples."
-  version "1.8.0"
+  version "1.9.0"
 
   params
     param Theme
@@ -17,7 +17,7 @@ feature DocumentationSite
 
   actions
     action "Render hero section with Butter tagline and quick-start code snippet"
-    action "Display Design Philosophy section explaining indentation-driven DSL approach"
+    action "Display Design Philosophy section explaining Butter's AI intent workflow: write spec, compile to JSON, feed to AI agent, get up to 100% alignment in one shot"
     action "Show installation instructions for Linux, macOS, and Windows via install scripts"
     action "Render Getting Started guide with a hello world example and compile workflow"
     action "Render Language Guide with tables for keywords, parameter fields, types, and conditionals"
@@ -49,7 +49,7 @@ feature SyntaxHighlighter
     action "Tokenize pipe operators for action conditions"
 
 feature TodoDemoApp
-  description "A working single-page todo application generated from the todo.butter specification."
+  description "A working single-page todo application. An AI agent generated this entire app from the todo.butter spec in a single shot — demonstrating Butter's philosophy: write spec, compile to JSON, feed to AI, get up to 100% alignment."
   version "1.0.0"
 
   params

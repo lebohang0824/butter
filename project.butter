@@ -1,16 +1,16 @@
 # Butter Project — Release Workflow for AI Agents
 product ButterProject
-description "Release workflow for the Butter project. AI agents follow this spec to decide what actions to take based on which files changed."
-version "1.8.0"
+description "Release workflow for the Butter project. AI agents follow this spec to decide what actions to take based on which files changed. This is Butter eating its own dog food — the project's own release process is defined as a .butter spec that AI agents execute step by step."
+version "1.9.0"
 
 feature ReleaseWorkflow
-  description "Actions an AI agent must follow to release changes to production. Agent inspects git diff to determine which files changed, then executes the matching actions."
-  version "1.8.0"
+  description "Actions an AI agent must follow to release changes to production. Agent inspects git diff to determine which files changed, then executes only the matching actions — skipping irrelevant ones. This shows how Butter's conditions (up to 100% / when / unless) eliminate wasted agent steps."
+  version "1.9.0"
 
   params
     param CurrentVersion
       type string
-      default "1.8.0"
+      default "1.9.0"
     param MainBranch
       type string
       default "main"

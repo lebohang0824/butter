@@ -2,13 +2,16 @@
 
 ![Butter Logo](https://raw.githubusercontent.com/lebohang0824/butter/main/butter-extension/butter.png)
 
-A VS Code extension providing syntax highlighting, indentation support, and language configuration for the **Butter** DSL — an indentation-aware specification language that compiles to JSON.
+A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to JSON, and feed to AI agents who produce implementations matching up to 100% of expected results in a single shot.
 
 ## Features
 
+- **IntelliSense** — Context-aware code completion and hover documentation for all Butter keywords, types, parameter fields, and conditionals. Suggests the right keyword based on indentation and parent block context (e.g., `type`/`required` inside a `param`, `action` inside `actions`, conditionals after `|`).
 - **Syntax Highlighting** — Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
+- **On-Save Formatting** — Automatically applies `butter fmt` on every save, no configuration needed
 - **On-Save Linting** — Validates `.butter` syntax on save using the bundled compiler and surfaces errors with red squiggly underlines
 - **Manual Lint Command** — `Butter: Lint current file` in the command palette
+- **Manual Format Command** — `Butter: Format current file` in the command palette
 - **Auto-Indentation** — Smart indent/dedent for `feature`, `params`, `actions`, and `param` blocks
 - **Configurable Compiler Path** — Set the path to the `butter` binary via `butter.compilerPath`
 - **Comment Support** — `#` line comments with toggle support
