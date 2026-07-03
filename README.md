@@ -262,7 +262,7 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax and
 
 ### Output Extensions
 
-Butter's output layer is fully pluggable. The built-in JSON and YAML serialisers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
+Butter's output layer is fully pluggable. The built-in JSON, YAML, and HTML tree serialisers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
 
 To write an extension, implement the `output.Extension` interface and call `output.Register()`:
 
@@ -283,7 +283,9 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 
 Then add a blank import in `cmd/root.go` and rebuild. The extension appears automatically in `--format` help text and error messages.
 
-Full walkthrough: [Writing Extensions](extension-dev.html)
+Built-in extensions reference: [Output Extensions](docs/extensions.html)
+
+Full walkthrough: [Writing Extensions](docs/extension-dev.html)
 
 ## AI Workflow
 

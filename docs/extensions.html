@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Butter — Output Extensions Reference</title>
+<meta name="description" content="Comprehensive documentation for every built-in output extension in the Butter specification language compiler: JSON, YAML, and the interactive HTML tree visualizer.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.10.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#json">JSON Extension</a>
+    <a href="#yaml">YAML Extension</a>
+    <a href="#htmltree">HTML Tree Extension</a>
+    <a href="#comparison">Comparison</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Output Extensions Reference</h1>
+    <p class="subtitle">Every built-in output format documented in detail — purpose, implementation, output examples, and when to use each one.</p>
+  </div>
+
+  <p>Butter's output layer is built around a pluggable <a href="extension-dev.html"><code>Extension</code> interface</a>. Each format is a standalone Go package that registers itself with the compiler at startup. The <code>--format</code> (or <code>-f</code>) flag selects which extension to use at compile time.</p>
+
+  <p>Three built-in extensions ship with the compiler:</p>
+
+  <table>
+    <tr><th>Name</th><th>File Extension</th><th>Primary Use Case</th></tr>
+    <tr><td><code>json</code></td><td><code>.json</code></td><td>Structured data for AI agents, CI pipelines, and programmatic consumption</td></tr>
+    <tr><td><code>yaml</code></td><td><code>.yaml</code></td><td>Human-readable configuration and documentation</td></tr>
+    <tr><td><code>htmltree</code></td><td><code>.html</code></td><td>Interactive visual debugging and spec exploration in the browser</td></tr>
+  </table>
+
+  <p>All extensions are imported via blank imports in <code>cmd/root.go</code> and auto-discovered at runtime. The compiler lists them automatically in <code>--help</code> output and error messages.</p>
+</section>
+
+<section id="json">
+  <h2>JSON Extension</h2>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Package</td><td><code>pkg/output/json/json.go</code></td></tr>
+    <tr><td>Extension name</td><td><code>json</code></td></tr>
+    <tr><td>File extension</td><td><code>.json</code></td></tr>
+    <tr><td>Library</td><td><code>encoding/json</code> (Go standard library)</td></tr>
+    <tr><td>Default format?</td><td>Yes — <code>butter compile</code> uses JSON when no <code>-f</code> flag is given</td></tr>
+  </table>
+
+  <h3>Purpose</h3>
+  <p>JSON is the primary output format for Butter. It produces a clean, pretty-printed JSON representation of the complete AST — every <code>app</code>, <code>feature</code>, <code>param</code>, <code>action</code>, condition, and enforce statement maps directly to a JSON object. This is the format designed to be consumed by AI agents: the structured tree tells the agent exactly what to build, in what order, and under what conditions.</p>
+
+  <p>JSON is also the default output format. Running <code>butter compile spec.butter</code> without any flags produces <code>spec.json</code>.</p>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-go">package json
+
+import (
+    "encoding/json"
+    "butter/pkg/ast"
+    "butter/pkg/output"
+)
+
+func init() {
+    output.Register(jsonExt{})
+}
+
+type jsonExt struct{}
+
+func (jsonExt) Name() string          { return "json" }
+func (jsonExt) FileExtension() string { return ".json" }
+
+func (jsonExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    return json.MarshalIndent(spec, "", "  ")
+}</code></pre>
+
+  <p>The implementation is 21 lines. <code>json.MarshalIndent</code> serialises the entire AST with two-space indentation. The <code>omitempty</code> struct tags on <code>Description</code>, <code>Version</code>, <code>Params</code>, and <code>Actions</code> ensure that optional fields are omitted from the output when they are empty, keeping the JSON lean.</p>
+
+  <h3>Example Output</h3>
+  <pre><code class="language-json">{
+  "app": "TodoApp",
+  "description": "A full-featured todo application...",
+  "version": "1.0.0",
+  "features": [
+    {
+      "name": "CreateTask",
+      "description": "Allows creation of new tasks...",
+      "version": "1.0.0",
+      "params": [
+        { "name": "Title", "type": "string", "required": true },
+        { "name": "Priority", "type": "enum[\"low\",\"medium\",\"high\",\"urgent\"]", "default": "medium" }
+      ],
+      "actions": [
+        { "statement": "Validate title is not empty" },
+        { "statement": "Assign unique identifier to the new task" },
+        { "statement": "Send notification to assigned user",
+          "condition": { "type": "if", "expression": "Priority == urgent" } }
+      ]
+    }
+  ]
+}</code></pre>
+
+  <h3>When to Use</h3>
+  <ul>
+    <li><strong>AI agent consumption</strong> — The structured format gives agents a complete, unambiguous specification tree.</li>
+    <li><strong>CI/CD pipelines</strong> — Lightweight parsing, broad language support, easy to diff.</li>
+    <li><strong>Programmatic introspection</strong> — <code>jq</code>, <code>python -m json.tool</code>, and every language's standard library can consume it.</li>
+    <li><strong>Default workflow</strong> — If you don't have a specific reason to choose another format, use JSON.</li>
+  </ul>
+</section>
+
+<section id="yaml">
+  <h2>YAML Extension</h2>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Package</td><td><code>pkg/output/yaml/yaml.go</code></td></tr>
+    <tr><td>Extension name</td><td><code>yaml</code></td></tr>
+    <tr><td>File extension</td><td><code>.yaml</code></td></tr>
+    <tr><td>Library</td><td><code>gopkg.in/yaml.v3</code> (third-party)</td></tr>
+  </table>
+
+  <h3>Purpose</h3>
+  <p>YAML produces a human-readable representation of the same AST that JSON serialises. It is ideal for documentation, configuration management, and any workflow where people need to read the compiled spec directly. YAML's indentation-based structure mirrors the .butter source's own indentation style, making it the most visually natural alternative format.</p>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-go">package yaml
+
+import (
+    "butter/pkg/ast"
+    "butter/pkg/output"
+    "gopkg.in/yaml.v3"
+)
+
+func init() {
+    output.Register(yamlExt{})
+}
+
+type yamlExt struct{}
+
+func (yamlExt) Name() string          { return "yaml" }
+func (yamlExt) FileExtension() string { return ".yaml" }
+
+func (yamlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    return yaml.Marshal(spec)
+}</code></pre>
+
+  <p>The YAML extension is structurally identical to JSON's: 21 lines, a struct, three methods, and an <code>init()</code> registration. It delegates to the <code>yaml.v3</code> marshaller, which uses the <code>yaml</code> struct tags on the AST types (<code>yaml:"params,omitempty"</code>, etc.). Internal fields such as line numbers are tagged with <code>yaml:"-"</code> so they never appear in the output.</p>
+
+  <h3>Example Output</h3>
+  <pre><code class="language-yaml">app: TodoApp
+description: A full-featured todo application...
+version: "1.0.0"
+features:
+  - name: CreateTask
+    description: Allows creation of new tasks...
+    version: "1.0.0"
+    params:
+      - name: Title
+        type: string
+        required: true
+      - name: Priority
+        type: enum["low","medium","high","urgent"]
+        default: medium
+    actions:
+      - statement: Validate title is not empty
+      - statement: Assign unique identifier to the new task
+      - statement: Send notification to assigned user
+        condition:
+          type: if
+          expression: Priority == urgent</code></pre>
+
+  <h3>When to Use</h3>
+  <ul>
+    <li><strong>Documentation</strong> — Include compiled YAML in README files or docs to show your project's spec in a human-friendly format.</li>
+    <li><strong>Configuration pipelines</strong> — When the compiled output feeds into a YAML-based tool chain (e.g., Helm charts, GitHub Actions, Docker Compose).</li>
+    <li><strong>Manual review</strong> — The indented format is easier to scan visually than JSON's brackets and quotes.</li>
+    <li><strong>Git diffs</strong> — YAML's line-oriented structure produces cleaner diffs than JSON for the same data.</li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> YAML's <code>yaml.v3</code> library is the only third-party dependency across all output extensions. JSON and htmltree use only Go standard library packages.</blockquote>
+</section>
+
+<section id="htmltree">
+  <h2>HTML Tree Extension</h2>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Package</td><td><code>pkg/output/htmltree/htmltree.go</code></td></tr>
+    <tr><td>Extension name</td><td><code>htmltree</code></td></tr>
+    <tr><td>File extension</td><td><code>.html</code></td></tr>
+    <tr><td>Library</td><td><code>html/template</code> (Go standard library) + inline HTML/CSS/JS</td></tr>
+    <tr><td>Status</td><td>Experimental</td></tr>
+  </table>
+
+  <h3>Purpose</h3>
+  <p>The HTML tree extension renders the spec as a standalone, interactive web page. It transforms the AST into a visual tree of cards connected by animated SVG bezier curves. Unlike JSON and YAML (which are data formats), htmltree is a visualisation tool — it helps developers explore, debug, and present their Butter specifications in the browser.</p>
+
+  <p>The entire output is a single self-contained HTML file with embedded CSS and JavaScript. No external dependencies, no network requests, no server required. Open it directly from disk in any modern browser.</p>
+
+  <h3>Source Code</h3>
+  <p>The implementation lives in <code>pkg/output/htmltree/htmltree.go</code> (373 lines). The Go code is minimal — it marshals the AST to JSON, then injects the JSON into an HTML template. The heavy lifting happens in the embedded JavaScript that runs in the browser:</p>
+
+  <pre><code class="language-go">package htmltree
+
+import (
+    "bytes"
+    "encoding/json"
+    "html/template"
+    "butter/pkg/ast"
+    "butter/pkg/output"
+)
+
+func init() {
+    output.Register(htmlTreeExt{})
+}
+
+type htmlTreeExt struct{}
+
+func (htmlTreeExt) Name() string          { return "htmltree" }
+func (htmlTreeExt) FileExtension() string { return ".html" }
+
+func (htmlTreeExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    specJSON, err := json.Marshal(spec)
+    if err != nil { return nil, err }
+    var buf bytes.Buffer
+    if err := tmpl.Execute(&buf, map[string]interface{}{
+        "Spec": template.JS(specJSON),
+        "App":  spec.App,
+    }); err != nil { return nil, err }
+    return buf.Bytes(), nil
+}
+
+var tmpl = template.Must(template.New("htmltree").Parse(page))
+
+const page = `...` // 330+ lines of embedded HTML, CSS, and JavaScript</code></pre>
+
+  <h3>Visual Features</h3>
+
+  <h4>Three-Column Layout</h4>
+  <p>The tree is organised into three visual columns from left to right: the root <strong>app</strong> node, the <strong>feature</strong> cards, and the <strong>params/actions</strong> detail panels. SVG bezier curves connect nodes across columns: the app node to each feature, and each feature to its params and actions sub-panels.</p>
+
+  <h4>Interactive Controls</h4>
+  <ul>
+    <li><strong>Collapse/Expand</strong> — Features start collapsed. Click the <code>+</code>/<code>&minus;</code> toggle next to <em>features</em> on the app card to expand or collapse all features. Individual params and actions panels toggle independently per feature.</li>
+    <li><strong>Zoom</strong> — Scroll the mouse wheel to zoom in and out. Zoom is centred on the cursor position.</li>
+    <li><strong>Pan</strong> — Click and drag the background to pan the view.</li>
+    <li><strong>Auto-fit</strong> — The view automatically centres and scales to fit all visible cards on initial load, after every toggle, and on window resize.</li>
+  </ul>
+
+  <h4>Card Details</h4>
+  <p>Each node card displays structured information about its corresponding AST node:</p>
+  <ul>
+    <li><strong>Title bar</strong> — Blue accent with the node name and a version badge.</li>
+    <li><strong>Description</strong> — Keyword on its own row, value on an indented second row (separate backgrounds for readability).</li>
+    <li><strong>Version</strong> — Inline key-value row.</li>
+    <li><strong>Params</strong> — Each param is two rows: param name (purple accent) and its type/default/constraint info (muted text).</li>
+    <li><strong>Actions</strong> — Numbered sequentially (<code>1.</code>, <code>2.</code>, ...). Conditions (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>) and enforce statements render as separate indented rows with a left border bracket linking them to their parent action. Distinct background colours differentiate condition rows from enforce rows.</li>
+  </ul>
+
+  <h4>Colour Scheme</h4>
+  <p>The visual theme matches the Butter VS Code extension's colour palette:</p>
+  <table>
+    <tr><th>Element</th><th>Colour</th><th>CSS</th></tr>
+    <tr><td>Keywords (param names, keys)</td><td>Amber / gold</td><td><code>#D4A24C</code></td></tr>
+    <tr><td>Title text / entities</td><td>Steel blue</td><td><code>#5A9ABA</code></td></tr>
+    <tr><td>String values</td><td>Soft green</td><td><code>#7ABA7A</code></td></tr>
+    <tr><td>Boolean / condition keywords</td><td>Violet</td><td><code>#8A7ADA</code></td></tr>
+    <tr><td>Param names (detail rows)</td><td>Muted purple</td><td><code>#AA7A9A</code></td></tr>
+    <tr><td>Action numbers / toggle icons</td><td>Muted slate</td><td><code>#64748B</code></td></tr>
+    <tr><td>Enforce keywords</td><td>Rose red</td><td><code>#e11d48</code></td></tr>
+  </table>
+
+  <h3>Example Output</h3>
+  <p>Run <code>butter compile todo.butter -f htmltree -o todo.html</code> and open <code>todo.html</code> in your browser. The generated page is fully self-contained — no server, no internet connection needed.</p>
+
+  <p>The root card shows the app name (<em>TodoApp</em>) with its description and version. Below it, a toggle row labelled <em>features: [4 items]</em> (collapsed by default) with a <code>+</code> icon. Click the toggle to expand: feature cards slide into column two, and bezier curves draw from the app card to each feature card. Each feature card has its own description, version, and two sub-toggles for <em>params</em> and <em>actions</em>. Clicking those reveals the detail panels in column three with param rows, numbered action statements, and indented condition/enforce rows.</p>
+
+  <h3>When to Use</h3>
+  <ul>
+    <li><strong>Spec exploration</strong> — When you want to visually inspect a spec, seeing the full tree structure at a glance.</li>
+    <li><strong>Debugging</strong> — Quickly verify that the compiler parsed your .butter file correctly by examining the visual tree.</li>
+    <li><strong>Presentations and demos</strong> — Open a spec in the browser during code reviews or team meetings.</li>
+    <li><strong>Teaching</strong> — The visual layout makes it easy to explain how Butter's app→feature→action hierarchy works.</li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> The htmltree extension is marked experimental. Its output format may change across compiler versions as visual features are added. Always regenerate HTML output with the current compiler version for accurate results.</blockquote>
+</section>
+
+<section id="comparison">
+  <h2>Extension Comparison</h2>
+
+  <table>
+    <tr><th>Criteria</th><th>JSON</th><th>YAML</th><th>HTML Tree</th></tr>
+    <tr><td>Primary audience</td><td>AI agents, programs</td><td>Humans, config pipelines</td><td>Developers (visual)</td></tr>
+    <tr><td>File extension</td><td><code>.json</code></td><td><code>.yaml</code></td><td><code>.html</code></td></tr>
+    <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td></tr>
+    <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td></tr>
+    <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td></tr>
+    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td></tr>
+    <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td></tr>
+    <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td></tr>
+    <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td></tr>
+  </table>
+
+  <p>For most workflows, JSON is the right choice — it is the default, has zero dependencies, and is designed for AI agent consumption. Use YAML when you need human readability alongside machine parseability. Use htmltree when you want to see your spec come to life as an interactive diagram.</p>
+
+  <p>To write your own extension, see the <a href="extension-dev.html">Writing Output Extensions</a> guide.</p>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>
