@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.9.0</div>
+    <div class="version">v1.10.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
@@ -699,6 +699,16 @@ after the other in the listed order, never in parallel or reordered.
 
 <section id="changelog">
   <h2>Changelog</h2>
+
+  <h3>v1.10.0 — 2026-07-03</h3>
+  <ul>
+    <li><strong>Interactive HTML tree visualizer</strong> — The <code>htmltree</code> output format now produces a zoomable, interactive SVG tree with bezier-curve connections between app, features, params, and actions. Long text wraps within fixed-width cards. Initial view collapses features; click to expand.</li>
+    <li><strong>Stacked detail rows</strong> — Description, param, condition, and enforce fields render as keyword row + value row with distinct backgrounds, improving readability.</li>
+    <li><strong>Visual grouping</strong> — Conditions and enforce statements are visually linked to their parent action via a left border bracket.</li>
+    <li><strong>Action numbering</strong> — Actions prefixed with sequential numbers (<code>1.</code>, <code>2.</code>, ...).</li>
+    <li><strong>Conditional and enforce rows</strong> — <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> and <code>enforce</code> statements now render on separate indented rows with distinct background colors.</li>
+    <li><strong>Defensive null guards</strong> — All <code>.forEach</code> iterations guarded with <code>||[]</code> to handle features without params or actions.</li>
+  </ul>
 
   <h3>v1.9.0 — 2026-07-02</h3>
   <ul>

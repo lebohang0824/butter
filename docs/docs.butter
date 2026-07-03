@@ -1,11 +1,11 @@
 # Butter Documentation System
 product Docs
 description "The official documentation site and demo applications for the Butter specification language — a language designed to communicate intent to AI agents by compiling structured specs that produce up to 100% expected results in a single shot."
-version "1.9.0"
+version "1.10.0"
 
 feature DocumentationSite
   description "The primary documentation website — a single-page HTML reference with syntax-highlighted code examples."
-  version "1.9.0"
+  version "1.10.0"
 
   params
     param Theme
