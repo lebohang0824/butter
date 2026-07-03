@@ -32,7 +32,7 @@
     <a href="#extension">VS Code Extension</a>
     <a href="#errors">Error Reference</a>
     <a href="#examples">Examples</a>
-    <a href="#changelog">Changelog</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
     <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
     <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
     <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
@@ -699,102 +699,7 @@ after the other in the listed order, never in parallel or reordered.
 ```</code></pre>
 </section>
 
-<section id="changelog">
-  <h2>Changelog</h2>
 
-  <h3>v1.10.0 — 2026-07-03</h3>
-  <ul>
-    <li><strong>Interactive HTML tree visualizer</strong> — The <code>htmltree</code> output format now produces a zoomable, interactive SVG tree with bezier-curve connections between app, features, params, and actions. Long text wraps within fixed-width cards. Initial view collapses features; click to expand.</li>
-    <li><strong>Stacked detail rows</strong> — Description, param, condition, and enforce fields render as keyword row + value row with distinct backgrounds, improving readability.</li>
-    <li><strong>Visual grouping</strong> — Conditions and enforce statements are visually linked to their parent action via a left border bracket.</li>
-    <li><strong>Action numbering</strong> — Actions prefixed with sequential numbers (<code>1.</code>, <code>2.</code>, ...).</li>
-    <li><strong>Conditional and enforce rows</strong> — <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> and <code>enforce</code> statements now render on separate indented rows with distinct background colors.</li>
-    <li><strong>Defensive null guards</strong> — All <code>.forEach</code> iterations guarded with <code>||[]</code> to handle features without params or actions.</li>
-  </ul>
-
-  <h3>v1.9.0 — 2026-07-02</h3>
-  <ul>
-    <li><strong>IntelliSense code completion</strong> — Context-aware autocomplete for Butter keywords, types, parameter fields, and conditionals. Completion analyses indentation and parent block context to suggest only valid keywords for the current position. Snippets for <code>app</code>, <code>product</code>, <code>feature</code>, <code>param</code>, <code>action</code>, <code>enum[...]</code>.</li>
-    <li><strong>Hover documentation</strong> — Hover over any Butter keyword, type, or conditional to see a markdown description with syntax examples.</li>
-    <li><strong>Refined philosophy</strong> — All documentation now consistently communicates Butter's purpose: a specification language that communicates intent to AI agents for up to 100% one-shot results. The <code>todo.butter</code> example uses <code>app</code> instead of <code>product</code> and is fully aligned with the working <code>todo.html</code> demo.</li>
-  </ul>
-
-  <h3>v1.8.0 — 2026-07-01</h3>
-  <ul>
-    <li><strong>Action <code>enforce</code> field</strong> — Actions now support zero or more <code>enforce</code> strings as indented children, specifying conditions that must hold for the action to succeed. Stored as <code>Enforce []string</code> in the AST.</li>
-    <li><strong>Updated syntax highlighting</strong> — <code>enforce</code> added to TextMate grammar (VS Code) and Prism (docs) keyword lists. Token color customizations match docs: amber keywords, green strings, blue functions, purple variables.</li>
-    <li><strong>Compiler spec alignment</strong> — <code>compiler.butter</code> and <code>docs/compiler-spec.html</code> synced to v1.8.0 with enforce examples.</li>
-    <li><strong>Updated extension</strong> — <code>butter-extension</code> v1.8.0 with <code>enforce</code> highlighting and color customizations.</li>
-  </ul>
-
-  <h3>v1.7.0 — 2026-06-30</h3>
-  <ul>
-    <li><strong>Pluggable output extensions</strong> — Output formats are now registered via a Go <code>Extension</code> interface. Writing a new format is a single-file, three-method implementation.</li>
-    <li><strong>Extension registry</strong> — <code>pkg/output.Extension</code> interface with <code>Register()</code>/<code>Get()</code>/<code>Names()</code>. Extensions auto-register via <code>init()</code>.</li>
-    <li><strong>JSON and YAML refactored as extensions</strong> — Moved from hardcoded functions in <code>parser.go</code> to standalone extension packages.</li>
-    <li><strong>Dynamic help text</strong> — <code>--format</code> flag description and error messages automatically list all registered extensions.</li>
-    <li><strong>Cleaner YAML output</strong> — Internal line numbers no longer leak into YAML output (<code>yaml:"-"</code> tags added).</li>
-    <li><strong>Developer documentation</strong> — New <a href="extension-dev.html">Writing Extensions</a> guide with a complete TOML extension walkthrough.</li>
-  </ul>
-
-  <h3>v1.6.0 — 2026-06-29</h3>
-  <ul>
-    <li><strong>Semantic analysis pass</strong> — Catches duplicate feature/param names, type-default mismatches, enum defaults, and redundant required+default combos.</li>
-    <li><strong>Enhanced <code>--check</code></strong> — <code>butter compile --check</code> now validates semantics in addition to syntax.</li>
-    <li><strong>Source location tracking</strong> — AST nodes carry precise line numbers for accurate error reporting.</li>
-  </ul>
-
-  <h3>v1.5.0 — 2026-06-28</h3>
-  <ul>
-    <li><strong>YAML output</strong> — New <code>--format</code> / <code>-f</code> flag to generate YAML output (<code>butter compile demo.butter -f yaml</code>). JSON remains the default.</li>
-    <li><strong>Updated philosophy</strong> — Clarified that core compilation (lexer, parser, validator) is zero-dependency, while output serialization may leverage libraries for format flexibility.</li>
-  </ul>
-
-  <h3>v1.4.0 — 2026-06-25</h3>
-  <ul>
-    <li><strong><code>bool</code> type</strong> — New <code>bool</code> parameter type for boolean values (<code>true</code> / <code>false</code>).</li>
-    <li><strong><code>length</code> field</strong> — New <code>length</code> parameter field for exact length constraints (e.g. <code>length 13</code>). Mutually exclusive with <code>validate</code>.</li>
-    <li><strong>Updated error messages</strong> — Param field error lists include <code>validate</code> and <code>length</code>; length/validate mutual exclusion enforced.</li>
-  </ul>
-
-  <h3>v1.3.0 — 2026-06-25</h3>
-  <ul>
-    <li><strong><code>product</code> keyword alias</strong> — <code>product</code> can now be used interchangeably with <code>app</code> at the top level, across parser, formatter, and syntax highlighting.</li>
-    <li><strong>Numeric literals in defaults</strong> — Values like <code>default 50</code> now parse correctly. The lexer now allows digits as identifier start characters.</li>
-    <li><strong>Parser robustness</strong> — <code>parseParam</code> loop now guards against infinite loops on unexpected token types.</li>
-    <li><strong><code>todo.butter</code> example</strong> — New complete todo application example using <code>product</code> with four features, enum types, and integer defaults.</li>
-    <li><strong>Validate rule format validation</strong> — <code>validate</code> rules are now rejected at parse time if they don't match a valid numeric comparison (operator + number). Supported operators: <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>=&lt;</code>, <code>==</code>, <code>=</code>, <code>!=</code>.</li>
-    <li><strong>Validate type restriction</strong> — <code>validate</code> rules are now rejected if the parameter type is not <code>int</code> or <code>float</code>.</li>
-  </ul>
-
-  <h3>v1.2.0 — 2026-06-24</h3>
-  <ul>
-    <li><strong>Butter Format (<code>butter fmt</code>)</strong> — New subcommand to automatically format <code>.butter</code> files. Uses a two-pass algorithm: removes blank lines after parameter keywords, then inserts blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</li>
-    <li><strong>Format on save</strong> — The VS Code extension now automatically runs <code>butter fmt</code> on every save, no configuration needed.</li>
-    <li><strong><code>Butter: Format current file</code> command</strong> — Available in the VS Code command palette.</li>
-  </ul>
-
-  <h3>v1.1.0 — 2026-06-23</h3>
-  <ul>
-    <li><strong><code>--check</code> flag</strong> — <code>butter compile --check</code> validates syntax without writing a <code>.json</code> file. Returns exit code 0 on success, 1 on error.</li>
-    <li><strong>On-save linting</strong> — The VS Code extension runs <code>butter compile --check</code> on every save, surfacing errors with red squiggly underlines.</li>
-    <li><strong><code>Butter: Lint current file</code> command</strong> — Available in the VS Code command palette.</li>
-    <li><strong>Configurable compiler path</strong> — <code>butter.compilerPath</code> setting lets you specify a custom path to the <code>butter</code> binary.</li>
-    <li><strong><code>butter --version</code></strong> — Prints the compiler version.</li>
-    <li><strong>Named capture highlighting</strong> — TextMate grammar now highlights <code>app</code>, <code>feature</code>, and <code>param</code> identifiers distinctly.</li>
-    <li><strong><code>version</code> keyword</strong> — Added to syntax highlighting.</li>
-    <li><strong>Document icon</strong> — Custom SVG icon for <code>.butter</code> files.</li>
-  </ul>
-
-  <h3>v1.0.0 — 2026-06-22</h3>
-  <ul>
-    <li>Initial release of the Butter DSL compiler.</li>
-    <li><code>butter compile</code> command compiles <code>.butter</code> files to pretty-printed JSON.</li>
-    <li>Lexer with Python-style indentation tracking (INDENT/DEDENT tokens).</li>
-    <li>Recursive descent parser supporting <code>app</code>, <code>description</code>, <code>version</code>, <code>feature</code>, <code>params</code>, <code>param</code> (with <code>type</code>, <code>required</code>, <code>default</code>), <code>actions</code>, <code>action</code>, and pipe-delimited conditionals (<code>if</code>, <code>unless</code>, <code>when</code>, <code>while</code>).</li>
-    <li>VS Code extension with syntax highlighting, indentation rules, and comment toggling.</li>
-  </ul>
-</section>
 
 <footer class="footer">
   <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
