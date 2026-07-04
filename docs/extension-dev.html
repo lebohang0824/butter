@@ -346,7 +346,7 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
   <p>Add a blank import to <code>cmd/root.go</code>:</p>
 
 <pre><code class="language-go">import (
-    _ "butter/pkg/output/htmltree" // &lt;-- experimental
+    _ "butter/pkg/output/htmltree"
     _ "butter/pkg/output/json"
     _ "butter/pkg/output/toml"     // &lt;-- new
     _ "butter/pkg/output/yaml"
@@ -445,7 +445,7 @@ ext := extIface.FileExtension()</code></pre>
     </tr>
   </table>
 
-  <p>Each is roughly 20 lines: a struct, three methods, and an <code>init()</code> registration call. The <code>htmltree</code> extension is an experimental format that renders the AST as an interactive, zoomable HTML tree — see it in action with <code>butter compile spec.butter -f htmltree -o spec.html</code>.</p>
+  <p>Each is roughly 20 lines: a struct, three methods, and an <code>init()</code> registration call. The <code>htmltree</code> extension renders the AST as an interactive, zoomable HTML tree — see it in action with <code>butter compile spec.butter -f htmltree -o spec.html</code>.</p>
 </section>
 
 <section id="publishing">
