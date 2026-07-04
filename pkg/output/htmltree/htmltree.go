@@ -43,7 +43,7 @@ const page = `<!DOCTYPE html>
 <title>Butter Spec — {{.App}}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#121212;background-image:linear-gradient(rgba(255,255,255,.03)1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03)1px,transparent 1px);background-size:20px 20px;font-family:'Courier New',Courier,monospace;color:#b0b0b0;overflow:hidden;height:100vh;width:100vw;position:fixed}
+body{background:#121212;background-image:linear-gradient(rgba(255,255,255,.03)1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03)1px,transparent 1px);background-size:20px 20px;font-family:'Courier New',Courier,monospace;color:#b0b0b0;overflow:hidden;height:100vh;width:100vw;position:fixed;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 #svg-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:1}
 .tree-panel{position:fixed;inset:0;overflow:hidden;cursor:grab;z-index:2}
 .tree-panel.dragging{cursor:grabbing}
@@ -52,6 +52,7 @@ body{background:#121212;background-image:linear-gradient(rgba(255,255,255,.03)1p
 .column{display:flex;flex-direction:column;gap:30px;justify-content:center;transition:opacity .3s ease}
 .node-card{background:#1e1e1e;border:1px solid #333;border-radius:6px;width:240px;box-shadow:0 4px 15px rgba(0,0,0,.5);font-size:13px;overflow:hidden;transition:all .2s ease;flex-shrink:0}
 .node-card:hover{border-color:#555}
+
 .node-row{padding:8px 12px;border-bottom:1px solid #2a2a2a;display:flex;align-items:flex-start;gap:6px;word-break:break-word;overflow-wrap:break-word;white-space:normal;line-height:1.4}
 .node-row:last-child{border-bottom:none}
 .key{color:#D4A24C;margin-right:2px;word-break:break-word;overflow-wrap:break-word}
@@ -226,18 +227,32 @@ function renderTree(tree){
   });
 }
 
+function applySubVisibility(){
+  var ftIdx=0;
+  while(true){
+    var featCard=document.getElementById('card-f-'+ftIdx);
+    if(!featCard) break;
+    var fi=ftIdx;
+    var ps=document.getElementById('sub-params-'+fi);
+    if(ps) ps.style.display=state.collapsed['params-'+fi]?'none':'block';
+    var asub=document.getElementById('sub-actions-'+fi);
+    if(asub) asub.style.display=state.collapsed['actions-'+fi]?'none':'block';
+    ftIdx++;
+  }
+  var col3=document.getElementById('col-3');
+  var anyVisible=false;
+  document.querySelectorAll('#col-3 .node-card').forEach(function(c){if(c.style.display!=='none')anyVisible=true;});
+  col3.style.opacity=anyVisible?'1':'0';
+}
+
 function drawConnections(){
   var svg = document.getElementById('svg-canvas');
   svg.innerHTML = '';
   svg.setAttribute('width', window.innerWidth);
   svg.setAttribute('height', window.innerHeight);
 
-  var rootCard = document.getElementById('root-node');
-  if(!rootCard) return;
-
   var col2 = document.getElementById('col-2');
   var col3 = document.getElementById('col-3');
-
   if(state.collapsed['app']){
     col2.style.display = 'none';
     col3.style.display = 'none';
@@ -245,6 +260,10 @@ function drawConnections(){
   }
   col2.style.display = 'flex';
   col3.style.display = 'flex';
+  applySubVisibility();
+
+  var rootCard = document.getElementById('root-node');
+  if(!rootCard) return;
 
   var rl = rootCard.getBoundingClientRect();
   var ftIdx = 0;
@@ -255,28 +274,21 @@ function drawConnections(){
     drawBezier(rl.right, rl.top+rl.height/2, fl.left, fl.top+fl.height/2, svg);
     var fi = ftIdx;
     var ps = document.getElementById('sub-params-'+fi);
-    if(ps){
-      if(!state.collapsed['params-'+fi]){ps.style.display='block';
-        var tr = featCard.querySelector('[data-sub="params-'+fi+'"]');
-        if(tr){var tl=tr.getBoundingClientRect();var sl=ps.getBoundingClientRect();
-          drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
-          drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'params',svg);}
-      }else{ps.style.display='none';}
+    if(ps&&!state.collapsed['params-'+fi]){
+      var tr = featCard.querySelector('[data-sub="params-'+fi+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=ps.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'params',svg);}
     }
     var asub = document.getElementById('sub-actions-'+fi);
-    if(asub){
-      if(!state.collapsed['actions-'+fi]){asub.style.display='block';
-        var tr = featCard.querySelector('[data-sub="actions-'+fi+'"]');
-        if(tr){var tl=tr.getBoundingClientRect();var sl=asub.getBoundingClientRect();
-          drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
-          drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'actions',svg);}
-      }else{asub.style.display='none';}
+    if(asub&&!state.collapsed['actions-'+fi]){
+      var tr = featCard.querySelector('[data-sub="actions-'+fi+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=asub.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'actions',svg);}
     }
     ftIdx++;
   }
-  var anyVisible = false;
-  document.querySelectorAll('#col-3 .node-card').forEach(function(c){if(c.style.display!=='none')anyVisible=true;});
-  col3.style.opacity = anyVisible?'1':'0';
 }
 
 function drawBezier(x1,y1,x2,y2,svg){
@@ -341,6 +353,53 @@ window.addEventListener('mousemove',function(e){
 });
 
 window.addEventListener('mouseup',function(){dragging=false;wrap.classList.remove('dragging');});
+
+var touching=false,tdx=0,tdy=0,tpx=0,tpy=0,pinchDist=0,pinchZoom=0;
+wrap.addEventListener('touchstart',function(e){
+  if(e.touches.length===1){
+    touching=true;tdx=e.touches[0].clientX-panX;tdy=e.touches[0].clientY-panY;
+    tpx=e.touches[0].clientX;tpy=e.touches[0].clientY;return;
+  }
+  if(e.touches.length===2){
+    pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    pinchZoom=zoom;
+  }
+},{passive:true});
+
+wrap.addEventListener('touchmove',function(e){
+  if(e.touches.length===1&&touching){
+    panX=e.touches[0].clientX-tdx;panY=e.touches[0].clientY-tdy;
+    var s=e.touches[0].clientX-tpx;
+    if(Math.abs(s)>5||Math.abs(e.touches[0].clientY-tpy)>5)e.preventDefault();
+    tpx=e.touches[0].clientX;tpy=e.touches[0].clientY;
+    updateTransform();return;
+  }
+  if(e.touches.length===2&&pinchDist>0){
+    e.preventDefault();
+    var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    zoom=Math.max(0.1,Math.min(5,pinchZoom*(d/pinchDist)));
+    var cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    var r=wrap.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top,oz=pinchZoom;
+    var s=zoom/oz;panX=mx-s*(mx-panX);panY=my-s*(my-panY);
+    updateTransform();
+  }
+},{passive:false});
+
+wrap.addEventListener('touchend',function(){touching=false;pinchDist=0;wrap.classList.remove('dragging');});
+wrap.addEventListener('touchcancel',function(){touching=false;pinchDist=0;wrap.classList.remove('dragging');});
+
+var lastTap=0;
+wrap.addEventListener('click',function(e){
+  if(e.target.closest('.interactive-row,.node-title')) return;
+  var now=Date.now();
+  if(now-lastTap<300){
+    var r=wrap.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    if(zoom<1.5){zoom=2;panX=mx-2*(mx-panX);panY=my-2*(my-panY);}
+    else{zoom=1;panX=0;panY=0;}
+    updateTransform();
+  }
+  lastTap=now;
+});
 
 var tree=buildTree(spec);
 renderTree(tree);
