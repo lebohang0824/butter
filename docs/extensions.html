@@ -27,6 +27,7 @@
     <a href="#json">JSON Extension</a>
     <a href="#yaml">YAML Extension</a>
     <a href="#htmltree">HTML Tree Extension</a>
+    <a href="#sim">Sim Extension</a>
     <a href="#comparison">Comparison</a>
   </nav>
 </aside>
@@ -42,13 +43,14 @@
 
   <p>Butter's output layer is built around a pluggable <a href="extension-dev.html"><code>Extension</code> interface</a>. Each format is a standalone Go package that registers itself with the compiler at startup. The <code>--format</code> (or <code>-f</code>) flag selects which extension to use at compile time.</p>
 
-  <p>Three built-in extensions ship with the compiler:</p>
+  <p>Four built-in extensions ship with the compiler:</p>
 
   <table>
     <tr><th>Name</th><th>File Extension</th><th>Primary Use Case</th></tr>
     <tr><td><code>json</code></td><td><code>.json</code></td><td>Structured data for AI agents, CI pipelines, and programmatic consumption</td></tr>
     <tr><td><code>yaml</code></td><td><code>.yaml</code></td><td>Human-readable configuration and documentation</td></tr>
     <tr><td><code>htmltree</code></td><td><code>.html</code></td><td>Interactive visual debugging and spec exploration in the browser</td></tr>
+    <tr><td><code>sim</code></td><td><code>.sim.html</code></td><td>Interactive spec simulation with AI-generated implementation code</td></tr>
   </table>
 
   <p>All extensions are imported via blank imports in <code>cmd/root.go</code> and auto-discovered at runtime. The compiler lists them automatically in <code>--help</code> output and error messages.</p>
@@ -306,23 +308,103 @@ const page = `...` // 330+ lines of embedded HTML, CSS, and JavaScript</code></p
 
 </section>
 
+<section id="sim">
+  <h2>Sim Extension</h2>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Package</td><td><code>pkg/output/simulator/simulator.go</code></td></tr>
+    <tr><td>Extension name</td><td><code>sim</code></td></tr>
+    <tr><td>File extension</td><td><code>.sim.html</code></td></tr>
+    <tr><td>Library</td><td><code>html/template</code> (Go standard library) + inline HTML/CSS/JS</td></tr>
+    <tr><td>AI integration</td><td>Anthropic, ChatGPT, Gemini, DeepSeek (via <code>BUTTER_AI_API_KEY</code>)</td></tr>
+  </table>
+
+  <h3>Purpose</h3>
+  <p>The simulator extension goes beyond static output — it generates a self-contained HTML page that lets you interactively test your spec's logic. For each feature, the page renders input controls for every parameter and a simulation runner that evaluates conditions and displays which actions would execute. When an AI API key is provided, it also generates functional JavaScript implementation code that appears alongside the interactive controls.</p>
+
+  <h3>Usage</h3>
+  <pre><code class="language-bash"># Basic (no AI — simulation only)
+butter compile spec.butter -f sim
+
+# With AI-generated implementation code
+BUTTER_AI_API_KEY=sk-... butter compile spec.butter -f sim
+
+# Specify provider for sk- keys
+BUTTER_AI_API_KEY=sk-... BUTTER_AI_PROVIDER=deepseek butter compile spec.butter -f sim</code></pre>
+
+  <h3>Source Code</h3>
+  <p>The implementation lives in <code>pkg/output/simulator/simulator.go</code>. The Go code marshals the AST to JSON, calls the AI provider (if configured) for code generation, then embeds everything into an HTML template with a built-in JavaScript expression evaluator:</p>
+
+  <pre><code class="language-go">package simulator
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "html/template"
+    "net/http"
+    "os"
+    "strings"
+    "time"
+
+    "butter/pkg/ast"
+    "butter/pkg/output"
+)
+
+func init() {
+    output.Register(simExt{})
+}
+
+type simExt struct{}
+
+func (simExt) Name() string          { return "sim" }
+func (simExt) FileExtension() string { return ".sim.html" }</code></pre>
+
+  <h3>Simulation Features</h3>
+  <ul>
+    <li><strong>Interactive parameters</strong> — Each feature's params render as typed input controls: text fields, number spinners, dropdown menus for enums, and toggle switches for booleans.</li>
+    <li><strong>Condition evaluation</strong> — A built-in JavaScript expression evaluator handles <code>==</code>, <code>!=</code>, <code>is empty</code>, <code>is not empty</code>, numeric comparisons, and bare boolean names. No AI is needed for the simulator to work.</li>
+    <li><strong>Visual action flow</strong> — Actions appear as animated cards along a timeline with dot indicators: green for actions that run, red for skipped, amber for unknown conditions.</li>
+    <li><strong>AI code generation</strong> — When <code>BUTTER_AI_API_KEY</code> is set, the compiler calls one of four supported AI providers (Anthropic, ChatGPT, Gemini, DeepSeek) to generate an <code>implementFeatureXxx(params)</code> function for each feature. The generated code appears in a collapsible panel below the simulation output.</li>
+    <li><strong>Provider auto-detection</strong> — The extension detects the provider from the key prefix (<code>sk-ant-</code> → Anthropic, <code>sk-</code> → ChatGPT/DeepSeek) or from the <code>BUTTER_AI_PROVIDER</code> environment variable.</li>
+  </ul>
+
+  <h3>Example Output</h3>
+  <p>Run <code>butter compile todo.butter -f sim</code> to generate <code>todo.sim.html</code>. Open the file in any browser to see:</p>
+  <ul>
+    <li>A sidebar listing all features</li>
+    <li>Parameter controls for the selected feature</li>
+    <li>A <strong>Run Simulation</strong> button that evaluates conditions and animates the action flow</li>
+    <li>If AI is configured, a collapsible code panel with feature implementations</li>
+  </ul>
+
+  <h3>When to Use</h3>
+  <ul>
+    <li><strong>Spec testing</strong> — Verify your spec's logic by running simulations with different parameter values.</li>
+    <li><strong>Stakeholder demos</strong> — Share a self-contained HTML file that lets non-technical team members interact with the spec.</li>
+    <li><strong>Rapid prototyping</strong> — Use AI-generated code as a starting point for implementing the spec in JavaScript.</li>
+    <li><strong>Education</strong> — Show how features, params, and conditions produce different execution paths.</li>
+  </ul>
+</section>
+
 <section id="comparison">
   <h2>Extension Comparison</h2>
 
   <table>
-    <tr><th>Criteria</th><th>JSON</th><th>YAML</th><th>HTML Tree</th></tr>
-    <tr><td>Primary audience</td><td>AI agents, programs</td><td>Humans, config pipelines</td><td>Developers (visual)</td></tr>
-    <tr><td>File extension</td><td><code>.json</code></td><td><code>.yaml</code></td><td><code>.html</code></td></tr>
-    <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td></tr>
-    <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td></tr>
-    <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td></tr>
-    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td></tr>
-    <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td></tr>
-    <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td></tr>
-    <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td></tr>
+    <tr><th>Criteria</th><th>JSON</th><th>YAML</th><th>HTML Tree</th><th>Sim</th></tr>
+    <tr><td>Primary audience</td><td>AI agents, programs</td><td>Humans, config pipelines</td><td>Developers (visual)</td><td>Developers (interactive testing)</td></tr>
+    <tr><td>File extension</td><td><code>.json</code></td><td><code>.yaml</code></td><td><code>.html</code></td><td><code>.sim.html</code></td></tr>
+    <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td><td>Yes (single HTML file)</td></tr>
+    <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td><td>Yes (simulation controls)</td></tr>
+    <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td><td>None (stdlib + inline JS + optional AI API)</td></tr>
+    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td><td>~375 (incl. embedded template)</td></tr>
+    <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td><td>High (interactive)</td></tr>
+    <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td><td>Low (designed for simulation)</td></tr>
   </table>
 
-  <p>For most workflows, JSON is the right choice — it is the default, has zero dependencies, and is designed for AI agent consumption. Use YAML when you need human readability alongside machine parseability. Use htmltree when you want to see your spec come to life as an interactive diagram.</p>
+  <p>For most workflows, JSON is the right choice — it is the default, has zero dependencies, and is designed for AI agent consumption. Use YAML when you need human readability alongside machine parseability. Use htmltree when you want to see your spec come to life as an interactive diagram. Use sim when you want to test your spec interactively or generate implementation code with AI.</p>
 
   <p>To write your own extension, see the <a href="extension-dev.html">Writing Output Extensions</a> guide.</p>
 </section>

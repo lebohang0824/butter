@@ -11,6 +11,7 @@ import (
 	"butter/pkg/output"
 	_ "butter/pkg/output/htmltree"
 	_ "butter/pkg/output/json"
+	_ "butter/pkg/output/simulator"
 	_ "butter/pkg/output/yaml"
 	"butter/pkg/parser"
 	"butter/pkg/semantic"
