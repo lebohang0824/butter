@@ -3,12 +3,14 @@ package simulator
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -38,25 +40,47 @@ func (simExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 	var provider string
 	var generatedCode string
 
+	if apiKey == "" && os.Getenv("BUTTER_AI_PROVIDER") == "opencode" {
+		apiKey = "opencode"
+	}
+
 	if apiKey == "" {
 		apiKey = promptKey()
 	}
 
 	if apiKey != "" {
-		provider = detectProvider(apiKey)
-		if provider == "ChatGPT" && os.Getenv("BUTTER_AI_PROVIDER") == "" {
-			provider = promptProvider()
+		if apiKey == "opencode" {
+			provider = "opencode"
+		} else {
+			provider = detectProvider(apiKey)
+			if provider == "ChatGPT" && os.Getenv("BUTTER_AI_PROVIDER") == "" {
+				provider = promptProvider()
+			}
 		}
-		fmt.Printf("Using %s\n", provider)
 
-		fmt.Print("Step 2/2: Generating implementation code...  ")
-		codegenResult, err := callAI(provider, apiKey, buildCodePrompt(spec), 4000)
-		if err != nil {
-			return nil, fmt.Errorf("code generation failed: %w", err)
+		if provider == "" {
+			fmt.Println("Code generation skipped (provider set to none)")
+			provider = "built-in"
+		} else {
+			fmt.Printf("Using %s\n", provider)
+
+			fmt.Print("Step 2/2: Generating implementation code...  ")
+			codegenResult, err := callAI(provider, apiKey, buildCodePrompt(spec), 4000)
+			if err != nil {
+				return nil, fmt.Errorf("code generation failed: %w", err)
+			}
+			generatedCode = extractCode(codegenResult)
+			// Validate the AI actually returned JS code, not natural language
+			if generatedCode != "" && !isValidAICode(generatedCode) {
+				fmt.Println("\n  Warning: AI response doesn't look like JS code — skipping AI integration")
+				fmt.Printf("  Response preview: %s...\n", truncate(generatedCode, 100))
+				generatedCode = ""
+				provider = "built-in"
+			} else {
+				tokenEst := len(strings.Fields(generatedCode))
+				fmt.Printf("Done (~%d tokens)\n", tokenEst)
+			}
 		}
-		generatedCode = extractCode(codegenResult)
-		tokenEst := len(strings.Fields(generatedCode))
-		fmt.Printf("Done (~%d tokens)\n", tokenEst)
 	} else {
 		fmt.Println("Step 2/2: Code generation skipped")
 		provider = "built-in"
@@ -66,6 +90,7 @@ func (simExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 	data := map[string]interface{}{
 		"Spec":          template.JS(specJSON),
 		"GeneratedCode": string(generatedCode),
+		"AIExecutable":  template.JS(generatedCode),
 		"HasCode":       generatedCode != "",
 		"Provider":      provider,
 		"AppName":       spec.App,
@@ -81,27 +106,40 @@ var providerNames = map[string]string{
 	"chatgpt":   "ChatGPT",
 	"gemini":    "Gemini",
 	"deepseek":  "DeepSeek",
+	"opencode":  "opencode",
+}
+
+var stdinReader = bufio.NewReader(os.Stdin)
+
+func readLine() string {
+	line, err := stdinReader.ReadString('\n')
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(line)
 }
 
 func promptKey() string {
-	fmt.Print("Enter AI API key (leave blank to skip code gen): ")
-	scanner := bufio.NewScanner(os.Stdin)
-	if !scanner.Scan() {
+	fmt.Print("Enter AI API key (or 'opencode' to use free opencode models, 'none' to skip, blank to skip): ")
+	key := readLine()
+	if key == "" || key == "none" {
 		return ""
 	}
-	return strings.TrimSpace(scanner.Text())
+	if key == "opencode" {
+		return "opencode"
+	}
+	return key
 }
 
 func promptProvider() string {
 	for {
-		fmt.Print("Provider? (chatgpt/deepseek) [chatgpt]: ")
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			return "ChatGPT"
-		}
-		p := strings.TrimSpace(strings.ToLower(scanner.Text()))
+		fmt.Print("Provider? (anthropic/chatgpt/gemini/deepseek/opencode/none) [chatgpt]: ")
+		p := strings.ToLower(readLine())
 		if p == "" {
 			return "ChatGPT"
+		}
+		if p == "none" {
+			return ""
 		}
 		if name, ok := providerNames[p]; ok {
 			return name
@@ -137,9 +175,55 @@ func callAI(provider, apiKey, prompt string, maxTokens int) (string, error) {
 		return callGemini(client, apiKey, prompt, maxTokens)
 	case "DeepSeek":
 		return callDeepSeek(client, apiKey, prompt, maxTokens)
+	case "opencode":
+		return callOpenCode(prompt, maxTokens)
 	default:
 		return "", fmt.Errorf("unknown provider: %s", provider)
 	}
+}
+
+func callOpenCode(prompt string, maxTokens int) (string, error) {
+	model := os.Getenv("BUTTER_AI_MODEL")
+	if model == "" {
+		model = "opencode/deepseek-v4-flash-free"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "opencode", "run", "--model", model, "--format", "json")
+	cmd.Stdin = strings.NewReader(prompt)
+	out, err := cmd.Output()
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("opencode timed out after 300s")
+		}
+		if ee, ok := err.(*exec.ExitError); ok && len(ee.Stderr) > 0 {
+			return "", fmt.Errorf("opencode failed: %s", string(ee.Stderr))
+		}
+		return "", fmt.Errorf("opencode failed: %w", err)
+	}
+
+	var parts []string
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev struct {
+			Type string `json:"type"`
+			Part struct {
+				Text string `json:"text"`
+			} `json:"part"`
+		}
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		if ev.Type == "text" {
+			parts = append(parts, ev.Part.Text)
+		}
+	}
+	return strings.TrimSpace(strings.Join(parts, "\n")), nil
 }
 
 func callAnthropic(client *http.Client, apiKey, prompt string, maxTokens int) (string, error) {
@@ -390,6 +474,27 @@ func extractCode(text string) string {
 	return strings.TrimSpace(text)
 }
 
+func truncate(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n])
+}
+
+func isValidAICode(code string) bool {
+	trimmed := strings.TrimSpace(code)
+	// Must start with window.AISim assignment
+	if strings.HasPrefix(trimmed, "window.AISim") || strings.HasPrefix(trimmed, "const AISim") || strings.HasPrefix(trimmed, "var AISim") || strings.HasPrefix(trimmed, "let AISim") {
+		return true
+	}
+	// Also accept if it has AISim.run as evidence of a method
+	if strings.Contains(trimmed, "AISim.run") || strings.Contains(trimmed, "AISim =") {
+		return true
+	}
+	return false
+}
+
 
 
 type codeGenFeature struct {
@@ -444,11 +549,22 @@ func buildMinSpec(spec *ast.AppSpec) []byte {
 
 func buildCodePrompt(spec *ast.AppSpec) string {
 	specJSON := buildMinSpec(spec)
-	return `Implement all features from this spec as JavaScript. Each feature gets a function implement<Name>(params). Respect conditions: if (run when true), unless (run when false), when (trigger when true), while (loop while true).
+	return `You are a code generator. Your task is to generate ONLY valid JavaScript code.
+NO explanation, NO markdown fences, NO comments outside the code.
 
-` + string(specJSON) + `
+Generate window.AISim with a run(featureName, params) method that returns an array of result objects, one per action in that feature, in order. Each result has:
+  { action: "the statement text", status: "ran"|"skipped", detail: "human-readable explanation" }
 
-Return ONLY the JS code. Use ES2020+. Include // === Feature: Name === section comments. End with: const Features = { FeatureName: implementFeatureName, ... };`
+Implement each feature's behavior realistically:
+- For "ran" actions, include realistic output (generated IDs, timestamps, computed values)
+- For "skipped" actions, explain why (condition not met, validation failed, etc.)
+- Parse natural language conditions using params (e.g. "Title is not empty" → params.Title)
+- If a param key doesn't match the spec, try common variants (snake_case, camelCase)
+
+RULE: Return ONLY raw JavaScript. No markdown. No explanation. No text before or after. Start with: window.AISim =
+
+Spec:
+` + string(specJSON)
 }
 
 var tmpl = template.Must(template.New("sim").Parse(page))
@@ -516,11 +632,10 @@ main{flex:1;padding:28px 36px;overflow-y:auto}
 .action-text{flex:1;word-break:break-word}
 .action-reason{font-size:11px;color:var(--text2);flex-shrink:0;max-width:320px;text-align:right;word-break:break-word;font-style:italic}
 details#code-panel{margin-top:24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
-details#code-panel summary{padding:12px 18px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);user-select:none;transition:color .2s;list-style:none;display:flex;align-items:center;gap:8px}
+details#code-panel summary{padding:12px 18px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);user-select:none;transition:color .2s;list-style:none;-webkit-list-style:none}
 details#code-panel summary::-webkit-details-marker{display:none}
-details#code-panel summary::before{content:'\\25B6';font-size:10px;color:var(--text2);transition:transform .25s}
-details#code-panel[open] summary::before{transform:rotate(90deg)}
 details#code-panel summary:hover{color:var(--text)}
+details#code-panel pre{background:var(--bg);padding:18px;overflow-x:auto;border-top:1px solid var(--border);max-height:500px;overflow-y:auto;margin:0}
 details#code-panel pre{background:var(--bg);padding:18px;overflow-x:auto;border-top:1px solid var(--border);max-height:500px;overflow-y:auto;margin:0}
 details#code-panel code{font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;font-size:13px;line-height:1.7;color:#e2e8f0;white-space:pre}
 ::-webkit-scrollbar{width:8px;height:8px}
@@ -549,27 +664,20 @@ details#code-panel code{font-family:'JetBrains Mono','Fira Code','Cascadia Code'
       <div id="flow-panel"></div>
       {{if .HasCode}}
       <details id="code-panel">
-        <summary>Show Generated Code</summary>
+        <summary><span id="code-arrow">▶</span> AI Source Code</summary>
         <pre><code id="code-content">{{.GeneratedCode}}</code></pre>
       </details>
+      <style>
+      #code-arrow{display:inline-block;transition:transform .25s;font-size:10px;color:var(--text2);margin-right:8px}
+      #code-panel[open] #code-arrow{transform:rotate(90deg)}
+      </style>
       {{end}}
     </div>
   </main>
 </div>
+{{if .HasCode}}<script>{{.AIExecutable}}</script>{{end}}
 <script>
 const SPEC = {{.Spec}};
-
-function evaluateConditions(featureName, params) {
-  const results = {};
-  const feature = (SPEC.features||[]).find(function(f){return f.name===featureName});
-  if (!feature) return results;
-  const paramNames = Object.keys(params);
-  (feature.actions||[]).forEach(function(a,i){
-    if (!a.condition) return;
-    results[i] = evalExpr(a.condition.expression, params, paramNames);
-  });
-  return results;
-}
 
 function evalExpr(expr, params, paramNames) {
   var js = expr;
@@ -592,7 +700,6 @@ function evalExpr(expr, params, paramNames) {
 
 (function(){
 let currentFeature = null;
-var toggleListeners = [];
 
 function renderFeatures() {
   const list = document.getElementById('feature-list');
@@ -617,7 +724,6 @@ function selectFeature(index) {
   renderParams(feature);
   var fp = document.getElementById('flow-panel');
   fp.innerHTML = '';
-  fp.classList.remove('has-run');
 }
 
 function paramId(name){return 'p-'+name;}
@@ -722,55 +828,97 @@ function runSimulation() {
   if (currentFeature === null) return;
   var feature = SPEC.features[currentFeature];
   var params = gatherParams(feature);
-  var results = evaluateConditions(feature.name, params);
   var panel = document.getElementById('flow-panel');
   panel.innerHTML = '';
   if (!feature.actions || feature.actions.length === 0) {
     panel.innerHTML = '<div class="no-actions">No actions defined</div>';
     return;
   }
-  feature.actions.forEach(function(a,i){
-    var card = document.createElement('div');
-    card.className = 'action-card';
-    card.style.setProperty('--i', i);
-    var icon = document.createElement('span');
-    icon.className = 'action-icon';
-    var text = document.createElement('span');
-    text.className = 'action-text';
-    text.textContent = a.statement;
-    var willRun = true;
-    var reason = '';
-    if (a.condition) {
-      var r = results[i];
-      if (r === undefined || r === null) {
+
+  if (typeof AISim !== 'undefined' && AISim && AISim.run) {
+    var aiResults;
+    try { aiResults = AISim.run(feature.name, params); } catch(e) { aiResults = []; }
+    feature.actions.forEach(function(a,i){
+      var card = document.createElement('div');
+      card.className = 'action-card';
+      card.style.setProperty('--i', i);
+      var icon = document.createElement('span');
+      icon.className = 'action-icon';
+      var text = document.createElement('span');
+      text.className = 'action-text';
+      text.textContent = a.statement;
+      var ar = aiResults[i];
+      if (ar && ar.status === 'ran') {
+        icon.textContent = '✅';
+        card.classList.add('will-run');
+        var rsn = document.createElement('span');
+        rsn.className = 'action-reason';
+        rsn.textContent = '← ' + (ar.detail || 'Done');
+        card.appendChild(icon);
+        card.appendChild(text);
+        card.appendChild(rsn);
+      } else if (ar && ar.status === 'skipped') {
+        icon.textContent = '⏭️';
+        card.classList.add('skipped');
+        var rsn = document.createElement('span');
+        rsn.className = 'action-reason';
+        rsn.textContent = '← ' + (ar.detail || 'Condition not met');
+        card.appendChild(icon);
+        card.appendChild(text);
+        card.appendChild(rsn);
+      } else {
         icon.textContent = '❓';
         card.classList.add('unknown');
-        willRun = false;
-      } else if (a.condition.type === 'unless') {
-        willRun = !r;
-        icon.textContent = willRun ? '✅' : '❌';
-        card.classList.add(willRun ? 'will-run' : 'skipped');
-        if (!willRun) reason = a.condition.type + ' "' + a.condition.expression + '" → false';
-      } else {
-        willRun = !!r;
-        icon.textContent = willRun ? '✅' : '❌';
-        card.classList.add(willRun ? 'will-run' : 'skipped');
-        if (!willRun) reason = a.condition.type + ' "' + a.condition.expression + '" → false';
+        card.appendChild(icon);
+        card.appendChild(text);
       }
-    } else {
-      icon.textContent = '✅';
-      card.classList.add('will-run');
-    }
-    card.appendChild(icon);
-    card.appendChild(text);
-    if (reason) {
-      var rsn = document.createElement('span');
-      rsn.className = 'action-reason';
-      rsn.textContent = '← ' + reason;
-      card.appendChild(rsn);
-    }
-    panel.appendChild(card);
-  });
+      panel.appendChild(card);
+    });
+  } else {
+    var paramNames = Object.keys(params);
+    feature.actions.forEach(function(a,i){
+      var card = document.createElement('div');
+      card.className = 'action-card';
+      card.style.setProperty('--i', i);
+      var icon = document.createElement('span');
+      icon.className = 'action-icon';
+      var text = document.createElement('span');
+      text.className = 'action-text';
+      text.textContent = a.statement;
+      var willRun = true;
+      var reason = '';
+      if (a.condition) {
+        var r = evalExpr(a.condition.expression, params, paramNames);
+        if (r === undefined || r === null) {
+          icon.textContent = '❓';
+          card.classList.add('unknown');
+          willRun = false;
+        } else if (a.condition.type === 'unless') {
+          willRun = !r;
+          icon.textContent = willRun ? '✅' : '❌';
+          card.classList.add(willRun ? 'will-run' : 'skipped');
+          if (!willRun) reason = a.condition.type + ' "' + a.condition.expression + '" → false';
+        } else {
+          willRun = !!r;
+          icon.textContent = willRun ? '✅' : '❌';
+          card.classList.add(willRun ? 'will-run' : 'skipped');
+          if (!willRun) reason = a.condition.type + ' "' + a.condition.expression + '" → false';
+        }
+      } else {
+        icon.textContent = '✅';
+        card.classList.add('will-run');
+      }
+      card.appendChild(icon);
+      card.appendChild(text);
+      if (reason) {
+        var rsn = document.createElement('span');
+        rsn.className = 'action-reason';
+        rsn.textContent = '← ' + reason;
+        card.appendChild(rsn);
+      }
+      panel.appendChild(card);
+    });
+  }
   setTimeout(function(){
     var last = panel.lastElementChild;
     if (last) last.scrollIntoView({behavior:'smooth',block:'nearest'});
