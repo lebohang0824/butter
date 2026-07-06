@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.10.1</div>
+    <div class="version">v1.11.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-11-0">v1.11.0</a>
     <a href="#v1-10-1">v1.10.1</a>
     <a href="#v1-10-0">v1.10.0</a>
     <a href="#v1-9-0">v1.9.0</a>
@@ -38,6 +39,19 @@
 </aside>
 
 <main class="main">
+
+<section id="v1-11-0">
+  <h2>v1.11.0 — 2026-07-06</h2>
+  <ul>
+    <li><strong>Sim extension with AI-powered spec simulation</strong> — The new <code>sim</code> output format (<code>-f sim</code>) generates a self-contained HTML page for interactively testing spec logic. Features render as typed input controls; the <strong>Run Simulation</strong> button evaluates conditions and animates action results. AI-generated code executes directly in the browser via <code>AISim.run()</code> and drives the action flow with green/red/amber status cards. Built-in JS expression evaluator handles conditions without any AI.</li>
+    <li><strong>opencode provider</strong> — <code>BUTTER_AI_PROVIDER=opencode</code> uses the opencode CLI with free built-in models (default <code>opencode/deepseek-v4-flash-free</code>, override via <code>BUTTER_AI_MODEL</code>). No API key required — pass <code>opencode</code> at the key prompt or set <code>BUTTER_AI_API_KEY=opencode</code>. The opencode CLI must be installed separately.</li>
+    <li><strong>Provider prompt with "none" fallback</strong> — The interactive prompt now lists all provider options <code>(anthropic/chatgpt/gemini/deepseek/opencode/none)</code>. Selecting <code>none</code> skips AI code generation entirely and uses the built-in evaluator.</li>
+    <li><strong>AI output validation</strong> — Generated code is validated by <code>isValidAICode()</code> before embedding. Natural language responses (which don't contain <code>AISim.run</code> or <code>AISim =</code>) are rejected with a warning and fall back to the built-in evaluator.</li>
+    <li><strong>Disclosure triangle icon fix</strong> — The "AI Source Code" collapsible panel previously had a broken disclosure icon due to <code>html/template</code> CSS escaping. The icon is now rendered as an inline <code>&lt;span&gt;</code> inside <code>&lt;summary&gt;</code> with <code>list-style: none</code>.</li>
+    <li><strong>Shared stdin reader</strong> — Replaced multiple <code>bufio.Scanner</code> instances with a shared <code>bufio.NewReader</code> + <code>readLine()</code> to fix buffered data loss between the key and provider prompts.</li>
+    <li><strong>Rate limit retry</strong> — API calls retry up to 2 times with exponential backoff (2s, 4s) on 429 responses. Error messages now extract <code>error.message</code> from the API JSON response instead of dumping the full body.</li>
+  </ul>
+</section>
 
 <section id="v1-10-1">
   <h2>v1.10.1 — 2026-07-04</h2>
