@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VS Code Extension — Butter Specification Language</title>
+<meta name="description" content="VS Code extension for Butter — syntax highlighting, on-save formatting and linting, and more for .butter files.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.11.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#features">Features</a>
+    <a href="#installation">Installation</a>
+    <a href="#settings">Settings</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="features">
+  <h2>VS Code Extension</h2>
+  <p>The project includes a VS Code extension (<code>butter-extension/</code>) providing language support for <code>.butter</code> files.</p>
+
+  <h3>Features</h3>
+  <ul>
+    <li><strong>Syntax highlighting</strong> — Full TextMate grammar with named captures for <code>app</code>, <code>feature</code>, and <code>param</code> identifiers.</li>
+    <li><strong>On-save formatting</strong> — Automatically applies <code>butter fmt</code> every time you save, no configuration needed.</li>
+    <li><strong>On-save linting</strong> — Runs <code>butter compile --check</code> after formatting, surfacing syntax errors with red squiggly underlines and entries in the Problems panel.</li>
+    <li><strong>Manual lint command</strong> — <code>Butter: Lint current file</code> in the command palette.</li>
+    <li><strong>Manual format command</strong> — <code>Butter: Format current file</code> in the command palette.</li>
+    <li><strong>Auto-indentation</strong> — Smart indent for <code>feature</code>, <code>params</code>, <code>actions</code>, and <code>param</code> blocks.</li>
+    <li><strong>Configurable compiler path</strong> — Set via <code>butter.compilerPath</code> in settings (defaults to <code>"butter"</code>).</li>
+    <li><strong>Comment toggle</strong> — <kbd>Ctrl+/</kbd> or <kbd>Cmd+/</kbd> toggles <code>#</code> line comments.</li>
+    <li><strong>Auto-closing pairs</strong> — <code>"</code> and <code>[]</code> are auto-closed.</li>
+    <li><strong>Document icon</strong> — Custom SVG icon for <code>.butter</code> files.</li>
+  </ul>
+</section>
+
+<section id="installation">
+  <h2>Installation</h2>
+  <p>Use the install script: <code>./install.sh extension</code></p>
+  <p>Or manually: <code>code --install-extension butter-extension.vsix</code></p>
+</section>
+
+<section id="settings">
+  <h2>Settings</h2>
+  <table>
+    <thead>
+      <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>butter.compilerPath</code></td><td><code>"butter"</code></td><td>Path to the <code>butter</code> compiler binary. Use this if the binary is not on your <code>PATH</code> or to use a different version.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <blockquote>
+    <p><strong>Linting is not working.</strong> Make sure the <code>butter</code> binary is installed and accessible from the <code>butter.compilerPath</code> setting (default: <code>PATH</code>). Open the "Butter" output channel in the VS Code panel to see diagnostic messages.</p>
+  </blockquote>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>

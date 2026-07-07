@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLI Reference — Butter Specification Language</title>
+<meta name="description" content="Complete CLI reference for the Butter compiler — compile, fmt, flags, exit codes, and error messages.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.11.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#compile">butter compile</a>
+    <a href="#fmt">butter fmt</a>
+    <a href="#version">butter --version</a>
+    <a href="#exit-codes">Exit Codes</a>
+    <a href="#error-format">Error Output Format</a>
+    <a href="#errors">Error Reference</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="compile">
+  <h2>CLI Reference</h2>
+
+  <h3><code>butter compile</code></h3>
+  <p>Compiles a <code>.butter</code> file to pretty-printed JSON.</p>
+  <pre><code class="language-bash">butter compile [input file] [flags]</code></pre>
+
+  <h4>Flags</h4>
+  <table class="flag-table">
+    <thead>
+      <tr><th>Flag</th><th>Shorthand</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>--output</td><td>-o</td><td>Custom output path (defaults to <code>&lt;input&gt;.json</code>)</td></tr>
+      <tr><td>--check</td><td></td><td>Validate syntax without generating output</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Examples</h4>
+  <pre><code class="language-bash">butter compile demo.butter
+butter compile demo.butter --output result.json
+butter compile demo.butter -o result.json
+butter compile --check demo.butter</code></pre>
+</section>
+
+<section id="fmt">
+  <h2><code>butter fmt</code></h2>
+  <p>Formats a <code>.butter</code> file according to standard conventions — removes blank lines after parameter keywords and adds blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</p>
+  <pre><code class="language-bash">butter fmt [input file] [flags]</code></pre>
+
+  <h3>Flags</h3>
+  <table class="flag-table">
+    <thead>
+      <tr><th>Flag</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>--check</td><td>Check formatting without modifying</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Examples</h3>
+  <pre><code class="language-bash">butter fmt demo.butter
+butter fmt --check demo.butter</code></pre>
+</section>
+
+<section id="version">
+  <h2><code>butter --version</code></h2>
+  <p>Prints the compiler version:</p>
+  <pre><code class="language-bash">butter --version
+# butter v1.3.0</code></pre>
+</section>
+
+<section id="exit-codes">
+  <h2>Exit Codes</h2>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>Success (compilation or validation passed)</td></tr>
+      <tr><td>1</td><td>Error (syntax error, file not found, etc.)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="error-format">
+  <h2>Error Output Format</h2>
+  <p>When compilation fails, the error includes the line number and a descriptive message:</p>
+  <pre><code>Error: compilation syntax compilation error:
+line 5: expected an application name after 'app'</code></pre>
+  <p>The VS Code extension parses this format to show red squiggly underlines at the reported line.</p>
+</section>
+
+<section id="errors">
+  <h2>Error Reference</h2>
+  <p>The compiler produces line-precise error messages. Here are the most common ones and what they mean:</p>
+
+  <table>
+    <thead>
+      <tr><th>Error Message</th><th>Likely Cause</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>input file must have a .butter extension</code></td>
+        <td>You tried to compile a file that doesn't end in <code>.butter</code>.</td>
+      </tr>
+      <tr>
+        <td><code>expected an application name after 'app'</code></td>
+        <td>The <code>app</code> keyword must be followed by a name (e.g. <code>app MyApp</code>).</td>
+      </tr>
+      <tr>
+        <td><code>expected a quoted string for description</code></td>
+        <td><code>description</code> must be followed by a double-quoted string.</td>
+      </tr>
+      <tr>
+        <td><code>expected a feature name after 'feature'</code></td>
+        <td><code>feature</code> must be followed by a name (e.g. <code>feature MyFeature</code>).</td>
+      </tr>
+      <tr>
+        <td><code>expected an indented block under this feature</code></td>
+        <td>The content after a <code>feature</code> declaration must be indented.</td>
+      </tr>
+      <tr>
+        <td><code>expected a newline after 'params'</code></td>
+        <td><code>params</code> must be on its own line, followed by an indented block.</td>
+      </tr>
+      <tr>
+        <td><code>expected 'param' inside this block, got '...'</code></td>
+        <td>Only <code>param</code> declarations are allowed inside a <code>params</code> block.</td>
+      </tr>
+      <tr>
+        <td><code>expected a parameter name after 'param'</code></td>
+        <td><code>param</code> must be followed by a name (e.g. <code>param MyParam</code>).</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', 'default', 'validate', or 'length'</code></td>
+        <td>Only <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, and <code>length</code> are valid parameter fields.</td>
+      </tr>
+      <tr>
+        <td><code>invalid validate rule "..." — must be a numeric comparison like ">0", ">=1", "=<100", "!=5"</code></td>
+        <td>The <code>validate</code> string must be a comparison operator followed by a number (e.g. <code>&gt;=1</code>, <code>!=0</code>).</td>
+      </tr>
+      <tr>
+        <td><code>validate rules require numeric type (int or float), got "..."</code></td>
+        <td><code>validate</code> is only allowed on parameters with <code>type int</code> or <code>type float</code>.</td>
+      </tr>
+      <tr>
+        <td><code>length and validate cannot be used together on the same parameter</code></td>
+        <td>A parameter can have <code>length</code> or <code>validate</code>, but not both.</td>
+      </tr>
+      <tr>
+        <td><code>action statement must be a quoted string</code></td>
+        <td>The action description must be wrapped in double quotes.</td>
+      </tr>
+      <tr>
+        <td><code>unsupported condition ... after '|' — expected if, unless, when, or while</code></td>
+        <td>The word after <code>|</code> must be one of the four conditionals.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '...' at the top level — expected 'app', 'description', 'version', or 'feature'</code></td>
+        <td>Only <code>app</code>, <code>description</code>, <code>version</code>, and <code>feature</code> are valid at the root level.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected '...' inside feature — expected 'description', 'version', 'params', or 'actions'</code></td>
+        <td>Only <code>description</code>, <code>version</code>, <code>params</code>, and <code>actions</code> are valid inside a feature.</td>
+      </tr>
+      <tr>
+        <td><code>Indentation mismatch</code></td>
+        <td>The indentation level does not match any parent block level. Check that you're using consistent spacing.</td>
+      </tr>
+      <tr>
+        <td><code>unexpected character '...'</code></td>
+        <td>The character is not valid Butter syntax. Only letters, digits, underscores, pipes, quotes, and whitespace are allowed.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>

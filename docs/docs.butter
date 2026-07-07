@@ -21,10 +21,9 @@ feature DocumentationSite
     action "Show installation instructions for Linux, macOS, and Windows via install scripts"
     action "Render Getting Started guide with a hello world example and compile workflow"
     action "Render Language Guide with tables for keywords, parameter fields, types, and conditionals"
-    action "Render CLI Reference documenting compile and fmt commands with all flags"
-    action "Render Compiler Architecture diagram showing the lexer-parser-semantic pipeline"
-    action "Render VS Code Extension section with installation and feature list"
-    action "Render Error Reference table mapping all parser and semantic error messages"
+    action "Render AI Workflow section explaining the write-compile-feed workflow"
+    action "Link to CLI Reference page with compile, fmt commands, flags, and error reference"
+    action "Link to VS Code Extension page with installation and feature list"
     action "Render changelog and version history"
 
 feature SyntaxHighlighter
@@ -77,21 +76,3 @@ feature TodoDemoApp
     action "Execute sequential action steps with visual step-log showing pending, running, done, skip, and error states"
     action "Evaluate semantic conditions: skip actions when conditions are not met, mark them with skip indicator"
 
-feature ErrorReference
-  description "Comprehensive error message reference documenting all compiler error conditions."
-
-  params
-    param ShowSource
-      type bool
-      default true
-    param GroupByStage
-      type bool
-      default true
-
-  actions
-    action "Document lexer errors: unexpected characters and indentation mismatch"
-    action "Document parser errors: unexpected tokens, missing keywords, invalid validate rules"
-    action "Document semantic errors: duplicate names, type mismatches, enum defaults"
-    action "Document semantic warnings: required param with redundant default"
-    action "Group errors by compiler stage: lexer, parser, semantic"
-    action "Show affected line number and suggested fix for each error"
