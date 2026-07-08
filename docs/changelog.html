@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.11.0</div>
+    <div class="version">v1.11.1</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-11-1">v1.11.1</a>
     <a href="#v1-11-0">v1.11.0</a>
     <a href="#v1-10-1">v1.10.1</a>
     <a href="#v1-10-0">v1.10.0</a>
@@ -39,6 +40,15 @@
 </aside>
 
 <main class="main">
+
+<section id="v1-11-1">
+  <h2>v1.11.1 — 2026-07-08</h2>
+  <ul>
+    <li><strong>Fixed provider prompt UX</strong> — Instead of requiring the user to type <code>opencode</code> or paste an API key into a blank input, the sim extension now presents a numbered menu of all providers. Selecting by number works immediately; API keys are only requested for providers that need one (Anthropic, ChatGPT, Gemini, DeepSeek). Selecting <code>opencode</code> or <code>none</code> proceeds straight to code generation without any key prompt.</li>
+    <li><strong>Fixed param-driven action logic</strong> — The AI code generation prompt now explicitly instructs models to always evaluate conditions using the <code>params</code> object, ensuring actions behave correctly when params are defined in the spec.</li>
+    <li><strong>Fixed version badges across all documentation</strong> — All doc pages now consistently show the correct current version.</li>
+  </ul>
+</section>
 
 <section id="v1-11-0">
   <h2>v1.11.0 — 2026-07-06</h2>

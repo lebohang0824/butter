@@ -39,47 +39,40 @@ func (simExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 
 	var provider string
 	var generatedCode string
+	envProvider := os.Getenv("BUTTER_AI_PROVIDER")
 
-	if apiKey == "" && os.Getenv("BUTTER_AI_PROVIDER") == "opencode" {
+	if apiKey == "" && envProvider == "opencode" {
 		apiKey = "opencode"
+		provider = "opencode"
 	}
 
-	if apiKey == "" {
-		apiKey = promptKey()
-	}
-
-	if apiKey != "" {
-		if apiKey == "opencode" {
-			provider = "opencode"
-		} else {
-			provider = detectProvider(apiKey)
-			if provider == "ChatGPT" && os.Getenv("BUTTER_AI_PROVIDER") == "" {
-				provider = promptProvider()
-			}
+	if apiKey == "" && provider == "" {
+		provider, apiKey = promptProviderAndKey()
+	} else if apiKey != "" && provider == "" {
+		provider = detectProvider(apiKey)
+		if provider == "ChatGPT" && envProvider == "" {
+			provider = promptProvider()
 		}
+	}
 
-		if provider == "" {
-			fmt.Println("Code generation skipped (provider set to none)")
+	if provider != "" && apiKey != "" {
+		fmt.Printf("Using %s\n", provider)
+
+		fmt.Print("Step 2/2: Generating implementation code...  ")
+		codegenResult, err := callAI(provider, apiKey, buildCodePrompt(spec), 4000)
+		if err != nil {
+			return nil, fmt.Errorf("code generation failed: %w", err)
+		}
+		generatedCode = extractCode(codegenResult)
+		// Validate the AI actually returned JS code, not natural language
+		if generatedCode != "" && !isValidAICode(generatedCode) {
+			fmt.Println("\n  Warning: AI response doesn't look like JS code — skipping AI integration")
+			fmt.Printf("  Response preview: %s...\n", truncate(generatedCode, 100))
+			generatedCode = ""
 			provider = "built-in"
 		} else {
-			fmt.Printf("Using %s\n", provider)
-
-			fmt.Print("Step 2/2: Generating implementation code...  ")
-			codegenResult, err := callAI(provider, apiKey, buildCodePrompt(spec), 4000)
-			if err != nil {
-				return nil, fmt.Errorf("code generation failed: %w", err)
-			}
-			generatedCode = extractCode(codegenResult)
-			// Validate the AI actually returned JS code, not natural language
-			if generatedCode != "" && !isValidAICode(generatedCode) {
-				fmt.Println("\n  Warning: AI response doesn't look like JS code — skipping AI integration")
-				fmt.Printf("  Response preview: %s...\n", truncate(generatedCode, 100))
-				generatedCode = ""
-				provider = "built-in"
-			} else {
-				tokenEst := len(strings.Fields(generatedCode))
-				fmt.Printf("Done (~%d tokens)\n", tokenEst)
-			}
+			tokenEst := len(strings.Fields(generatedCode))
+			fmt.Printf("Done (~%d tokens)\n", tokenEst)
 		}
 	} else {
 		fmt.Println("Step 2/2: Code generation skipped")
@@ -119,16 +112,58 @@ func readLine() string {
 	return strings.TrimSpace(line)
 }
 
-func promptKey() string {
-	fmt.Print("Enter AI API key (or 'opencode' to use free opencode models, 'none' to skip, blank to skip): ")
-	key := readLine()
-	if key == "" || key == "none" {
-		return ""
+func promptProviderAndKey() (string, string) {
+	fmt.Println("Select AI provider:")
+	fmt.Println("  1) Anthropic")
+	fmt.Println("  2) ChatGPT (OpenAI)")
+	fmt.Println("  3) Gemini (Google)")
+	fmt.Println("  4) DeepSeek")
+	fmt.Println("  5) opencode (free, no key needed)")
+	fmt.Println("  6) none (skip AI generation)")
+	fmt.Print("Enter number [5]: ")
+
+	choice := strings.TrimSpace(readLine())
+	if choice == "" {
+		choice = "5"
 	}
-	if key == "opencode" {
-		return "opencode"
+
+	switch choice {
+	case "1":
+		fmt.Print("Enter Anthropic API key: ")
+		key := readLine()
+		if key == "" {
+			return "", ""
+		}
+		return "Anthropic", key
+	case "2":
+		fmt.Print("Enter OpenAI API key: ")
+		key := readLine()
+		if key == "" {
+			return "", ""
+		}
+		return "ChatGPT", key
+	case "3":
+		fmt.Print("Enter Gemini API key: ")
+		key := readLine()
+		if key == "" {
+			return "", ""
+		}
+		return "Gemini", key
+	case "4":
+		fmt.Print("Enter DeepSeek API key: ")
+		key := readLine()
+		if key == "" {
+			return "", ""
+		}
+		return "DeepSeek", key
+	case "5":
+		return "opencode", "opencode"
+	case "6":
+		return "", ""
+	default:
+		fmt.Println("Invalid choice, defaulting to opencode")
+		return "opencode", "opencode"
 	}
-	return key
 }
 
 func promptProvider() string {
@@ -184,14 +219,16 @@ func callAI(provider, apiKey, prompt string, maxTokens int) (string, error) {
 
 func callOpenCode(prompt string, maxTokens int) (string, error) {
 	model := os.Getenv("BUTTER_AI_MODEL")
-	if model == "" {
-		model = "opencode/deepseek-v4-flash-free"
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "opencode", "run", "--model", model, "--format", "json")
+	var cmd *exec.Cmd
+	if model != "" {
+		cmd = exec.CommandContext(ctx, "opencode", "run", "--model", model, "--format", "json")
+	} else {
+		cmd = exec.CommandContext(ctx, "opencode", "run", "--format", "json")
+	}
 	cmd.Stdin = strings.NewReader(prompt)
 	out, err := cmd.Output()
 	if err != nil {
@@ -558,6 +595,7 @@ Generate window.AISim with a run(featureName, params) method that returns an arr
 Implement each feature's behavior realistically:
 - For "ran" actions, include realistic output (generated IDs, timestamps, computed values)
 - For "skipped" actions, explain why (condition not met, validation failed, etc.)
+- ALWAYS use the params object to evaluate conditions and drive action logic
 - Parse natural language conditions using params (e.g. "Title is not empty" → params.Title)
 - If a param key doesn't match the spec, try common variants (snake_case, camelCase)
 
