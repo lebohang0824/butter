@@ -42,6 +42,9 @@ install_binary() {
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
     
     info "Butter compiler installed to $INSTALL_DIR/$BINARY_NAME"
+    if [ -x "$INSTALL_DIR/$BINARY_NAME" ]; then
+        info "$("$INSTALL_DIR/$BINARY_NAME" --version)"
+    fi
     
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
         warn "$INSTALL_DIR is not in PATH. Add it to your shell profile:"

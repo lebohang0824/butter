@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.11.1</div>
+    <div class="version">v1.11.2</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-11-2">v1.11.2</a>
     <a href="#v1-11-1">v1.11.1</a>
     <a href="#v1-11-0">v1.11.0</a>
     <a href="#v1-10-1">v1.10.1</a>
@@ -40,6 +41,13 @@
 </aside>
 
 <main class="main">
+
+<section id="v1-11-2">
+  <h2>v1.11.2 — 2026-07-09</h2>
+  <ul>
+    <li><strong>Fixed raw newlines and tabs in compiled output</strong> — String values (descriptions, defaults, action statements) no longer contain literal <code>\n</code> or <code>\t</code> characters in JSON, YAML, or other output formats. These were leaking into compiled output when descriptions were written across multiple lines for readability in <code>.butter</code> source files. The lexer now properly handles escape sequences (<code>\"</code>, <code>\\</code>, <code>\n</code>, <code>\t</code>) and strips control characters from string tokens.</li>
+  </ul>
+</section>
 
 <section id="v1-11-1">
   <h2>v1.11.1 — 2026-07-08</h2>

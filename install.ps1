@@ -47,6 +47,11 @@ function Install-Binary {
     
     Copy-Item -Path $BinaryName -Destination (Join-Path $installDir $BinaryName) -Force
     Write-Info "Butter compiler installed to $installDir\$BinaryName"
+    $installedPath = Join-Path $installDir $BinaryName
+    if (Test-Path $installedPath) {
+        $version = & $installedPath --version
+        Write-Info "$version"
+    }
     
     $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
     if ($userPath -notlike "*$installDir*") {

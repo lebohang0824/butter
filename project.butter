@@ -1,67 +1,42 @@
-# Butter Project — Release Workflow for AI Agents
-product ButterProject
-description "Release workflow for the Butter project. AI agents follow this spec to decide what actions to take based on which files changed. This is Butter eating its own dog food — the project's own release process is defined as a .butter spec that AI agents execute step by step."
-version "1.11.0"
+# Butter Project — Release Workflow Specification
+#
+# This specification defines the sequential release steps for the Butter project.
+# AI agents: read this spec to execute release tasks safely and deterministically.
+# Follow each action in sequence, ensuring that any conditional expressions
+# (like 'when' or 'if') are verified against the repository state before executing.
 
-feature ReleaseWorkflow
-  description "Actions an AI agent must follow to release changes to production. Agent inspects git diff to determine which files changed, then executes only the matching actions — skipping irrelevant ones. This shows how Butter's conditions (up to 100% / when / unless) eliminate wasted agent steps."
-  version "1.11.0"
+app ButterProject
+description "Release workflow for the Butter project, guiding agents through staging, testing, version bumping, and publishing releases."
+version "2.0.0"
 
-  params
-    param CurrentVersion
-      type string
-      default "1.9.0"
-    param MainBranch
-      type string
-      default "main"
-    param GitHubRepo
-      type string
-      default "github.com/lebohang0824/butter"
+feature ReleaseFlow
+    description "Sequential execution flow to track changes, run validation tests, bump version metadata, update changelogs/documentation, and push the release to the remote repository."
+    version "2.0.0"
 
-  actions
-    # ── Go source changes ──────────────────────────────────────
-    action "Run go build ./... && go vet ./..." | when "*.go, go.mod, go.sum, or main.go changed"
-    action "Run go test ./..." | when "*.go or go.mod changed"
-    action "Bump Version const in cmd/root.go to next semver" | when "Compiler behaviour or CLI interface changed"
+    actions
+        # ── Step 1: Pre-release Inspection ─────────────────────────
+        # AI agents: Inspect the git workspace first to see what files are modified.
+        action "Track changes"
+            enforce "Use git to check for modified files"
 
-    # ── Compiler spec changes ──────────────────────────────────
-    action "Bump product version in compiler.butter" | when "compiler.butter changed"
-    action "Sync compiler.butter actions with actual compiler stages" | when "compiler.butter or pkg/ changed"
-    action "Regenerate compiler.butter compiled output" | when "compiler.butter changed"
+        # ── Step 2: Quality Assurance & Validation ──────────────────
+        # AI agents: Compile and validate all .butter specs to prevent broken configurations.
+        action "Test all butter spec files"
+            enforce "Abort the release process immediately if any validation test fails"
 
-    # ── Extension changes ──────────────────────────────────────
-    action "Bump version in butter-extension/package.json" | when "butter-extension/ changed"
-    action "Bump version in butter-extension/butter-extension.butter" | when "butter-extension/ changed"
-    action "Regenerate butter-extension.json from butter-extension.butter" | when "butter-extension.butter changed"
-    action "Add entry to butter-extension/CHANGELOG.md" | when "Extension behaviour or capabilities changed"
-    action "Rebuild butter-extension.vsix" | when "butter-extension/ changed and release is being prepared"
+        # ── Step 3: Versioning & Changelog updates ──────────────────
+        # AI agents: Automatically manage project versioning and update human-readable logs.
+        action "Update version" | unless "Only .butter or compiled JSON files changed"
+            enforce "Update the version number in the project files"
+            enforce "Update minor version number for bug fixes/tweaks"
+            enforce "Update major version number for enhancements"
 
-    # ── Grammar changes ────────────────────────────────────────
-    action "Add keyword regex to TextMate grammar in syntaxes/butter.tmLanguage.json" | when "New keyword was added to the lexer"
-    action "Add keyword regex to Prism grammar in docs/prism-butber.js" | when "New keyword was added to the lexer"
-    action "Verify keyword list matches between lexer token map, TextMate grammar, and Prism grammar" | when "Any grammar file or lexer token map changed"
-    action "Add new token scope to themes/butter-docs-color-theme.json" | when "New named capture scope is introduced in TextMate grammar"
+        action "Update changelog to reflect new changes" | unless "Only .butter or compiled JSON files changed"
+        action "Update all documents (.md and docs/index.html)" | if "The core compiler has new enhancements"
 
-    # ── Documentation changes ──────────────────────────────────
-    action "Add keyword to keywords table in README.md, DOCUMENTATION.md, and docs/index.html" | when "New keyword was added"
-    action "Bump version badge in docs/index.html, docs/compiler-spec.html, docs/extension-dev.html sidebars" | when "Project version changed"
-    action "Update docs/compiler-spec.html Stage 4 section to match output extension system" | when "Output extension system or pkg/output/ changed"
-    action "Update docs/extension-dev.html walkthrough to match output API" | when "output.Extension interface or registration changed"
-    action "Add entry to docs/index.html changelog section" | when "New version is released"
-    action "Update CLI reference tables in README.md, DOCUMENTATION.md, and docs/index.html" | when "CLI flags or commands changed"
-    action "Update compiler architecture diagram in README.md and DOCUMENTATION.md" | when "Compiler pipeline stages changed"
-    action "Sync VS Code extension features list across README.md, DOCUMENTATION.md, butter-extension/README.md" | when "Extension capabilities changed"
-
-    # ── Markdown documentation changes ─────────────────────────
-    action "Bump version in code snippet const Version in DOCUMENTATION.md" | when "cmd/root.go Version const changed"
-    action "Update install instructions in README.md and DOCUMENTATION.md" | when "Build or install process changed"
-    action "Sync output extensions documentation between README.md and DOCUMENTATION.md" | when "Extension registry changed"
-    action "Verify cross-reference links between .md files and docs/ pages are valid" | unless "All documentation links were verified"
-
-    # ── Release finalization ───────────────────────────────────
-    action "Bump version in project.butter and docs/docs.butter" | when "Release is being cut"
-    action "Regenerate all compiled JSON outputs from all .butter source files" | when "Any .butter spec changed"
-    action "Stage all changed files" | when "Release is ready"
-    action "Verify git status shows only intended changes" | when "Release is ready"
-    action "Commit with conventional message format 'type(scope): description'" | when "Release is ready"
-    action "Push to main branch" | when "Release commit is ready"
+        # ── Step 4: Finalizing & Publishing ─────────────────────────
+        # AI agents: Grouped git operations to stage, verify, commit, and push changes to main.
+        action "Stage all changed files" | when "Release is ready"
+        action "Verify git status shows only intended changes" | when "Release is ready"
+        action "Commit with conventional message format 'type(scope): description'" | when "Release is ready"
+        action "Push to main branch" | when "Release commit is ready"

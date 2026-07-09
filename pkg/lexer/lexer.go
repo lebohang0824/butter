@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 )
 
@@ -170,12 +171,42 @@ func (l *Lexer) skipWhitespaceAndComments() {
 
 func (l *Lexer) readString() Token {
 	l.pos++
-	start := l.pos
-	for l.pos < len(l.input) && l.input[l.pos] != '"' {
+	var buf strings.Builder
+	for l.pos < len(l.input) {
+		ch := l.input[l.pos]
+		if ch == '"' {
+			l.pos++
+			break
+		}
+		if ch == '\\' && l.pos+1 < len(l.input) {
+			l.pos++
+			switch l.input[l.pos] {
+			case 'n':
+				buf.WriteByte('\n')
+			case 't':
+				buf.WriteByte('\t')
+			case 'r':
+				buf.WriteByte('\r')
+			case '\\':
+				buf.WriteByte('\\')
+			case '"':
+				buf.WriteByte('"')
+			default:
+				buf.WriteByte('\\')
+				buf.WriteByte(l.input[l.pos])
+			}
+		} else {
+			if ch == '\n' {
+				l.line++
+			}
+			buf.WriteByte(ch)
+		}
 		l.pos++
 	}
-	val := l.input[start:l.pos]
-	l.pos++
+	val := buf.String()
+	val = strings.ReplaceAll(val, "\n", "")
+	val = strings.ReplaceAll(val, "\r", "")
+	val = strings.ReplaceAll(val, "\t", "")
 	return Token{Type: TokenString, Value: val, Line: l.line}
 }
 
