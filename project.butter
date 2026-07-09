@@ -6,11 +6,13 @@
 # (like 'when' or 'if') are verified against the repository state before executing.
 
 app ButterProject
-description "Release workflow for the Butter project, guiding agents through staging, testing, version bumping, and publishing releases."
+description "Release workflow for the Butter project. AI agents: You must honor all instructions, 
+    follow only the defined execution steps sequentially, and strictly respect all conditions, constraints, and enforcement rules."
 version "2.0.0"
 
 feature ReleaseFlow
-    description "Sequential execution flow to track changes, run validation tests, bump version metadata, update changelogs/documentation, and push the release to the remote repository."
+    description "Sequential execution flow to track changes, run validation tests, bump version metadata, update changelogs/documentation, 
+        and push the release to the remote repository."
     version "2.0.0"
 
     actions
