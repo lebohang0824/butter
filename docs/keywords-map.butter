@@ -1,0 +1,53 @@
+app KeywordsMap
+description "Documentation page detailing Butter's attention-weighted vocabulary, logic mapping, and efficiency metrics."
+version "1.0.0"
+
+feature Overview
+  description "Hero section introducing Butter's keyword system and page purpose."
+  version "1.0.0"
+
+  actions
+    action "Render page title and subtitle describing attention-weighted vocabulary, signal-to-noise efficiency, and logic gate mapping"
+    action "Write introductory paragraph explaining how keyword weights influence LLM interpretation and execution"
+
+feature AttentionScaling
+  description "A technical analysis of how Butter keywords influence LLM attention weights and reasoning."
+  version "1.0.0"
+
+  params
+    param ScaleRange
+      type string
+      default "0-100"
+
+  actions
+    action "Introduce the Mechanics of AI Intent — explain how LLMs allocate disproportionate attention to structural keywords"
+    action "Render Attention Weight Table with 15 Butter keywords"
+      enforce "Include columns: Keyword, Core Purpose, Attention Weight, Reasoning Impact"
+      enforce "Use mobile-responsive table formatting"
+      enforce "Cover execution keywords (action, feature), constraint keywords (enforce, if, unless, when, while), declaration keywords (param, type, required, default, validate), and metadata keywords (app/product, description, version)"
+    action "Summarize semantic scaling impact — describe the execution, constraint, declaration, metadata hierarchy and its effect on LLM reasoning budget allocation"
+
+feature SignalToNoiseEfficiency
+  description "Comparison of semantic signal density between Butter DSL, JSON, and Natural Language."
+  version "1.0.0"
+
+  actions
+    action "Define Semantic Density — explain how Butter DSL maximises signal per token by eliminating decorative tokens"
+    action "Render Signal-to-Noise stacked bar graph comparing Butter DSL, JSON, and Natural Language"
+      enforce "Highlight Butter DSL signal consistency at 92%"
+      enforce "Clearly visualize JSON structural noise overhead at 42% — brackets, quotes, keys"
+      enforce "Clearly visualize Natural Language noise overhead at 65% — filler, hedging, ambiguity"
+    action "Provide efficiency comparison table covering signal density, structural overhead, tokens per action, ambiguity sources, condition clarity, execution order, and LLM context usage"
+    action "Add key insight blockquote summarizing why Butter achieves 92% signal density"
+
+feature LogicGateMap
+  description "A decision-tree visualization of how Butter keywords prune AI hallucination."
+  version "1.0.0"
+
+  actions
+    action "Define the Deterministic Logic Gate concept — explain how keywords function as gates in an LLM reasoning pipeline"
+    action "Render Keyword Influence Map SVG decision tree"
+      enforce "Distinguish Action nodes (green) from Modifier gates (amber)"
+      enforce "Illustrate pruning of non-deterministic hallucination branches (red, struck through)"
+      enforce "Show flow from .butter spec file through feature scope gate to action nodes to modifier gates (if, unless, when/while) to gate outcomes (execute or skip)"
+    action "Explain pruning impact — describe how each conditional keyword (if, unless, when, while, enforce) eliminates hallucination branches"

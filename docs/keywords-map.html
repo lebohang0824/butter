@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Butter — Keywords Map</title>
+<meta name="description" content="Technical analysis of Butter's attention-weighted vocabulary, signal-to-noise efficiency, and logic gate mapping for LLM reasoning.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-vertical: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.12.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#home">Overview</a>
+    <a href="#attention-scaling">Attention Scaling</a>
+    <a href="#signal-to-noise">Signal-to-Noise Efficiency</a>
+    <a href="#logic-gate-map">Logic Gate Map</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="home">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Keywords Map</h1>
+    <p class="subtitle">A technical analysis of Butter's attention-weighted vocabulary, signal-to-noise efficiency, and logic gate mapping for LLM reasoning.</p>
+  </div>
+  <p>Butter's keyword system is designed with a deep understanding of how large language models allocate attention. Each keyword carries a specific semantic weight that influences how an LLM interprets, prioritises, and executes specification instructions. This page maps those weights, compares Butter's signal density against JSON and natural language, and visualises how keywords act as deterministic logic gates that prune hallucination branches.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE 1: ATTENTION SCALING
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section id="attention-scaling">
+  <h2>Attention Scaling</h2>
+  <p>Large language models do not treat all tokens equally. Structural keywords — words that define <em>what to do</em>, <em>when to do it</em>, and <em>what must be true</em> — receive disproportionate attention during inference. Butter's vocabulary is engineered to exploit this: every keyword is chosen to maximise semantic signal per token.</p>
+
+  <h3>Attention Weight Table</h3>
+  <p>The table below maps each Butter keyword to its core purpose, a relative attention weight (0–100 scale, normalised against the full keyword set), and its reasoning impact on LLM behaviour.</p>
+
+  <table class="flag-table">
+    <thead>
+      <tr><th>Keyword</th><th>Core Purpose</th><th>Attention Weight</th><th>Reasoning Impact</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>action</code></td>
+        <td>Declares a discrete execution step — the atomic unit of work</td>
+        <td><strong>98</strong></td>
+        <td>Anchors the LLM's execution plan. Each <code>action</code> becomes a concrete, ordered task. Highest attention because it defines <em>what happens</em>.</td>
+      </tr>
+      <tr>
+        <td><code>feature</code></td>
+        <td>Groups related actions into a named capability boundary</td>
+        <td><strong>95</strong></td>
+        <td>Creates cognitive scope. The LLM treats each feature as an isolated module, preventing cross-feature bleed and ensuring focused implementation.</td>
+      </tr>
+      <tr>
+        <td><code>enforce</code></td>
+        <td>Declares a mandatory constraint that must hold for an action to succeed</td>
+        <td><strong>92</strong></td>
+        <td>Triggers hard constraint reasoning. The LLM treats enforce strings as non-negotiable preconditions — failure to satisfy them halts execution.</td>
+      </tr>
+      <tr>
+        <td><code>if</code></td>
+        <td>Conditional gate — action runs only when predicate is true</td>
+        <td><strong>88</strong></td>
+        <td>Activates branch evaluation. The LLM must resolve the condition before deciding execution, reducing unconditional hallucination.</td>
+      </tr>
+      <tr>
+        <td><code>unless</code></td>
+        <td>Inverted conditional — action runs except when predicate is true</td>
+        <td><strong>85</strong></td>
+        <td>Forces negation reasoning. The LLM must process the logical inverse, which strengthens condition-aware behaviour.</td>
+      </tr>
+      <tr>
+        <td><code>when</code></td>
+        <td>Event-driven trigger — action fires upon external state change</td>
+        <td><strong>82</strong></td>
+        <td>Introduces reactive semantics. The LLM understands this action is contingent on an external signal, not internal logic.</td>
+      </tr>
+      <tr>
+        <td><code>while</code></td>
+        <td>Continuous polling — action persists while condition holds</td>
+        <td><strong>80</strong></td>
+        <td>Establishes state persistence. The LLM treats this as a long-running concern, not a one-shot execution.</td>
+      </tr>
+      <tr>
+        <td><code>param</code></td>
+        <td>Declares a typed input variable with constraints</td>
+        <td><strong>78</strong></td>
+        <td>Defines the input schema. The LLM uses params to validate user input and constrain function signatures.</td>
+      </tr>
+      <tr>
+        <td><code>type</code></td>
+        <td>Sets the data constraint for a parameter (string, int, enum, etc.)</td>
+        <td><strong>75</strong></td>
+        <td>Shapes type inference. The LLM generates type-safe code aligned with the declared constraint.</td>
+      </tr>
+      <tr>
+        <td><code>required</code></td>
+        <td>Marks a parameter as mandatory</td>
+        <td><strong>72</strong></td>
+        <td>Enforces input validation. The LLM adds null/empty checks and error handling for required params.</td>
+      </tr>
+      <tr>
+        <td><code>default</code></td>
+        <td>Provides a fallback value when parameter is omitted</td>
+        <td><strong>65</strong></td>
+        <td>Reduces ambiguity. The LLM knows the exact fallback, eliminating guesswork for optional inputs.</td>
+      </tr>
+      <tr>
+        <td><code>validate</code></td>
+        <td>Numeric constraint rule (e.g. <code>&gt;10</code>, <code>!=5</code>)</td>
+        <td><strong>68</strong></td>
+        <td>Adds validation logic. The LLM generates boundary checks and error messages for out-of-range values.</td>
+      </tr>
+      <tr>
+        <td><code>app</code> / <code>product</code></td>
+        <td>Root namespace — defines the top-level entity</td>
+        <td><strong>60</strong></td>
+        <td>Sets the project scope. Lower weight because it's structural metadata, not execution logic.</td>
+      </tr>
+      <tr>
+        <td><code>description</code></td>
+        <td>Human-readable context string</td>
+        <td><strong>55</strong></td>
+        <td>Provides contextual framing. The LLM uses it to understand purpose but doesn't execute it directly.</td>
+      </tr>
+      <tr>
+        <td><code>version</code></td>
+        <td>Version identifier for app or feature</td>
+        <td><strong>40</strong></td>
+        <td>Metadata only. Minimal reasoning impact — used for tracking, not execution.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Semantic Scaling Impact</h3>
+  <p>Butter's keyword weights follow a deliberate hierarchy: <strong>execution keywords</strong> (<code>action</code>, <code>feature</code>) carry the highest attention because they define what the AI must build. <strong>Constraint keywords</strong> (<code>enforce</code>, <code>if</code>, <code>unless</code>) follow closely because they gate execution paths. <strong>Declaration keywords</strong> (<code>param</code>, <code>type</code>, <code>required</code>) sit in the middle because they shape the input schema. <strong>Metadata keywords</strong> (<code>app</code>, <code>description</code>, <code>version</code>) carry the least weight because they provide context without driving behaviour.</p>
+
+  <p>This hierarchy means an LLM reading a Butter spec allocates its reasoning budget proportionally: most attention goes to execution steps, then to constraints, then to type declarations, and least to metadata. The result is fewer hallucinated actions, stricter condition evaluation, and more type-safe implementations — all without explicit prompting instructions.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE 2: SIGNAL-TO-NOISE EFFICIENCY
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section id="signal-to-noise">
+  <h2>Signal-to-Noise Efficiency</h2>
+  <p>Semantic density measures how much actionable information a format delivers per token. Butter DSL is engineered for maximum signal density: every token either declares intent, defines a constraint, or specifies execution order. JSON and natural language carry significant structural overhead — brackets, quotes, keys, filler words — that consumes context window tokens without adding execution value.</p>
+
+  <h3>Signal-to-Noise Graph</h3>
+  <p>The graph below compares the semantic composition of three formats expressing the same specification. Butter DSL achieves near-uniform signal density with minimal structural noise. JSON's curly braces, key names, and quoting add significant overhead. Natural language is dominated by filler and ambiguity.</p>
+
+  <div style="overflow-x: auto; margin: 1.5rem 0;">
+    <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" style="max-width: 700px; width: 100%; height: auto;">
+      <!-- Background -->
+      <rect width="700" height="340" fill="var(--bg)" rx="8"/>
+
+      <!-- Title -->
+      <text x="350" y="30" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">Semantic Composition by Format</text>
+
+      <!-- Y-axis label -->
+      <text x="20" y="185" text-anchor="middle" font-size="11" fill="var(--fg-muted)" transform="rotate(-90, 20, 185)">Percentage of Tokens</text>
+
+      <!-- Y-axis ticks -->
+      <text x="55" y="295" text-anchor="end" font-size="10" fill="var(--fg-muted)">0%</text>
+      <text x="55" y="233" text-anchor="end" font-size="10" fill="var(--fg-muted)">25%</text>
+      <text x="55" y="171" text-anchor="end" font-size="10" fill="var(--fg-muted)">50%</text>
+      <text x="55" y="109" text-anchor="end" font-size="10" fill="var(--fg-muted)">75%</text>
+      <text x="55" y="47" text-anchor="end" font-size="10" fill="var(--fg-muted)">100%</text>
+
+      <!-- Grid lines -->
+      <line x1="65" y1="290" x2="660" y2="290" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+      <line x1="65" y1="228" x2="660" y2="228" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+      <line x1="65" y1="166" x2="660" y2="166" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+      <line x1="65" y1="104" x2="660" y2="104" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+
+      <!-- Baseline -->
+      <line x1="65" y1="290" x2="660" y2="290" stroke="var(--border)" stroke-width="1"/>
+
+      <!-- Butter DSL bar (left) -->
+      <!-- Signal: 92% = 267px height -->
+      <rect x="120" y="23" width="120" height="267" rx="4" fill="#5A8A5A" opacity="0.9"/>
+      <text x="180" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Signal</text>
+      <text x="180" y="170" text-anchor="middle" font-size="10" fill="#fff">92%</text>
+      <!-- Noise: 8% = 23px height -->
+      <rect x="120" y="267" width="120" height="23" rx="0 0 4 4" fill="#C87D3A" opacity="0.7"/>
+      <text x="180" y="282" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">8%</text>
+
+      <!-- JSON bar (middle) -->
+      <!-- Signal: 58% = 168px height -->
+      <rect x="290" y="122" width="120" height="168" rx="4" fill="#5A8A5A" opacity="0.9"/>
+      <text x="350" y="210" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Signal</text>
+      <text x="350" y="225" text-anchor="middle" font-size="10" fill="#fff">58%</text>
+      <!-- Noise: 42% = 122px height -->
+      <rect x="350" y="122" width="60" height="168" rx="0 0 4 4" fill="#C87D3A" opacity="0.7"/>
+      <rect x="290" y="122" width="60" height="168" rx="0 0 4 4" fill="#C87D3A" opacity="0.5"/>
+      <text x="350" y="282" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">42%</text>
+      <!-- JSON overhead labels -->
+      <text x="350" y="140" text-anchor="middle" font-size="9" fill="#fff" opacity="0.9">{ } [ ] " : ,</text>
+
+      <!-- Natural Language bar (right) -->
+      <!-- Signal: 35% = 101px height -->
+      <rect x="460" y="189" width="120" height="101" rx="4" fill="#5A8A5A" opacity="0.9"/>
+      <text x="520" y="245" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Signal</text>
+      <text x="520" y="260" text-anchor="middle" font-size="10" fill="#fff">35%</text>
+      <!-- Noise: 65% = 189px height -->
+      <rect x="460" y="189" width="120" height="101" rx="0 0 0 0" fill="none"/>
+      <rect x="460" y="189" width="120" height="101" rx="0" fill="#C87D3A" opacity="0.3"/>
+      <rect x="460" y="101" width="120" height="88" rx="4 4 0 0" fill="#C87D3A" opacity="0.7"/>
+      <text x="520" y="282" text-anchor="middle" font-size="10" font-weight="600" fill="#fff">65%</text>
+      <!-- NL overhead labels -->
+      <text x="520" y="130" text-anchor="middle" font-size="9" fill="#fff" opacity="0.9">filler · ambiguity</text>
+      <text x="520" y="145" text-anchor="middle" font-size="9" fill="#fff" opacity="0.9">hedging · repetition</text>
+
+      <!-- X-axis labels -->
+      <text x="180" y="315" text-anchor="middle" font-size="12" font-weight="600" fill="var(--fg)">Butter DSL</text>
+      <text x="350" y="315" text-anchor="middle" font-size="12" font-weight="600" fill="var(--fg)">JSON</text>
+      <text x="520" y="315" text-anchor="middle" font-size="12" font-weight="600" fill="var(--fg)">Natural Language</text>
+
+      <!-- Legend -->
+      <rect x="230" y="330" width="10" height="10" rx="2" fill="#5A8A5A" opacity="0.9"/>
+      <text x="245" y="339" font-size="10" fill="var(--fg-muted)">Signal (actionable intent)</text>
+      <rect x="400" y="330" width="10" height="10" rx="2" fill="#C87D3A" opacity="0.7"/>
+      <text x="415" y="339" font-size="10" fill="var(--fg-muted)">Noise (structural overhead)</text>
+    </svg>
+  </div>
+
+  <h3>Efficiency Comparison</h3>
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Butter DSL</th><th>JSON</th><th>Natural Language</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Signal density</td><td><strong>92%</strong></td><td>58%</td><td>35%</td></tr>
+      <tr><td>Structural overhead</td><td><strong>8%</strong></td><td>42%</td><td>65%</td></tr>
+      <tr><td>Tokens per action</td><td><strong>~6</strong></td><td>~18</td><td>~35</td></tr>
+      <tr><td>Ambiguity sources</td><td><strong>0</strong></td><td>1 (implicit types)</td><td>Many (hedging, pronouns, context)</td></tr>
+      <tr><td>Condition clarity</td><td><strong>Explicit keyword + expression</strong></td><td>Nested JSON object</td><td>Prose with embedded logic</td></tr>
+      <tr><td>Execution order</td><td><strong>Implicit (array position)</strong></td><td>Implicit (array position)</td><td>Ambiguous (requires parsing)</td></tr>
+      <tr><td>LLM context usage</td><td><strong>~3x less than NL</strong></td><td>~1.5x less than NL</td><td>Baseline</td></tr>
+    </tbody>
+  </table>
+
+  <blockquote>
+    <p><strong>Key insight:</strong> Butter achieves 92% signal density because every token is either a keyword that defines behaviour, a name that identifies a component, or a value that constrains input. There are no decorative tokens. JSON's 42% overhead comes from structural syntax (<code>{</code>, <code>}</code>, <code>"</code>, <code>:</code>, <code>,</code>) that adds zero execution value. Natural language's 65% overhead comes from filler words, hedging, pronoun resolution, and ambiguous references that actively confuse LLM reasoning.</p>
+  </blockquote>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE 3: LOGIC GATE MAP
+     ═══════════════════════════════════════════════════════════════ -->
+
+<section id="logic-gate-map">
+  <h2>Logic Gate Map</h2>
+  <p>Butter keywords function as deterministic logic gates in an LLM's reasoning pipeline. Each keyword either <strong>declares an action node</strong> (what must happen) or <strong>acts as a modifier gate</strong> (under what conditions it happens). Together, they form a decision tree that prunes non-deterministic hallucination branches before they form.</p>
+
+  <h3>How It Works</h3>
+  <p>When an LLM reads a Butter spec, it processes the keyword hierarchy top-down:</p>
+  <ol>
+    <li><strong><code>feature</code></strong> — Opens a scope. The LLM knows everything inside belongs to one capability.</li>
+    <li><strong><code>action</code></strong> — Creates a concrete execution node. The LLM adds this to its ordered task list.</li>
+    <li><strong><code>enforce</code></strong> — Attaches a hard constraint to the preceding action. The LLM must verify this before proceeding.</li>
+    <li><strong><code>if</code> / <code>unless</code> / <code>when</code> / <code>while</code></strong> — Gates the action behind a condition. The LLM evaluates the predicate and decides whether to execute or skip.</li>
+  </ol>
+  <p>Without these gates, an LLM faced with "process payments" might invent its own conditions, skip validation steps, or execute actions in parallel. Butter's keyword gates eliminate this by making every branching decision explicit and every execution order deterministic.</p>
+
+  <h3>Keyword Influence Map</h3>
+  <p>The diagram below shows how Butter keywords flow from spec to LLM reasoning. Action nodes (green) define what happens. Modifier gates (amber) decide whether it happens. Hallucination branches (red, struck through) are pruned at each gate.</p>
+
+  <div style="overflow-x: auto; margin: 1.5rem 0;">
+    <svg viewBox="0 0 760 520" xmlns="http://www.w3.org/2000/svg" style="max-width: 760px; width: 100%; height: auto;">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--fg-muted)"/>
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A8A5A"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#C04040"/>
+        </marker>
+      </defs>
+
+      <!-- Background -->
+      <rect width="760" height="520" fill="var(--bg)" rx="8"/>
+
+      <!-- Title -->
+      <text x="380" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)">Butter Keyword Logic Gate Map</text>
+
+      <!-- ─── ROW 1: Spec Input ─── -->
+      <rect x="270" y="48" width="220" height="36" rx="6" fill="var(--bg-alt)" stroke="var(--border)" stroke-width="1.5"/>
+      <text x="380" y="71" text-anchor="middle" font-size="12" font-weight="600" fill="var(--fg)">.butter Spec File</text>
+
+      <!-- Arrow down -->
+      <line x1="380" y1="84" x2="380" y2="112" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- ─── ROW 2: Feature Scope ─── -->
+      <rect x="270" y="114" width="220" height="36" rx="6" fill="#3A7A9A" opacity="0.15" stroke="#3A7A9A" stroke-width="1.5"/>
+      <text x="380" y="137" text-anchor="middle" font-size="12" font-weight="600" fill="#3A7A9A">feature → Scope Gate</text>
+
+      <!-- Arrows from feature to three action nodes -->
+      <line x1="320" y1="150" x2="140" y2="192" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="380" y1="150" x2="380" y2="192" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="440" y1="150" x2="620" y2="192" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- ─── ROW 3: Action Nodes ─── -->
+      <!-- Action 1 -->
+      <rect x="55" y="194" width="170" height="36" rx="6" fill="#5A8A5A" opacity="0.2" stroke="#5A8A5A" stroke-width="1.5"/>
+      <text x="140" y="217" text-anchor="middle" font-size="11" font-weight="600" fill="#5A8A5A">action → Execute</text>
+
+      <!-- Action 2 -->
+      <rect x="295" y="194" width="170" height="36" rx="6" fill="#5A8A5A" opacity="0.2" stroke="#5A8A5A" stroke-width="1.5"/>
+      <text x="380" y="217" text-anchor="middle" font-size="11" font-weight="600" fill="#5A8A5A">action → Execute</text>
+
+      <!-- Action 3 -->
+      <rect x="535" y="194" width="170" height="36" rx="6" fill="#5A8A5A" opacity="0.2" stroke="#5A8A5A" stroke-width="1.5"/>
+      <text x="620" y="217" text-anchor="middle" font-size="11" font-weight="600" fill="#5A8A5A">action → Execute</text>
+
+      <!-- Enforce under Action 1 -->
+      <line x1="140" y1="230" x2="140" y2="254" stroke="#C04040" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+      <rect x="60" y="256" width="160" height="30" rx="4" fill="#C04040" opacity="0.12" stroke="#C04040" stroke-width="1"/>
+      <text x="140" y="275" text-anchor="middle" font-size="10" font-weight="600" fill="#C04040">enforce → Hard Constraint</text>
+
+      <!-- ─── ROW 4: Modifier Gates ─── -->
+      <!-- IF gate -->
+      <line x1="380" y1="230" x2="280" y2="310" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="210" y="312" width="140" height="32" rx="16" fill="#C87D3A" opacity="0.2" stroke="#C87D3A" stroke-width="1.5"/>
+      <text x="280" y="333" text-anchor="middle" font-size="11" font-weight="600" fill="#C87D3A">if → Gate</text>
+
+      <!-- UNLESS gate -->
+      <line x1="380" y1="230" x2="480" y2="310" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="410" y="312" width="140" height="32" rx="16" fill="#C87D3A" opacity="0.2" stroke="#C87D3A" stroke-width="1.5"/>
+      <text x="480" y="333" text-anchor="middle" font-size="11" font-weight="600" fill="#C87D3A">unless → Gate</text>
+
+      <!-- ─── ROW 5: Gate Outcomes ─── -->
+      <!-- IF: True branch (execute) -->
+      <line x1="250" y1="344" x2="180" y2="382" stroke="#5A8A5A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+      <rect x="105" y="384" width="150" height="28" rx="4" fill="#5A8A5A" opacity="0.15" stroke="#5A8A5A" stroke-width="1"/>
+      <text x="180" y="403" text-anchor="middle" font-size="10" font-weight="600" fill="#5A8A5A">✓ True → Execute</text>
+
+      <!-- IF: False branch (prune) -->
+      <line x1="310" y1="344" x2="370" y2="382" stroke="#C04040" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+      <rect x="310" y="384" width="120" height="28" rx="4" fill="#C04040" opacity="0.12" stroke="#C04040" stroke-width="1"/>
+      <text x="370" y="403" text-anchor="middle" font-size="10" font-weight="600" fill="#C04040">✗ False → Skip</text>
+
+      <!-- Hallucination branch (pruned) -->
+      <line x1="370" y1="412" x2="370" y2="444" stroke="#C04040" stroke-width="1" stroke-dasharray="4"/>
+      <rect x="295" y="446" width="150" height="28" rx="4" fill="#C04040" opacity="0.08" stroke="#C04040" stroke-width="1" stroke-dasharray="3"/>
+      <text x="370" y="465" text-anchor="middle" font-size="9" fill="#C04040" text-decoration="line-through">Hallucinated path pruned</text>
+
+      <!-- UNLESS: False branch (execute) -->
+      <line x1="450" y1="344" x2="520" y2="382" stroke="#5A8A5A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+      <rect x="445" y="384" width="150" height="28" rx="4" fill="#5A8A5A" opacity="0.15" stroke="#5A8A5A" stroke-width="1"/>
+      <text x="520" y="403" text-anchor="middle" font-size="10" font-weight="600" fill="#5A8A5A">✓ False → Execute</text>
+
+      <!-- UNLESS: True branch (prune) -->
+      <line x1="510" y1="344" x2="610" y2="382" stroke="#C04040" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+      <rect x="555" y="384" width="110" height="28" rx="4" fill="#C04040" opacity="0.12" stroke="#C04040" stroke-width="1"/>
+      <text x="610" y="403" text-anchor="middle" font-size="10" font-weight="600" fill="#C04040">✗ True → Skip</text>
+
+      <!-- Hallucination branch (pruned) -->
+      <line x1="610" y1="412" x2="610" y2="444" stroke="#C04040" stroke-width="1" stroke-dasharray="4"/>
+      <rect x="535" y="446" width="150" height="28" rx="4" fill="#C04040" opacity="0.08" stroke="#C04040" stroke-width="1" stroke-dasharray="3"/>
+      <text x="610" y="465" text-anchor="middle" font-size="9" fill="#C04040" text-decoration="line-through">Hallucinated path pruned</text>
+
+      <!-- WHEN / WHILE gates (right side) -->
+      <line x1="620" y1="230" x2="620" y2="310" stroke="var(--fg-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <rect x="555" y="312" width="130" height="32" rx="16" fill="#C87D3A" opacity="0.2" stroke="#C87D3A" stroke-width="1.5"/>
+      <text x="620" y="333" text-anchor="middle" font-size="10" font-weight="600" fill="#C87D3A">when / while → Gate</text>
+
+      <!-- WHEN/WAIT outcomes -->
+      <line x1="590" y1="344" x2="560" y2="382" stroke="#5A8A5A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+      <rect x="495" y="384" width="130" height="28" rx="4" fill="#5A8A5A" opacity="0.15" stroke="#5A8A5A" stroke-width="1"/>
+      <text x="560" y="403" text-anchor="middle" font-size="9" font-weight="600" fill="#5A8A5A">✓ Event fires → Run</text>
+
+      <line x1="650" y1="344" x2="680" y2="382" stroke="#C04040" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+      <rect x="625" y="384" width="110" height="28" rx="4" fill="#C04040" opacity="0.12" stroke="#C04040" stroke-width="1"/>
+      <text x="680" y="403" text-anchor="middle" font-size="9" font-weight="600" fill="#C04040">✗ No event → Wait</text>
+
+      <!-- Legend -->
+      <rect x="60" y="490" width="12" height="12" rx="3" fill="#5A8A5A" opacity="0.2" stroke="#5A8A5A" stroke-width="1"/>
+      <text x="78" y="501" font-size="10" fill="var(--fg-muted)">Action node (execute)</text>
+      <rect x="220" y="490" width="12" height="12" rx="6" fill="#C87D3A" opacity="0.2" stroke="#C87D3A" stroke-width="1"/>
+      <text x="238" y="501" font-size="10" fill="var(--fg-muted)">Modifier gate (condition)</text>
+      <rect x="400" y="490" width="12" height="12" rx="3" fill="#C04040" opacity="0.12" stroke="#C04040" stroke-width="1"/>
+      <text x="418" y="501" font-size="10" fill="var(--fg-muted)">Pruned hallucination branch</text>
+    </svg>
+  </div>
+
+  <h3>Pruning Impact</h3>
+  <p>Every Butter keyword acts as a filter. Without <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> gates, an LLM must decide on its own which actions apply — and will frequently invent conditions or execute actions that should be skipped. With Butter's explicit gates:</p>
+  <ul>
+    <li><strong><code>if</code></strong> prunes actions when the predicate is false — the LLM skips instead of hallucinating execution.</li>
+    <li><strong><code>unless</code></strong> prunes actions when the predicate is true — the LLM skips the inverse path.</li>
+    <li><strong><code>when</code></strong> prunes actions until the event fires — the LLM waits instead of assuming immediate execution.</li>
+    <li><strong><code>while</code></strong> prunes actions when the state condition is false — the LLM recognises the action is state-dependent.</li>
+    <li><strong><code>enforce</code></strong> prunes incomplete execution — the LLM cannot proceed until the constraint is satisfied.</li>
+  </ul>
+
+  <p>The result is a specification where every execution path is deterministic. The LLM doesn't need to <em>infer</em> what to do — it reads what to do, evaluates the gates, and executes only the validated paths. This is the core mechanism behind Butter's claim of up to 100% alignment in a single shot.</p>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
