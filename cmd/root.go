@@ -11,6 +11,7 @@ import (
 	"butter/pkg/output"
 	_ "butter/pkg/output/htmltree"
 	_ "butter/pkg/output/json"
+	_ "butter/pkg/output/prompt"
 	_ "butter/pkg/output/simulator"
 	_ "butter/pkg/output/yaml"
 	"butter/pkg/parser"
@@ -23,7 +24,7 @@ func formatList() string {
 	return strings.Join(output.Names(), ", ")
 }
 
-const Version = "1.11.2"
+const Version = "1.12.0"
 
 var outputFile string
 var outputFormat string

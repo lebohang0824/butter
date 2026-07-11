@@ -8,12 +8,12 @@
 app ButterProject
 description "Release workflow for the Butter project. AI agents: You must honor all instructions, 
     follow only the defined execution steps sequentially, and strictly respect all conditions, constraints, and enforcement rules."
-version "2.0.0"
+version "2.1.0"
 
 feature ReleaseFlow
     description "Sequential execution flow to track changes, run validation tests, bump version metadata, update changelogs/documentation, 
         and push the release to the remote repository."
-    version "2.0.0"
+    version "2.1.0"
 
     actions
         # ── Step 1: Pre-release Inspection ─────────────────────────
@@ -35,6 +35,7 @@ feature ReleaseFlow
 
         action "Update changelog to reflect new changes" | unless "Only .butter or compiled JSON files changed"
         action "Update all documents (.md and docs/index.html)" | if "The core compiler has new enhancements"
+        action "Update docs/extensions.html" | if "New output extension is added"
 
         # ── Step 4: Finalizing & Publishing ─────────────────────────
         # AI agents: Grouped git operations to stage, verify, commit, and push changes to main.

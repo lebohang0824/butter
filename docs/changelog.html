@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.11.2</div>
+    <div class="version">v1.12.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-12-0">v1.12.0</a>
     <a href="#v1-11-2">v1.11.2</a>
     <a href="#v1-11-1">v1.11.1</a>
     <a href="#v1-11-0">v1.11.0</a>
@@ -41,6 +42,13 @@
 </aside>
 
 <main class="main">
+
+<section id="v1-12-0">
+  <h2>v1.12.0 — 2026-07-11</h2>
+  <ul>
+    <li><strong>Prompt output extension</strong> — New <code>-f prompt</code> output format generates a token-efficient Markdown spec designed for LLM consumption. Features <code># [SYSTEM SPEC]</code> headers, <code>## Feature:</code> sections with versioned params (type, required/optional, defaults, validate constraints), and numbered <code>### Execution Sequence</code> steps with <strong>ENFORCE</strong>, <strong>WHEN</strong>, <strong>IF</strong>, <strong>UNLESS</strong>, and <strong>WHILE</strong> condition sub-bullets. Output defaults to <code>.prompt.md</code>.</li>
+  </ul>
+</section>
 
 <section id="v1-11-2">
   <h2>v1.11.2 — 2026-07-09</h2>

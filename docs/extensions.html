@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Butter — Output Extensions Reference</title>
-<meta name="description" content="Comprehensive documentation for every built-in output extension in the Butter specification language compiler: JSON, YAML, and the interactive HTML tree visualizer.">
+<meta name="description" content="Comprehensive documentation for every built-in output extension in the Butter specification language compiler: JSON, YAML, HTML tree visualizer, simulator, and prompt.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.11.2</div>
+    <div class="version">v1.12.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -28,6 +28,7 @@
     <a href="#yaml">YAML Extension</a>
     <a href="#htmltree">HTML Tree Extension</a>
     <a href="#sim">Sim Extension</a>
+    <a href="#prompt">Prompt Extension</a>
     <a href="#comparison">Comparison</a>
   </nav>
 </aside>
@@ -43,7 +44,7 @@
 
   <p>Butter's output layer is built around a pluggable <a href="extension-dev.html"><code>Extension</code> interface</a>. Each format is a standalone Go package that registers itself with the compiler at startup. The <code>--format</code> (or <code>-f</code>) flag selects which extension to use at compile time.</p>
 
-  <p>Four built-in extensions ship with the compiler:</p>
+  <p>Five built-in extensions ship with the compiler:</p>
 
   <table>
     <tr><th>Name</th><th>File Extension</th><th>Primary Use Case</th></tr>
@@ -51,6 +52,7 @@
     <tr><td><code>yaml</code></td><td><code>.yaml</code></td><td>Human-readable configuration and documentation</td></tr>
     <tr><td><code>htmltree</code></td><td><code>.html</code></td><td>Interactive visual debugging and spec exploration in the browser</td></tr>
     <tr><td><code>sim</code></td><td><code>.sim.html</code></td><td>Interactive spec simulation with AI-generated implementation code</td></tr>
+    <tr><td><code>prompt</code></td><td><code>.prompt.md</code></td><td>Token-efficient Markdown spec for LLM consumption</td></tr>
   </table>
 
   <p>All extensions are imported via blank imports in <code>cmd/root.go</code> and auto-discovered at runtime. The compiler lists them automatically in <code>--help</code> output and error messages.</p>
@@ -400,23 +402,117 @@ func (simExt) FileExtension() string { return ".sim.html" }</code></pre>
   </ul>
 </section>
 
+<section id="prompt">
+  <h2>Prompt Extension</h2>
+
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Package</td><td><code>pkg/output/prompt/prompt.go</code></td></tr>
+    <tr><td>Extension name</td><td><code>prompt</code></td></tr>
+    <tr><td>File extension</td><td><code>.prompt.md</code></td></tr>
+    <tr><td>Library</td><td><code>fmt</code> + <code>strings</code> (Go standard library)</td></tr>
+  </table>
+
+  <h3>Purpose</h3>
+  <p>The prompt extension generates a token-efficient Markdown specification designed for direct LLM consumption. Unlike JSON or YAML (which encode data structure), the prompt format produces a human-and-LLM-readable document that uses Markdown headers, bold keywords, backtick-wrapped identifiers, and numbered execution sequences to communicate intent with minimal token overhead.</p>
+
+  <p>This format is ideal when you want to paste a spec directly into an LLM chat interface, embed it in a system prompt, or use it as a context document — without the overhead of JSON brackets, quotes, and nested braces consuming context window tokens.</p>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-go">package prompt
+
+import (
+    "fmt"
+    "strings"
+    "butter/pkg/ast"
+    "butter/pkg/output"
+)
+
+func init() {
+    output.Register(promptExt{})
+}
+
+type promptExt struct{}
+
+func (promptExt) Name() string          { return "prompt" }
+func (promptExt) FileExtension() string { return ".prompt.md" }
+
+func (promptExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
+    var b strings.Builder
+    fmt.Fprintf(&b, "# [SYSTEM SPEC] %s\n", spec.App)
+    // ... version, description, features, params, actions
+    return []byte(b.String()), nil
+}</code></pre>
+
+  <h3>Output Format</h3>
+  <p>The prompt format follows a strict Markdown structure optimized for token efficiency:</p>
+
+  <pre><code class="language-markdown"># [SYSTEM SPEC] OrderProcessor
+> **Version:** 2.1.0
+> **Description:** Handles high-throughput retail checkout workflows safely
+
+## Feature: ProcessPayment
+**Version:** 1.0.0
+Processes financial transactions through multiple payment gateways
+
+### Params
+* `OrderID` (string, required)
+* `Amount` (float, required)
+* `PaymentMethod` (enum["CreditCard", "Crypto", "BankTransfer"], optional) default: "CreditCard"
+
+### Execution Sequence
+**CRITICAL:** Execute the following steps strictly in order. Do not proceed to the next step until the current one is complete.
+
+1. **Validate routing balance metrics**
+    * **ENFORCE:** The payment gateway must have sufficient routing capacity
+    * **ENFORCE:** Failed validations must log the routing error before halting
+
+2. **Apply cryptocurrency transaction surcharge**
+    * **WHEN:** `PaymentMethod is set to Crypto`
+
+3. **Flag transaction for manual risk mitigation review**
+    * **IF:** `Amount > 10000`
+
+4. **Bypass fraud detection ledger verification**
+    * **UNLESS:** `Amount > 50`
+
+5. **Maintain continuous transaction ledger heartbeat**
+    * **WHILE:** `Gateway Connection is unstable`</code></pre>
+
+  <h3>Format Structure</h3>
+  <ul>
+    <li><strong>Header</strong> — <code># [SYSTEM SPEC] AppName</code> with version and description in blockquotes</li>
+    <li><strong>Features</strong> — <code>## Feature: Name</code> with version and description</li>
+    <li><strong>Params</strong> — <code>* `Name` (type, required/optional)</code> with defaults and validate constraints</li>
+    <li><strong>Execution Sequence</strong> — Numbered bold action statements with <strong>ENFORCE</strong>, <strong>WHEN</strong>, <strong>IF</strong>, <strong>UNLESS</strong>, <strong>WHILE</strong> sub-bullets</li>
+  </ul>
+
+  <h3>When to Use</h3>
+  <ul>
+    <li><strong>LLM chat interfaces</strong> — Paste the spec directly into ChatGPT, Claude, or Gemini without JSON overhead.</li>
+    <li><strong>System prompts</strong> — Embed the spec as context in an LLM system prompt for agentic workflows.</li>
+    <li><strong>Token-constrained environments</strong> — When every token counts, the prompt format eliminates JSON syntax overhead.</li>
+    <li><strong>Documentation</strong> — Human-readable spec that doubles as a requirements document.</li>
+  </ul>
+</section>
+
 <section id="comparison">
   <h2>Extension Comparison</h2>
 
   <table>
-    <tr><th>Criteria</th><th>JSON</th><th>YAML</th><th>HTML Tree</th><th>Sim</th></tr>
-    <tr><td>Primary audience</td><td>AI agents, programs</td><td>Humans, config pipelines</td><td>Developers (visual)</td><td>Developers (interactive testing)</td></tr>
-    <tr><td>File extension</td><td><code>.json</code></td><td><code>.yaml</code></td><td><code>.html</code></td><td><code>.sim.html</code></td></tr>
-    <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td><td>Yes (single HTML file)</td></tr>
-    <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td><td>Yes (simulation controls)</td></tr>
-    <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td><td>None (stdlib + inline JS + optional AI API / opencode CLI)</td></tr>
-    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td><td>~912 (incl. embedded template)</td></tr>
-    <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
-    <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td><td>High (interactive)</td></tr>
-    <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td><td>Low (designed for simulation)</td></tr>
+    <tr><th>Criteria</th><th>JSON</th><th>YAML</th><th>HTML Tree</th><th>Sim</th><th>Prompt</th></tr>
+    <tr><td>Primary audience</td><td>AI agents, programs</td><td>Humans, config pipelines</td><td>Developers (visual)</td><td>Developers (interactive testing)</td><td>LLMs, system prompts</td></tr>
+    <tr><td>File extension</td><td><code>.json</code></td><td><code>.yaml</code></td><td><code>.html</code></td><td><code>.sim.html</code></td><td><code>.prompt.md</code></td></tr>
+    <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td><td>Yes (single HTML file)</td><td>Yes</td></tr>
+    <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td><td>Yes (simulation controls)</td><td>No</td></tr>
+    <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td><td>None (stdlib + inline JS + optional AI API / opencode CLI)</td><td>None (stdlib)</td></tr>
+    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td><td>~912 (incl. embedded template)</td><td>~100</td></tr>
+    <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td><td>High (interactive)</td><td>High (Markdown)</td></tr>
+    <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td><td>Low (designed for simulation)</td><td>Moderate (structured Markdown)</td></tr>
   </table>
 
-  <p>For most workflows, JSON is the right choice — it is the default, has zero dependencies, and is designed for AI agent consumption. Use YAML when you need human readability alongside machine parseability. Use htmltree when you want to see your spec come to life as an interactive diagram. Use sim when you want to test your spec interactively or generate implementation code with AI.</p>
+  <p>For most workflows, JSON is the right choice — it is the default, has zero dependencies, and is designed for AI agent consumption. Use YAML when you need human readability alongside machine parseability. Use htmltree when you want to see your spec come to life as an interactive diagram. Use sim when you want to test your spec interactively or generate implementation code with AI. Use prompt when you need a token-efficient spec for direct LLM consumption or system prompt embedding.</p>
 
   <p>To write your own extension, see the <a href="extension-dev.html">Writing Output Extensions</a> guide.</p>
 </section>

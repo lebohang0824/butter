@@ -2,6 +2,9 @@
 butter
 butter.exe
 
+# Generated prompt output
+**.prompt.md
+
 # Generated JSON/YAML output
 **/*.json
 **/*.yaml

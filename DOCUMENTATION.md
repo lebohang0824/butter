@@ -1075,6 +1075,7 @@ butter compile demo.butter -f toml
 | `pkg/output/json/json.go` | `"json"` | `.json` | `encoding/json` (stdlib) |
 | `pkg/output/yaml/yaml.go` | `"yaml"` | `.yaml` | `gopkg.in/yaml.v3` |
 | `pkg/output/htmltree/htmltree.go` | `"htmltree"` | `.html` | `html/template` (stdlib) |
+| `pkg/output/prompt/prompt.go` | `"prompt"` | `.prompt.md` | `fmt` + `strings` (stdlib) |
 
 Each is roughly 20 lines and serves as a reference implementation (htmltree is larger due to its embedded HTML/CSS/JS template). See [Output Extensions Reference](docs/extensions.html) for detailed documentation of every built-in extension.
 
