@@ -43,7 +43,7 @@
     <h1>Keywords Map</h1>
     <p class="subtitle">A technical analysis of Butter's attention-weighted vocabulary, signal-to-noise efficiency, and logic gate mapping for LLM reasoning.</p>
   </div>
-  <p>Butter's keyword system is designed with a deep understanding of how large language models allocate attention. Each keyword carries a specific semantic weight that influences how an LLM interprets, prioritises, and executes specification instructions. This page maps those weights, compares Butter's signal density against JSON and natural language, and visualises how keywords act as deterministic logic gates that prune hallucination branches.</p>
+  <p>Butter's keyword system is designed with a deep understanding of how large language models allocate attention. Each keyword carries a specific semantic weight that influences how an LLM interprets, prioritises, and executes specification instructions — from feature actions to HTTP endpoint contracts. This page maps those weights, compares Butter's signal density against JSON and natural language, and visualises how keywords act as deterministic logic gates that prune hallucination branches.</p>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════
@@ -75,16 +75,34 @@
         <td>Creates cognitive scope. The LLM treats each feature as an isolated module, preventing cross-feature bleed and ensuring focused implementation.</td>
       </tr>
       <tr>
+        <td><code>endpoint</code></td>
+        <td>Declares an HTTP endpoint — the synchronous transport contract</td>
+        <td><strong>94</strong></td>
+        <td>Creates API scope. The LLM treats each endpoint as an isolated contract with its own params, responses, and return mapping. Strictly separated from feature blocks.</td>
+      </tr>
+      <tr>
         <td><code>enforce</code></td>
         <td>Declares a mandatory constraint that must hold for an action to succeed</td>
         <td><strong>92</strong></td>
         <td>Triggers hard constraint reasoning. The LLM treats enforce strings as non-negotiable preconditions — failure to satisfy them halts execution.</td>
       </tr>
       <tr>
+        <td><code>route</code></td>
+        <td>Defines the URL path pattern for an endpoint</td>
+        <td><strong>90</strong></td>
+        <td>Defines the API surface. The LLM generates routing configuration, path parameter extraction, and URL pattern matching.</td>
+      </tr>
+      <tr>
         <td><code>if</code></td>
         <td>Conditional gate — action runs only when predicate is true</td>
         <td><strong>88</strong></td>
         <td>Activates branch evaluation. The LLM must resolve the condition before deciding execution, reducing unconditional hallucination.</td>
+      </tr>
+      <tr>
+        <td><code>method</code></td>
+        <td>Sets the HTTP method constraint (GET, POST, PUT, DELETE, etc.)</td>
+        <td><strong>87</strong></td>
+        <td>Constrains transport semantics. The LLM generates method-specific handlers, validation, and response formatting.</td>
       </tr>
       <tr>
         <td><code>unless</code></td>
@@ -99,6 +117,12 @@
         <td>Introduces reactive semantics. The LLM understands this action is contingent on an external signal, not internal logic.</td>
       </tr>
       <tr>
+        <td><code>response</code></td>
+        <td>Declares a reusable response schema with typed fields</td>
+        <td><strong>81</strong></td>
+        <td>Shapes output types. The LLM generates type definitions, deserialization logic, and schema validation for response payloads.</td>
+      </tr>
+      <tr>
         <td><code>while</code></td>
         <td>Continuous polling — action persists while condition holds</td>
         <td><strong>80</strong></td>
@@ -111,22 +135,28 @@
         <td>Defines the input schema. The LLM uses params to validate user input and constrain function signatures.</td>
       </tr>
       <tr>
+        <td><code>field</code></td>
+        <td>Declares a typed field in a response schema (recursive nesting)</td>
+        <td><strong>76</strong></td>
+        <td>Shapes nested output types. The LLM generates recursive type definitions with field-level constraints for response payloads.</td>
+      </tr>
+      <tr>
         <td><code>type</code></td>
-        <td>Sets the data constraint for a parameter (string, int, enum, etc.)</td>
+        <td>Sets the data constraint for a parameter or field (string, int, enum, etc.)</td>
         <td><strong>75</strong></td>
         <td>Shapes type inference. The LLM generates type-safe code aligned with the declared constraint.</td>
       </tr>
       <tr>
         <td><code>required</code></td>
-        <td>Marks a parameter as mandatory</td>
+        <td>Marks a parameter or field as mandatory</td>
         <td><strong>72</strong></td>
         <td>Enforces input validation. The LLM adds null/empty checks and error handling for required params.</td>
       </tr>
       <tr>
-        <td><code>default</code></td>
-        <td>Provides a fallback value when parameter is omitted</td>
-        <td><strong>65</strong></td>
-        <td>Reduces ambiguity. The LLM knows the exact fallback, eliminating guesswork for optional inputs.</td>
+        <td><code>return</code></td>
+        <td>Maps a status code to a response schema or string payload</td>
+        <td><strong>70</strong></td>
+        <td>Defines the output contract. The LLM generates conditional return logic based on status codes and payload types.</td>
       </tr>
       <tr>
         <td><code>validate</code></td>
@@ -135,10 +165,28 @@
         <td>Adds validation logic. The LLM generates boundary checks and error messages for out-of-range values.</td>
       </tr>
       <tr>
+        <td><code>default</code></td>
+        <td>Provides a fallback value when parameter or field is omitted</td>
+        <td><strong>65</strong></td>
+        <td>Reduces ambiguity. The LLM knows the exact fallback, eliminating guesswork for optional inputs.</td>
+      </tr>
+      <tr>
+        <td><code>responses</code></td>
+        <td>Scope container — groups response declarations under an endpoint</td>
+        <td><strong>62</strong></td>
+        <td>Structural grouping. Lower weight because it's a container keyword — it organises responses but doesn't drive implementation.</td>
+      </tr>
+      <tr>
         <td><code>app</code> / <code>product</code></td>
         <td>Root namespace — defines the top-level entity</td>
         <td><strong>60</strong></td>
         <td>Sets the project scope. Lower weight because it's structural metadata, not execution logic.</td>
+      </tr>
+      <tr>
+        <td><code>returns</code></td>
+        <td>Scope container — groups return mappings under an endpoint</td>
+        <td><strong>58</strong></td>
+        <td>Structural grouping. Lowest scope weight — it organises return statements but doesn't define behaviour.</td>
       </tr>
       <tr>
         <td><code>description</code></td>
@@ -148,7 +196,7 @@
       </tr>
       <tr>
         <td><code>version</code></td>
-        <td>Version identifier for app or feature</td>
+        <td>Version identifier for app, feature, or endpoint</td>
         <td><strong>40</strong></td>
         <td>Metadata only. Minimal reasoning impact — used for tracking, not execution.</td>
       </tr>
@@ -156,7 +204,7 @@
   </table>
 
   <h3>Semantic Scaling Impact</h3>
-  <p>Butter's keyword weights follow a deliberate hierarchy: <strong>execution keywords</strong> (<code>action</code>, <code>feature</code>) carry the highest attention because they define what the AI must build. <strong>Constraint keywords</strong> (<code>enforce</code>, <code>if</code>, <code>unless</code>) follow closely because they gate execution paths. <strong>Declaration keywords</strong> (<code>param</code>, <code>type</code>, <code>required</code>) sit in the middle because they shape the input schema. <strong>Metadata keywords</strong> (<code>app</code>, <code>description</code>, <code>version</code>) carry the least weight because they provide context without driving behaviour.</p>
+  <p>Butter's keyword weights follow a deliberate hierarchy: <strong>execution keywords</strong> (<code>action</code>, <code>feature</code>, <code>endpoint</code>) carry the highest attention because they define what the AI must build. <strong>Transport keywords</strong> (<code>route</code>, <code>method</code>) follow closely because they constrain the API contract. <strong>Constraint keywords</strong> (<code>enforce</code>, <code>if</code>, <code>unless</code>) gate execution paths. <strong>Schema keywords</strong> (<code>response</code>, <code>param</code>, <code>field</code>, <code>type</code>, <code>required</code>, <code>return</code>) sit in the middle because they shape input and output schemas. <strong>Scope keywords</strong> (<code>responses</code>, <code>returns</code>, <code>app</code>, <code>description</code>, <code>version</code>) carry the least weight because they provide structure without driving behaviour.</p>
 
   <p>This hierarchy means an LLM reading a Butter spec allocates its reasoning budget proportionally: most attention goes to execution steps, then to constraints, then to type declarations, and least to metadata. The result is fewer hallucinated actions, stricter condition evaluation, and more type-safe implementations — all without explicit prompting instructions.</p>
 </section>
@@ -274,15 +322,23 @@
 
 <section id="logic-gate-map">
   <h2>Logic Gate Map</h2>
-  <p>Butter keywords function as deterministic logic gates in an LLM's reasoning pipeline. Each keyword either <strong>declares an action node</strong> (what must happen) or <strong>acts as a modifier gate</strong> (under what conditions it happens). Together, they form a decision tree that prunes non-deterministic hallucination branches before they form.</p>
+  <p>Butter keywords function as deterministic logic gates in an LLM's reasoning pipeline. Each keyword either <strong>declares an action node</strong> (what must happen) or <strong>acts as a modifier gate</strong> (under what conditions it happens). Endpoint keywords add a parallel set of gates for HTTP transport contracts. Together, they form a decision tree that prunes non-deterministic hallucination branches before they form.</p>
 
   <h3>How It Works</h3>
-  <p>When an LLM reads a Butter spec, it processes the keyword hierarchy top-down:</p>
+  <p>When an LLM reads a Butter spec, it processes the keyword hierarchy top-down. Feature blocks and endpoint blocks follow parallel but strictly separated gate structures:</p>
   <ol>
     <li><strong><code>feature</code></strong> — Opens a scope. The LLM knows everything inside belongs to one capability.</li>
     <li><strong><code>action</code></strong> — Creates a concrete execution node. The LLM adds this to its ordered task list.</li>
     <li><strong><code>enforce</code></strong> — Attaches a hard constraint to the preceding action. The LLM must verify this before proceeding.</li>
     <li><strong><code>if</code> / <code>unless</code> / <code>when</code> / <code>while</code></strong> — Gates the action behind a condition. The LLM evaluates the predicate and decides whether to execute or skip.</li>
+  </ol>
+  <p>Endpoints follow a parallel structure for HTTP transport contracts:</p>
+  <ol>
+    <li><strong><code>endpoint</code></strong> — Opens an API scope. The LLM treats everything inside as one HTTP contract.</li>
+    <li><strong><code>route</code></strong> — Defines the URL pattern. The LLM generates routing and path parameter extraction.</li>
+    <li><strong><code>method</code></strong> — Constrains the HTTP verb. The LLM generates method-specific handlers.</li>
+    <li><strong><code>response</code></strong> / <strong><code>field</code></strong> — Declares typed output schemas. The LLM generates type definitions and validation.</li>
+    <li><strong><code>return</code></strong> — Maps status codes to payloads. The LLM generates conditional return logic.</li>
   </ol>
   <p>Without these gates, an LLM faced with "process payments" might invent its own conditions, skip validation steps, or execute actions in parallel. Butter's keyword gates eliminate this by making every branching decision explicit and every execution order deterministic.</p>
 
@@ -410,16 +466,19 @@
   </div>
 
   <h3>Pruning Impact</h3>
-  <p>Every Butter keyword acts as a filter. Without <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> gates, an LLM must decide on its own which actions apply — and will frequently invent conditions or execute actions that should be skipped. With Butter's explicit gates:</p>
+  <p>Every Butter keyword acts as a filter. Without <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> gates, an LLM must decide on its own which actions apply — and will frequently invent conditions or execute actions that should be skipped. Without endpoint gates, the LLM might invent response schemas, guess status codes, or mix feature and API concerns. With Butter's explicit gates:</p>
   <ul>
     <li><strong><code>if</code></strong> prunes actions when the predicate is false — the LLM skips instead of hallucinating execution.</li>
     <li><strong><code>unless</code></strong> prunes actions when the predicate is true — the LLM skips the inverse path.</li>
     <li><strong><code>when</code></strong> prunes actions until the event fires — the LLM waits instead of assuming immediate execution.</li>
     <li><strong><code>while</code></strong> prunes actions when the state condition is false — the LLM recognises the action is state-dependent.</li>
     <li><strong><code>enforce</code></strong> prunes incomplete execution — the LLM cannot proceed until the constraint is satisfied.</li>
+    <li><strong><code>endpoint</code></strong> prunes feature keywords — the LLM cannot mix action logic into API contracts.</li>
+    <li><strong><code>method</code></strong> prunes wrong HTTP verbs — the LLM generates only the handler for the declared method.</li>
+    <li><strong><code>return</code></strong> prunes unmapped status codes — the LLM only generates responses for declared mappings.</li>
   </ul>
 
-  <p>The result is a specification where every execution path is deterministic. The LLM doesn't need to <em>infer</em> what to do — it reads what to do, evaluates the gates, and executes only the validated paths. This is the core mechanism behind Butter's claim of up to 100% alignment in a single shot.</p>
+  <p>The result is a specification where every execution path — both feature actions and endpoint contracts — is deterministic. The LLM doesn't need to <em>infer</em> what to do — it reads what to do, evaluates the gates, and executes only the validated paths. Feature keywords never leak into endpoint blocks and vice versa. This is the core mechanism behind Butter's claim of up to 100% alignment in a single shot.</p>
 </section>
 
 <footer class="footer">
