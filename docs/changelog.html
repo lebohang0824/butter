@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.12.0</div>
+    <div class="version">v1.13.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-13-0">v1.13.0</a>
     <a href="#v1-12-0">v1.12.0</a>
     <a href="#v1-11-2">v1.11.2</a>
     <a href="#v1-11-1">v1.11.1</a>
@@ -42,6 +43,23 @@
 </aside>
 
 <main class="main">
+
+<section id="v1-13-0">
+  <h2>v1.13.0 — 2026-07-13</h2>
+  <ul>
+    <li><strong><code>endpoint</code> enhancement</strong> — New top-level block for defining synchronous HTTP transport network architecture alongside features. Supports <code>version</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, and <code>returns</code> sub-blocks with strict scope separation from features.</li>
+    <li><strong><code>response</code> blocks</strong> — Define reusable response schemas with typed fields inside endpoints. Fields support recursive nested sub-fields.</li>
+    <li><strong><code>return</code> mapping</strong> — Map status codes to response references or string payloads with optional <code>if</code>/<code>unless</code> conditions.</li>
+    <li><strong><code>field</code> keyword</strong> — Typed fields inside responses with optional nested sub-fields; defaults to <code>string</code> when no <code>type</code> is specified.</li>
+    <li><strong>Return statement coloring</strong> — Status codes, response references, and string payloads in <code>return</code> statements are syntax-highlighted with dedicated TextMate patterns.</li>
+    <li><strong>Type value coloring</strong> — Values after <code>type</code> keywords now receive <code>support.type.butter</code> scope.</li>
+    <li><strong>Response ref hover</strong> — Hovering over a response reference in a <code>return</code> statement shows the response schema declaration.</li>
+    <li><strong>Response ref navigation</strong> — Ctrl+click on a response reference in a <code>return</code> statement navigates to its <code>response</code> declaration.</li>
+    <li><strong>HTML tree visualization</strong> — Endpoints render as node cards with route/method badges, response schema cards, and return mapping cards with connection lines.</li>
+    <li><strong>AI simulator</strong> — Endpoints appear in the sidebar with route/method display, parameter forms, response schemas, and return mapping.</li>
+    <li><strong>Formatter</strong> — Handles endpoint, responses, returns, response, and field keywords with proper indentation rules.</li>
+  </ul>
+</section>
 
 <section id="v1-12-0">
   <h2>v1.12.0 — 2026-07-11</h2>
