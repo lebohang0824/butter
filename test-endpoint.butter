@@ -1,0 +1,51 @@
+app TestEndpoint
+description "Example endpoint."
+version "1.0.0"
+
+endpoint ProcessOrder
+  description "Validates checkout items, processes the transaction, and generates an order summary invoice."
+  route "/api/checkout/orders"
+  method "POST"
+
+  params
+    param checkout_token
+      type string
+      required true
+    param coupon_code
+      type string
+      required false
+      default "WELCOME10"
+    param dry_run
+      type bool
+      required false
+      default false
+
+  responses
+    response InvoiceLineItem
+      field sku
+      field description
+      field unitPrice
+        type float
+      field quantity
+        type int
+    response OrderSuccessPayload
+      field orderId
+      field total_amount
+        type float
+      field currency
+      field lineItems
+        type array[InvoiceLineItem]
+
+  actions
+    action "Verify checkout token is valid and active"
+    action "Calculate final prices using coupon_code" | if "coupon_code exists"
+    action "Authorize payment transaction via external provider" | unless "dry_run == true"
+    action "Commit transaction details and reserve inventory" | unless "dry_run == true"
+
+  returns
+    return 201 OrderSuccessPayload
+    return 200 OrderSuccessPayload | if "Dry run validation succeeded without performing side effects"
+    return 400 "Invalid or expired checkout token" | if "Checkout token validation fails"
+    return 402 "Payment authorization failed" | unless "Payment gateway successfully processes transaction"
+    return 500 "External payment provider connection times out" | if "External payment provider connection times out"
+    return 404

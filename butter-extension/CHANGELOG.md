@@ -1,5 +1,20 @@
 # Change Log
 
+## [1.13.0] - 2026-07-13
+
+- **`endpoint` enhancement** — New top-level block for defining synchronous HTTP transport network architecture alongside features. Supports `version`, `params`, `responses`, `actions`, and `returns` sub-blocks with strict scope separation from features.
+- **`response` blocks** — Define reusable response schemas with typed fields inside endpoints.
+- **`return` mapping** — Map status codes to response references or string payloads with optional `if`/`unless` conditions.
+- **`field` keyword** — Typed fields inside responses with optional nested sub-fields; defaults to `string` when no `type` is specified.
+- **Return statement coloring** — Status codes, response references, and string payloads in `return` statements are now syntax-highlighted with dedicated TextMate patterns.
+- **Type value coloring** — Values after `type` keywords now receive `support.type.butter` scope (brown).
+- **Field name coloring** — Field names now use `variable.parameter.butter` scope (pink), matching param names.
+- **Response ref hover** — Hovering over a response reference in a `return` statement shows the response schema declaration.
+- **Response ref navigation** — Ctrl+click on a response reference in a `return` statement navigates to its `response` declaration.
+- **HTML tree visualization** — Endpoints render as node cards with route/method badges, response schema cards, and return mapping cards with connection lines.
+- **AI simulator** — Endpoints appear in the sidebar with route/method display, parameter forms, response schemas, and return mapping. Code generation prompt includes endpoint data.
+- **Formatter** — Handles endpoint, responses, returns, response, and field keywords with proper indentation rules.
+
 ## [1.9.0] - 2026-07-02
 
 - **IntelliSense code completion** — Context-aware autocomplete for Butter keywords, types, parameter fields, and conditionals. The completion provider analyses indentation and parent block context to suggest only the valid keywords for the current cursor position. Includes snippets for `app`, `product`, `feature`, `param`, `action`, and `enum[...]`.

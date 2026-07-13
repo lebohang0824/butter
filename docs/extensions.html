@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.12.0</div>
+    <div class="version">v1.13.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -45,7 +45,7 @@
 
   <p>Butter's output layer is built around a pluggable <a href="extension-dev.html"><code>Extension</code> interface</a>. Each format is a standalone Go package that registers itself with the compiler at startup. The <code>--format</code> (or <code>-f</code>) flag selects which extension to use at compile time.</p>
 
-  <p>Five built-in extensions ship with the compiler:</p>
+  <p>Five built-in extensions ship with the compiler, all supporting features and endpoints:</p>
 
   <table>
     <tr><th>Name</th><th>File Extension</th><th>Primary Use Case</th></tr>
@@ -262,7 +262,7 @@ const page = `...` // 330+ lines of embedded HTML, CSS, and JavaScript</code></p
   <h3>Visual Features</h3>
 
   <h4>Three-Column Layout</h4>
-  <p>The tree is organised into three visual columns from left to right: the root <strong>app</strong> node, the <strong>feature</strong> cards, and the <strong>params/actions</strong> detail panels. SVG bezier curves connect nodes across columns: the app node to each feature, and each feature to its params and actions sub-panels.</p>
+  <p>The tree is organised into three visual columns from left to right: the root <strong>app</strong> node, the <strong>feature</strong> and <strong>endpoint</strong> cards, and the <strong>params/actions/responses/returns</strong> detail panels. SVG bezier curves connect nodes across columns: the app node to each feature and endpoint, and each node to its sub-panels.</p>
 
   <h4>Interactive Controls</h4>
   <ul>
@@ -280,6 +280,7 @@ const page = `...` // 330+ lines of embedded HTML, CSS, and JavaScript</code></p
     <li><strong>Version</strong> — Inline key-value row.</li>
     <li><strong>Params</strong> — Each param is two rows: param name (purple accent) and its type/default/constraint info (muted text).</li>
     <li><strong>Actions</strong> — Numbered sequentially (<code>1.</code>, <code>2.</code>, ...). Conditions (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>) and enforce statements render as separate indented rows with a left border bracket linking them to their parent action. Distinct background colours differentiate condition rows from enforce rows.</li>
+    <li><strong>Endpoint cards</strong> — Show route (green) and method (gold) badges. Sub-panels include response schemas (blue left border, field names in purple) and return mappings (brown left border, status codes in brown).</li>
   </ul>
 
   <h4>Colour Scheme</h4>
@@ -293,6 +294,10 @@ const page = `...` // 330+ lines of embedded HTML, CSS, and JavaScript</code></p
     <tr><td>Param names (detail rows)</td><td>Muted purple</td><td><code>#AA7A9A</code></td></tr>
     <tr><td>Action numbers / toggle icons</td><td>Muted slate</td><td><code>#64748B</code></td></tr>
     <tr><td>Enforce keywords</td><td>Rose red</td><td><code>#e11d48</code></td></tr>
+    <tr><td>Route values</td><td>Soft green</td><td><code>#7ABA7A</code></td></tr>
+    <tr><td>Method badges</td><td>Amber / gold</td><td><code>#D4A24C</code></td></tr>
+    <tr><td>Response names</td><td>Steel blue</td><td><code>#5A9ABA</code></td></tr>
+    <tr><td>Return status codes</td><td>Brown</td><td><code>#D29A6A</code></td></tr>
   </table>
 
   <h3>Example Output</h3>
@@ -376,7 +381,8 @@ func (simExt) FileExtension() string { return ".sim.html" }</code></pre>
 
   <h3>Simulation Features</h3>
   <ul>
-    <li><strong>Interactive parameters</strong> — Each feature's params render as typed input controls: text fields, number spinners, dropdown menus for enums, and toggle switches for booleans.</li>
+    <li><strong>Interactive parameters</strong> — Each feature's and endpoint's params render as typed input controls: text fields, number spinblers, dropdown menus for enums, and toggle switches for booleans.</li>
+    <li><strong>Endpoint support</strong> — Endpoints appear in the sidebar alongside features. Selecting an endpoint shows its route/method badge, parameter forms, response schemas, and return mapping. The simulation runner evaluates endpoint actions with the same condition logic as features.</li>
     <li><strong>Condition evaluation</strong> — A built-in JavaScript expression evaluator handles <code>==</code>, <code>!=</code>, <code>is empty</code>, <code>is not empty</code>, numeric comparisons, and bare boolean names. No AI is needed for the simulator to work.</li>
     <li><strong>Visual action flow</strong> — Actions appear as animated cards along a timeline with dot indicators: green for actions that run, red for skipped, amber for unknown conditions.</li>
     <li><strong>AI code generation</strong> — When <code>BUTTER_AI_API_KEY</code> is set, the compiler calls one of five supported AI providers (Anthropic, ChatGPT, Gemini, DeepSeek, opencode) to generate an <code>AISim.run(featureName, params)</code> function for each feature. The generated JavaScript executes directly in the browser when the <strong>Run Simulation</strong> button is clicked — results (<code>{action, status, detail}</code>) drive the animated action flow cards. The generated source appears in a collapsible panel below the simulation output.</li>
@@ -484,8 +490,11 @@ Processes financial transactions through multiple payment gateways
   <ul>
     <li><strong>Header</strong> — <code># [SYSTEM SPEC] AppName</code> with version and description in blockquotes</li>
     <li><strong>Features</strong> — <code>## Feature: Name</code> with version and description</li>
+    <li><strong>Endpoints</strong> — <code>## Endpoint: Name</code> with route, method, version, params, responses, and returns</li>
     <li><strong>Params</strong> — <code>* `Name` (type, required/optional)</code> with defaults and validate constraints</li>
     <li><strong>Execution Sequence</strong> — Numbered bold action statements with <strong>ENFORCE</strong>, <strong>WHEN</strong>, <strong>IF</strong>, <strong>UNLESS</strong>, <strong>WHILE</strong> sub-bullets</li>
+    <li><strong>Response Schemas</strong> — Field listings under each response name</li>
+    <li><strong>Return Mapping</strong> — Status codes with payload references or string payloads</li>
   </ul>
 
   <h3>When to Use</h3>
@@ -507,7 +516,7 @@ Processes financial transactions through multiple payment gateways
     <tr><td>Self-contained</td><td>Yes</td><td>Yes</td><td>Yes (single HTML file)</td><td>Yes (single HTML file)</td><td>Yes</td></tr>
     <tr><td>Interactive</td><td>No</td><td>No</td><td>Yes (zoom, pan, toggle)</td><td>Yes (simulation controls)</td><td>No</td></tr>
     <tr><td>Dependencies</td><td>None (stdlib)</td><td><code>gopkg.in/yaml.v3</code></td><td>None (stdlib + inline JS)</td><td>None (stdlib + inline JS + optional AI API / opencode CLI)</td><td>None (stdlib)</td></tr>
-    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>373 (incl. embedded template)</td><td>~912 (incl. embedded template)</td><td>~100</td></tr>
+    <tr><td>Lines of Go code</td><td>21</td><td>21</td><td>432 (incl. embedded template)</td><td>~971 (incl. embedded template)</td><td>~120</td></tr>
     <tr><td>Default format</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
     <tr><td>Human-readable</td><td>Moderate</td><td>High</td><td>High (visual)</td><td>High (interactive)</td><td>High (Markdown)</td></tr>
     <tr><td>Machine-parseable</td><td>Excellent</td><td>Excellent</td><td>Low (designed for humans)</td><td>Low (designed for simulation)</td><td>Moderate (structured Markdown)</td></tr>

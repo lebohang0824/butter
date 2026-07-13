@@ -16,12 +16,24 @@
       "settings": { "foreground": "#5A9ABA" }
     },
     {
+      "scope": "entity.name.class.butter",
+      "settings": { "foreground": "#5A9ABA" }
+    },
+    {
       "scope": "variable.parameter.butter",
       "settings": { "foreground": "#AA7A9A" }
     },
     {
       "scope": "constant.language.boolean.butter",
       "settings": { "foreground": "#8A7ADA" }
+    },
+    {
+      "scope": "support.type.butter",
+      "settings": { "foreground": "#D29A6A" }
+    },
+    {
+      "scope": "constant.numeric.integer.butter",
+      "settings": { "foreground": "#D29A6A" }
     },
     {
       "scope": "entity.name.type.butter",

@@ -541,6 +541,16 @@ type codeGenFeature struct {
 	Actions     []codeGenAction  `json:"actions,omitempty"`
 }
 
+type codeGenEndpoint struct {
+	Name        string           `json:"name"`
+	Description string           `json:"description,omitempty"`
+	Route       string           `json:"route"`
+	Method      string           `json:"method"`
+	Params      []codeGenParam   `json:"params,omitempty"`
+	Actions     []codeGenAction  `json:"actions,omitempty"`
+	Returns     []codeGenReturn  `json:"returns,omitempty"`
+}
+
 type codeGenParam struct {
 	Name     string      `json:"name"`
 	Type     string      `json:"type"`
@@ -558,11 +568,18 @@ type codeGenCond struct {
 	Expression string `json:"expression"`
 }
 
+type codeGenReturn struct {
+	StatusCode int    `json:"status_code"`
+	Payload    string `json:"payload,omitempty"`
+}
+
 func buildMinSpec(spec *ast.AppSpec) []byte {
 	min := struct {
-		Features []codeGenFeature `json:"features"`
+		Features  []codeGenFeature  `json:"features"`
+		Endpoints []codeGenEndpoint `json:"endpoints,omitempty"`
 	}{
-		Features: make([]codeGenFeature, len(spec.Features)),
+		Features:  make([]codeGenFeature, len(spec.Features)),
+		Endpoints: make([]codeGenEndpoint, len(spec.Endpoints)),
 	}
 	for i, f := range spec.Features {
 		mf := codeGenFeature{Name: f.Name, Description: f.Description}
@@ -580,6 +597,25 @@ func buildMinSpec(spec *ast.AppSpec) []byte {
 		}
 		min.Features[i] = mf
 	}
+	for i, ep := range spec.Endpoints {
+		mep := codeGenEndpoint{Name: ep.Name, Description: ep.Description, Route: ep.Route, Method: ep.Method}
+		for _, p := range ep.Params {
+			mep.Params = append(mep.Params, codeGenParam{
+				Name: p.Name, Type: p.Type, Required: p.Required, Default: p.Default,
+			})
+		}
+		for _, a := range ep.Actions {
+			ma := codeGenAction{Statement: a.Statement}
+			if a.Condition != nil {
+				ma.Condition = &codeGenCond{Type: a.Condition.Type, Expression: a.Condition.Expression}
+			}
+			mep.Actions = append(mep.Actions, ma)
+		}
+		for _, r := range ep.Returns {
+			mep.Returns = append(mep.Returns, codeGenReturn{StatusCode: r.StatusCode, Payload: r.Payload})
+		}
+		min.Endpoints[i] = mep
+	}
 	b, _ := json.Marshal(min)
 	return b
 }
@@ -589,15 +625,16 @@ func buildCodePrompt(spec *ast.AppSpec) string {
 	return `You are a code generator. Your task is to generate ONLY valid JavaScript code.
 NO explanation, NO markdown fences, NO comments outside the code.
 
-Generate window.AISim with a run(featureName, params) method that returns an array of result objects, one per action in that feature, in order. Each result has:
+Generate window.AISim with a run(name, params) method that returns an array of result objects, one per action in that feature/endpoint, in order. Each result has:
   { action: "the statement text", status: "ran"|"skipped", detail: "human-readable explanation" }
 
-Implement each feature's behavior realistically:
+Implement each feature's and endpoint's behavior realistically:
 - For "ran" actions, include realistic output (generated IDs, timestamps, computed values)
 - For "skipped" actions, explain why (condition not met, validation failed, etc.)
 - ALWAYS use the params object to evaluate conditions and drive action logic
 - Parse natural language conditions using params (e.g. "Title is not empty" → params.Title)
 - If a param key doesn't match the spec, try common variants (snake_case, camelCase)
+- For endpoints, consider the route, method, and return mapping when generating actions
 
 RULE: Return ONLY raw JavaScript. No markdown. No explanation. No text before or after. Start with: window.AISim =
 
@@ -681,6 +718,23 @@ details#code-panel code{font-family:'JetBrains Mono','Fira Code','Cascadia Code'
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--text2)}
 @media(max-width:700px){aside{display:none}main{padding:20px}.param-row{flex-direction:column;align-items:stretch;gap:6px}.param-row label{width:auto}}
+.endpoint-header{margin-bottom:20px}
+.endpoint-route{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'JetBrains Mono','Fira Code',monospace;font-size:13px;color:var(--green);margin-bottom:8px}
+.endpoint-method{font-weight:600;font-size:12px;text-transform:uppercase;padding:2px 8px;border-radius:3px}
+.endpoint-method.get{background:rgba(34,197,94,.15);color:var(--green)}
+.endpoint-method.post{background:rgba(59,130,246,.15);color:#3b82f6}
+.endpoint-method.put{background:rgba(245,158,11,.15);color:var(--amber)}
+.endpoint-method.delete{background:rgba(239,68,68,.15);color:var(--red)}
+.endpoint-method.patch{background:rgba(168,85,247,.15);color:#a855f7}
+.response-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.response-card h4{font-size:13px;font-weight:500;color:var(--accent2);margin-bottom:8px}
+.response-field{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+.response-field .fname{color:var(--text);font-weight:500}
+.response-field .ftype{color:var(--text3);font-size:12px}
+.return-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:6px;font-size:13px;display:flex;align-items:center;gap:10px}
+.return-status{font-weight:600;color:var(--amber)}
+.return-payload{color:var(--green);font-style:italic}
+.return-cond{color:var(--text3);font-size:12px}
 </style>
 </head>
 <body>
@@ -738,6 +792,7 @@ function evalExpr(expr, params, paramNames) {
 
 (function(){
 let currentFeature = null;
+let currentType = 'feature';
 
 function renderFeatures() {
   const list = document.getElementById('feature-list');
@@ -745,23 +800,59 @@ function renderFeatures() {
     const li = document.createElement('li');
     li.textContent = f.name;
     li.dataset.index = i;
-    li.addEventListener('click', function(){selectFeature(i);});
+    li.dataset.type = 'feature';
+    li.addEventListener('click', function(){selectItem(i,'feature');});
     list.appendChild(li);
   });
-  if ((SPEC.features||[]).length > 0) selectFeature(0);
+  (SPEC.endpoints||[]).forEach(function(ep,i){
+    const li = document.createElement('li');
+    li.textContent = ep.name;
+    li.dataset.index = i;
+    li.dataset.type = 'endpoint';
+    li.addEventListener('click', function(){selectItem(i,'endpoint');});
+    list.appendChild(li);
+  });
+  if ((SPEC.features||[]).length > 0) selectItem(0,'feature');
+  else if ((SPEC.endpoints||[]).length > 0) selectItem(0,'endpoint');
 }
 
-function selectFeature(index) {
+function selectItem(index, type) {
   currentFeature = index;
-  const feature = SPEC.features[index];
+  currentType = type;
   document.querySelectorAll('#feature-list li').forEach(function(li,i){
-    li.classList.toggle('active', i === index);
+    li.classList.toggle('active', li.dataset.index == index && li.dataset.type === type);
   });
-  document.getElementById('feature-title').textContent = feature.name;
-  document.getElementById('feature-desc').textContent = feature.description || '';
-  renderParams(feature);
+  var panel = document.getElementById('feature-panel');
   var fp = document.getElementById('flow-panel');
   fp.innerHTML = '';
+  if (type === 'endpoint') {
+    var ep = SPEC.endpoints[index];
+    document.getElementById('feature-title').textContent = ep.name;
+    document.getElementById('feature-desc').textContent = ep.description || '';
+    var hdr = document.getElementById('params-panel');
+    hdr.innerHTML = '';
+    var hdrDiv = document.createElement('div');
+    hdrDiv.className = 'endpoint-header';
+    var routeDiv = document.createElement('div');
+    routeDiv.className = 'endpoint-route';
+    var methodSpan = document.createElement('span');
+    methodSpan.className = 'endpoint-method ' + (ep.method||'get').toLowerCase();
+    methodSpan.textContent = ep.method || 'GET';
+    routeDiv.appendChild(methodSpan);
+    var routeText = document.createElement('span');
+    routeText.textContent = ep.route || '/';
+    routeDiv.appendChild(routeText);
+    hdrDiv.appendChild(routeDiv);
+    hdr.appendChild(hdrDiv);
+    renderEndpointParams(ep);
+    renderEndpointResponses(ep);
+    renderEndpointReturns(ep);
+  } else {
+    var feature = SPEC.features[index];
+    document.getElementById('feature-title').textContent = feature.name;
+    document.getElementById('feature-desc').textContent = feature.description || '';
+    renderParams(feature);
+  }
 }
 
 function paramId(name){return 'p-'+name;}
@@ -840,9 +931,128 @@ function renderParams(feature) {
   panel.appendChild(card);
 }
 
-function gatherParams(feature) {
+function renderEndpointParams(ep) {
+  var panel = document.getElementById('params-panel');
+  if (!ep.params || ep.params.length === 0) {
+    return;
+  }
+  var card = document.createElement('div');
+  card.className = 'params-card';
+  var h3 = document.createElement('h3');
+  h3.textContent = 'Parameters';
+  card.appendChild(h3);
+  ep.params.forEach(function(p){
+    var row = document.createElement('div');
+    row.className = 'param-row';
+    var label = document.createElement('label');
+    label.textContent = p.name;
+    label.htmlFor = paramId(p.name);
+    if (p.required) label.classList.add('required');
+    var input;
+    if (p.type && p.type.startsWith('enum')) {
+      input = document.createElement('select');
+      input.id = paramId(p.name);
+      var m = p.type.match(/\[(.+?)\]/);
+      if (m) {
+        m[1].split(',').map(function(v){return v.trim().replace(/"/g,'');}).forEach(function(v){
+          var opt = document.createElement('option');
+          opt.value = v; opt.textContent = v;
+          input.appendChild(opt);
+        });
+      }
+      if (p.default !== undefined && p.default !== null) input.value = String(p.default).replace(/^"|"$/g,'');
+      row.appendChild(label);
+      row.appendChild(input);
+    } else if (p.type === 'bool') {
+      createToggle(paramId(p.name), p.default === true || p.default === 'true', label);
+      row.appendChild(label);
+    } else if (p.type === 'int' || p.type === 'float') {
+      input = document.createElement('input');
+      input.type = 'number'; input.id = paramId(p.name);
+      input.step = p.type === 'int' ? '1' : 'any';
+      if (p.default !== undefined && p.default !== null) input.value = p.default;
+      row.appendChild(label);
+      row.appendChild(input);
+    } else {
+      input = document.createElement('input');
+      input.type = 'text'; input.id = paramId(p.name);
+      if (p.default !== undefined && p.default !== null) input.value = String(p.default).replace(/^"|"$/g,'');
+      row.appendChild(label);
+      row.appendChild(input);
+    }
+    card.appendChild(row);
+  });
+  panel.appendChild(card);
+}
+
+function renderEndpointResponses(ep) {
+  var panel = document.getElementById('params-panel');
+  if (!ep.responses || ep.responses.length === 0) return;
+  var card = document.createElement('div');
+  card.className = 'params-card';
+  var h3 = document.createElement('h3');
+  h3.textContent = 'Response Schemas';
+  card.appendChild(h3);
+  ep.responses.forEach(function(r){
+    var respCard = document.createElement('div');
+    respCard.className = 'response-card';
+    var h4 = document.createElement('h4');
+    h4.textContent = r.name;
+    respCard.appendChild(h4);
+    (r.fields||[]).forEach(function(f){
+      var fd = document.createElement('div');
+      fd.className = 'response-field';
+      var fn = document.createElement('span');
+      fn.className = 'fname';
+      fn.textContent = f.name;
+      var ft = document.createElement('span');
+      ft.className = 'ftype';
+      ft.textContent = f.type;
+      fd.appendChild(fn);
+      fd.appendChild(ft);
+      respCard.appendChild(fd);
+    });
+    card.appendChild(respCard);
+  });
+  panel.appendChild(card);
+}
+
+function renderEndpointReturns(ep) {
+  var panel = document.getElementById('params-panel');
+  if (!ep.returns || ep.returns.length === 0) return;
+  var card = document.createElement('div');
+  card.className = 'params-card';
+  var h3 = document.createElement('h3');
+  h3.textContent = 'Return Mapping';
+  card.appendChild(h3);
+  ep.returns.forEach(function(r){
+    var retCard = document.createElement('div');
+    retCard.className = 'return-card';
+    var status = document.createElement('span');
+    status.className = 'return-status';
+    status.textContent = r.status_code;
+    retCard.appendChild(status);
+    if (r.payload) {
+      var pl = document.createElement('span');
+      pl.className = 'return-payload';
+      pl.textContent = r.payload_is_string ? '"' + r.payload + '"' : r.payload;
+      retCard.appendChild(pl);
+    }
+    if (r.condition) {
+      var cond = document.createElement('span');
+      cond.className = 'return-cond';
+      cond.textContent = r.condition.type + ' "' + r.condition.expression + '"';
+      retCard.appendChild(cond);
+    }
+    card.appendChild(retCard);
+  });
+  panel.appendChild(card);
+}
+
+function gatherParams(item, type) {
   var params = {};
-  (feature.params||[]).forEach(function(p){
+  var src = type === 'endpoint' ? (item.params||[]) : (item.params||[]);
+  src.forEach(function(p){
     var id = paramId(p.name);
     if (p.type === 'bool') {
       var track = document.querySelector('.toggle-track[data-param="'+id+'"]');
@@ -864,19 +1074,19 @@ function gatherParams(feature) {
 
 function runSimulation() {
   if (currentFeature === null) return;
-  var feature = SPEC.features[currentFeature];
-  var params = gatherParams(feature);
+  var item = currentType === 'endpoint' ? SPEC.endpoints[currentFeature] : SPEC.features[currentFeature];
+  var params = gatherParams(item, currentType);
   var panel = document.getElementById('flow-panel');
   panel.innerHTML = '';
-  if (!feature.actions || feature.actions.length === 0) {
+  if (!item.actions || item.actions.length === 0) {
     panel.innerHTML = '<div class="no-actions">No actions defined</div>';
     return;
   }
 
   if (typeof AISim !== 'undefined' && AISim && AISim.run) {
     var aiResults;
-    try { aiResults = AISim.run(feature.name, params); } catch(e) { aiResults = []; }
-    feature.actions.forEach(function(a,i){
+    try { aiResults = AISim.run(item.name, params); } catch(e) { aiResults = []; }
+    item.actions.forEach(function(a,i){
       var card = document.createElement('div');
       card.className = 'action-card';
       card.style.setProperty('--i', i);
@@ -914,7 +1124,7 @@ function runSimulation() {
     });
   } else {
     var paramNames = Object.keys(params);
-    feature.actions.forEach(function(a,i){
+    item.actions.forEach(function(a,i){
       var card = document.createElement('div');
       card.className = 'action-card';
       card.style.setProperty('--i', i);
@@ -957,10 +1167,40 @@ function runSimulation() {
       panel.appendChild(card);
     });
   }
+  if (currentType === 'endpoint' && item.returns && item.returns.length > 0) {
+    var retDiv = document.createElement('div');
+    retDiv.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid var(--border);';
+    var retH = document.createElement('h3');
+    retH.style.cssText = 'font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px;';
+    retH.textContent = 'Possible Returns';
+    retDiv.appendChild(retH);
+    item.returns.forEach(function(r){
+      var rc = document.createElement('div');
+      rc.className = 'return-card';
+      var rs = document.createElement('span');
+      rs.className = 'return-status';
+      rs.textContent = r.status_code;
+      rc.appendChild(rs);
+      if (r.payload) {
+        var pl = document.createElement('span');
+        pl.className = 'return-payload';
+        pl.textContent = r.payload_is_string ? '"' + r.payload + '"' : r.payload;
+        rc.appendChild(pl);
+      }
+      if (r.condition) {
+        var cd = document.createElement('span');
+        cd.className = 'return-cond';
+        cd.textContent = r.condition.type + ' "' + r.condition.expression + '"';
+        rc.appendChild(cd);
+      }
+      retDiv.appendChild(rc);
+    });
+    panel.appendChild(retDiv);
+  }
   setTimeout(function(){
     var last = panel.lastElementChild;
     if (last) last.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }, feature.actions.length * 100 + 200);
+  }, item.actions.length * 100 + 200);
 }
 
 document.getElementById('run-btn').addEventListener('click', runSimulation);

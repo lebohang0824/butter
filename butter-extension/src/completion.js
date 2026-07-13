@@ -4,18 +4,26 @@ const DOCS = {
   app: 'Declare the root application specification.\n\n```butter\napp MyApp\n\tdescription "..."\n\tversion "1.0.0"\n```',
   product: 'Declare the root product specification (alias for `app`).\n\n```butter\nproduct MyProduct\n\tdescription "..."\n\tversion "1.0.0"\n```',
   description: 'A human-readable description of the current block.\n\n```butter\ndescription "My application"\n```',
-  version: 'Version identifier for the app or feature.\n\n```butter\nversion "1.0.0"\n```',
+  version: 'Version identifier for the app, feature, or endpoint.\n\n```butter\nversion "1.0.0"\n```',
   feature: 'Define a logical feature group within the app.\n\n```butter\nfeature MyFeature\n\tdescription "..."\n\tparams\n\t\tparam X\n\t\t\ttype string\n```',
-  params: 'Begin a parameter definition block for the current feature.\n\n```butter\nparams\n\tparam Name\n\t\ttype string\n```',
+  endpoint: 'Define a synchronous HTTP network gateway with route, method, params, responses, actions, and return mappings.\n\n```butter\nendpoint ProcessOrder\n\tdescription "Process a checkout order"\n\troute "/api/checkout/orders"\n\tmethod "POST"\n\tparams\n\t\tparam checkout_token\n\t\t\ttype string\n\t\t\trequired true\n```',
+  params: 'Begin a parameter definition block for the current feature or endpoint.\n\n```butter\nparams\n\tparam Name\n\t\ttype string\n```',
   param: 'Define a single configuration parameter.\n\n```butter\nparam ParamName\n\ttype string\n\trequired true\n```',
-  type: 'Set the data type of the parameter.\n\nValues: `string`, `int`, `float`, `bool`, `enum[...]`',
+  type: 'Set the data type of a parameter or field.\n\nValues: `string`, `int`, `float`, `bool`, `enum[...]`',
   required: 'Mark the parameter as required (`true`) or optional (`false`).',
   default: 'Set a default value for the parameter, used when no value is provided.',
   validate: 'Add a numeric validation rule (e.g., `">0"`, `">=1"`, `"=<100"`). Requires `int` or `float` type.',
   length: 'Enforce a maximum length for string or numeric parameters.',
-  actions: 'Begin an action definition block for the current feature.\n\n```butter\nactions\n\taction "Do something"\n```',
+  actions: 'Begin an action definition block for the current feature or endpoint.\n\n```butter\nactions\n\taction "Do something"\n```',
   action: 'Define a behavioral action step with a quoted description.\n\n```butter\naction "Execute the pipeline"\n\tenforce "Must be valid"\n```',
   enforce: 'Specify an invariant enforcement rule for the action.\n\n```butter\nenforce "The value must be positive"\n```',
+  route: 'Define the relative URL path pattern for the endpoint.\n\n```butter\nroute "/api/resource/{id}"\n```',
+  method: 'The transport-layer HTTP verb for the endpoint.\n\n```butter\nmethod "POST"\n```',
+  responses: 'Begin a response schema definition block. Each response defines an internal JSON payload format.\n\n```butter\nresponses\n\tresponse OrderSuccess\n\t\tfield order_id\n\t\t\ttype string\n```',
+  response: 'Define a reusable, internal response payload schema.\n\n```butter\nresponse OrderSuccess\n\tfield order_id\n\t\ttype string\n\tfield total_amount\n\t\ttype float\n```',
+  field: 'Declare a JSON key inside a response schema. Defines the name and type of a single output field. Defaults to `string` if no type is given.\n\n```butter\nresponse OrderSuccess\n\tfield order_id\n\tfield total_amount\n\t\ttype float\n```',
+  returns: 'Begin a return mapping block that binds execution outcomes to HTTP status codes.\n\n```butter\nreturns\n\treturn 200 OrderSuccess | if "Transaction succeeded"\n\treturn 400 "Invalid input" | if "Validation fails"\n```',
+  return: 'Map an HTTP status code to a response payload or string literal with an optional condition.\n\nSyntax: `return <StatusCode> [<ResponseName> | <"String">] [| if/unless <"Condition">]`\n\n```butter\nreturn 201 OrderSuccess | if "Transaction authorized"\nreturn 400 "Invalid token" | if "Token validation fails"\nreturn 500 | if "Provider times out"\n```',
   if: 'Execute this action only when the condition is true.\n\n```butter\naction "Do something" | if "condition == true"\n```',
   unless: 'Execute this action only when the condition is false.\n\n```butter\naction "Do something" | unless "condition == false"\n```',
   when: 'Execute this action when the condition becomes true.\n\n```butter\naction "Do something" | when "event occurs"\n```',
@@ -57,12 +65,14 @@ const TOP_LEVEL = setDocs([
   item('description', vscode.CompletionItemKind.Keyword),
   item('version', vscode.CompletionItemKind.Keyword),
   snippet('feature', 'feature ${1:FeatureName}\n\t${0}'),
+  snippet('endpoint', 'endpoint ${1:EndpointName}\n\t${0}'),
 ]);
 
 const APP_BODY = setDocs([
   item('description', vscode.CompletionItemKind.Keyword),
   item('version', vscode.CompletionItemKind.Keyword),
   snippet('feature', 'feature ${1:FeatureName}\n\t${0}'),
+  snippet('endpoint', 'endpoint ${1:EndpointName}\n\t${0}'),
 ]);
 
 const FEATURE_BODY = setDocs([
@@ -70,6 +80,17 @@ const FEATURE_BODY = setDocs([
   item('version', vscode.CompletionItemKind.Keyword),
   item('params', vscode.CompletionItemKind.Keyword),
   item('actions', vscode.CompletionItemKind.Keyword),
+]);
+
+const ENDPOINT_BODY = setDocs([
+  item('description', vscode.CompletionItemKind.Keyword),
+  item('version', vscode.CompletionItemKind.Keyword),
+  item('route', vscode.CompletionItemKind.Keyword),
+  item('method', vscode.CompletionItemKind.Keyword),
+  item('params', vscode.CompletionItemKind.Keyword),
+  item('responses', vscode.CompletionItemKind.Keyword),
+  item('actions', vscode.CompletionItemKind.Keyword),
+  item('returns', vscode.CompletionItemKind.Keyword),
 ]);
 
 const PARAMS_BODY = setDocs([
@@ -90,6 +111,23 @@ const ACTIONS_BODY = setDocs([
 
 const ACTION_BODY = setDocs([
   item('enforce', vscode.CompletionItemKind.Keyword),
+]);
+
+const RESPONSES_BODY = setDocs([
+  snippet('response', 'response ${1:ResponseName}\n\t${0}'),
+]);
+
+const RESPONSE_BODY = setDocs([
+  snippet('field', 'field ${1:FieldName}'),
+]);
+
+const FIELD_BODY = setDocs([
+  item('type', vscode.CompletionItemKind.Keyword),
+  snippet('field', 'field ${1:FieldName}'),
+]);
+
+const RETURNS_BODY = setDocs([
+  snippet('return', 'return ${1:200} ${2:ResponseName} | if "${3:condition}"'),
 ]);
 
 const TYPES = setDocs([
@@ -201,15 +239,31 @@ function suggestionKind(context) {
     if (gk === 'actions') return 'actions-body';
     return 'feature-body';
   }
+  if (pk === 'endpoint') {
+    if (currentIndent === 1) return 'endpoint-body';
+    if (gk === 'params') return 'params-body';
+    if (gk === 'actions') return 'actions-body';
+    if (gk === 'responses') return 'responses-body';
+    if (gk === 'returns') return 'returns-body';
+    return 'endpoint-body';
+  }
   if (pk === 'params') return 'params-body';
   if (pk === 'param') return 'param-body';
   if (pk === 'actions') return 'actions-body';
   if (pk === 'action') return 'action-body';
+  if (pk === 'responses') return 'responses-body';
+  if (pk === 'response') return 'response-body';
+  if (pk === 'field') return 'field-body';
+  if (pk === 'returns') return 'returns-body';
 
   if (gk === 'params') return 'params-body';
   if (gk === 'actions') return 'actions-body';
   if (gk === 'param') return 'param-body';
   if (gk === 'action') return 'action-body';
+  if (gk === 'responses') return 'responses-body';
+  if (gk === 'response') return 'response-body';
+  if (gk === 'field') return 'field-body';
+  if (gk === 'returns') return 'returns-body';
 
   return 'keyword';
 }
@@ -237,10 +291,15 @@ class ButterCompletionProvider {
       case 'top-level': return TOP_LEVEL;
       case 'app-body': return APP_BODY;
       case 'feature-body': return FEATURE_BODY;
+      case 'endpoint-body': return ENDPOINT_BODY;
       case 'params-body': return PARAMS_BODY;
       case 'param-body': return PARAM_BODY;
       case 'actions-body': return ACTIONS_BODY;
       case 'action-body': return ACTION_BODY;
+      case 'responses-body': return RESPONSES_BODY;
+      case 'response-body': return RESPONSE_BODY;
+      case 'field-body': return FIELD_BODY;
+      case 'returns-body': return RETURNS_BODY;
       default: return TOP_LEVEL;
     }
   }
@@ -248,6 +307,25 @@ class ButterCompletionProvider {
 
 class ButterHoverProvider {
   provideHover(document, position) {
+    const lineText = document.lineAt(position.line).text;
+
+    const returnMatch = lineText.match(/\breturn\s+\d{3}\s+(\w+)/);
+    if (returnMatch) {
+      const respName = returnMatch[1];
+      const start = lineText.indexOf(respName);
+      const end = start + respName.length;
+      if (position.character >= start && position.character <= end) {
+        const decl = findResponseDecl(document, respName);
+        if (decl) {
+          const md = new vscode.MarkdownString(`**${respName}** — response schema\n\n`);
+          for (const f of decl.fields) {
+            md.appendMarkdown(`\`${f.name}\` — \`${f.type}\`\n\n`);
+          }
+          return new vscode.Hover(md);
+        }
+      }
+    }
+
     const wordRange = document.getWordRangeAtPosition(position);
     if (!wordRange) return null;
     const word = document.getText(wordRange);
@@ -258,4 +336,56 @@ class ButterHoverProvider {
   }
 }
 
-module.exports = { ButterCompletionProvider, ButterHoverProvider };
+class ButterDefinitionProvider {
+  provideDefinition(document, position) {
+    const lineText = document.lineAt(position.line).text;
+
+    const returnMatch = lineText.match(/\breturn\s+\d{3}\s+(\w+)/);
+    if (returnMatch) {
+      const respName = returnMatch[1];
+      const start = lineText.indexOf(respName);
+      const end = start + respName.length;
+      if (position.character >= start && position.character <= end) {
+        const decl = findResponseDecl(document, respName);
+        if (decl) {
+          return new vscode.Location(document.uri, new vscode.Position(decl.line, 0));
+        }
+      }
+    }
+
+    return null;
+  }
+}
+
+function findResponseDecl(document, name) {
+  const re = /^\s*response\s+(\w+)\s*$/;
+  for (let i = 0; i < document.lineCount; i++) {
+    const m = document.lineAt(i).text.match(re);
+    if (m && m[1] === name) {
+      const fields = [];
+      let j = i + 1;
+      while (j < document.lineCount) {
+        const fl = document.lineAt(j).text;
+        const fm = fl.match(/^\s+field\s+(\w+)\s*$/);
+        if (fm) {
+          let type = 'string';
+          if (j + 1 < document.lineCount) {
+            const tl = document.lineAt(j + 1).text;
+            const tm = tl.match(/^\s+type\s+(\S+)\s*$/);
+            if (tm) { type = tm[1]; j++; }
+          }
+          fields.push({ name: fm[1], type });
+          j++;
+        } else if (fl.match(/^\s*response\s+/) || fl.match(/^\s*returns\s*$/) || fl.match(/^\s*actions\s*$/) || (fl.match(/^\S/) && fl.trim() !== '')) {
+          break;
+        } else {
+          j++;
+        }
+      }
+      return { line: i, fields };
+    }
+  }
+  return null;
+}
+
+module.exports = { ButterCompletionProvider, ButterHoverProvider, ButterDefinitionProvider };

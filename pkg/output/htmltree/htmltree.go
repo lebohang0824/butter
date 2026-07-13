@@ -79,6 +79,22 @@ body{background:#121212;background-image:linear-gradient(rgba(255,255,255,.03)1p
 .enforce-key-row .key{color:#e11d48;font-size:11px}
 .enforce-val-row{padding:2px 12px 8px 20px;border-left:2px solid #555;border-bottom:1px solid #222;background:#232323}
 .enforce-val-row .val-string{color:#e6e6e6;font-size:11px}
+.endpoint-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 8px;border-radius:4px;background:#1a1f2e;border:1px solid #2a3040;margin-left:8px}
+.route-val{color:#7ABA7A;font-weight:500;font-family:'Courier New',Courier,monospace}
+.method-val{color:#D4A24C;font-weight:600;font-size:11px;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:rgba(212,162,76,.1)}
+.response-key-row{padding:4px 12px 2px 16px;border-left:2px solid #5A9ABA;border-bottom:none;background:#191919}
+.response-key-row .key{color:#5A9ABA;font-size:12px}
+.field-key-row{padding:4px 12px 2px 24px;border-left:2px solid #777;border-bottom:none;background:#191919}
+.field-key-row .key{color:#AA7A9A;font-size:12px}
+.field-val-row{padding:2px 12px 4px 24px;border-left:2px solid #777;border-bottom:1px solid #222;background:#232323}
+.field-val-row .val-string{color:#b0b0b0;font-size:11px}
+.return-key-row{padding:4px 12px 2px 16px;border-left:2px solid #D29A6A;border-bottom:none;background:#191919}
+.return-key-row .key{color:#D29A6A;font-size:12px}
+.return-val-row{padding:2px 12px 4px 16px;border-left:2px solid #D29A6A;border-bottom:1px solid #222;background:#232323}
+.return-val-row .val-string{color:#b0b0b0;font-size:11px}
+.return-val-row .return-status{color:#D29A6A;font-weight:600;margin-right:6px}
+.return-val-row .return-payload{color:#7ABA7A}
+.return-val-row .return-cond{color:#8A7ADA;font-size:10px;margin-left:6px}
 .connection-path{fill:none;stroke:#555;stroke-width:1.5}
 .connection-label{font-size:10px;fill:#666;font-family:'Courier New',Courier,monospace;user-select:none;pointer-events:none}
 </style>
@@ -144,6 +160,55 @@ function buildTree(spec){
     state.collapsed['actions-'+fi] = true;
     tree.children.push(feat);
   });
+  (spec.endpoints||[]).forEach(function(ep,ei){
+    var epc = {
+      id: 'ep-'+ei,
+      title: ep.name,
+      type: 'endpoint',
+      details: [],
+      params: [],
+      responses: [],
+      actions: [],
+      returns: [],
+      children: []
+    };
+    if(ep.description) epc.details.push({k:'description',v:ep.description,type:'desc'});
+    if(ep.version) epc.details.push({k:'version',v:ep.version});
+    epc.details.push({k:'route',v:ep.route,type:'route'});
+    epc.details.push({k:'method',v:ep.method,type:'method'});
+    (ep.params||[]).forEach(function(p){
+      var parts = [p.type];
+      if(p.required) parts.push('required');
+      if(p.default !== undefined && p.default !== null && p.default !== '') parts.push('default: '+p.default);
+      epc.params.push({k:p.name,v:parts.join(', ')});
+    });
+    (ep.responses||[]).forEach(function(r){
+      var resp = {name:r.name,fields:[]};
+      (r.fields||[]).forEach(function(f){
+        resp.fields.push({k:f.name,v:f.type});
+      });
+      epc.responses.push(resp);
+    });
+    (ep.actions||[]).forEach(function(a,ai){
+      var act = {number:ai+1,statement:a.statement,conditions:[],enforces:[]};
+      if(a.condition) act.conditions.push({type:a.condition.type,expr:a.condition.expression});
+      if(a.enforce) a.enforce.forEach(function(e){act.enforces.push(e);});
+      epc.actions.push(act);
+    });
+    (ep.returns||[]).forEach(function(r){
+      var ret = {status:r.status_code,payload:r.payload,payloadIsString:r.payload_is_string,condition:r.condition?{type:r.condition.type,expr:r.condition.expression}:null};
+      epc.returns.push(ret);
+    });
+    epc.details.push({k:'params',v:(ep.params||[]).length+' items',sub:'ep-params-'+ei,type:'sub'});
+    epc.details.push({k:'responses',v:(ep.responses||[]).length+' items',sub:'ep-responses-'+ei,type:'sub'});
+    epc.details.push({k:'actions',v:(ep.actions||[]).length+' items',sub:'ep-actions-'+ei,type:'sub'});
+    epc.details.push({k:'returns',v:(ep.returns||[]).length+' items',sub:'ep-returns-'+ei,type:'sub'});
+    state.collapsed['ep-params-'+ei] = true;
+    state.collapsed['ep-responses-'+ei] = true;
+    state.collapsed['ep-actions-'+ei] = true;
+    state.collapsed['ep-returns-'+ei] = true;
+    tree.children.push(epc);
+  });
   return tree;
 }
 
@@ -169,11 +234,104 @@ function renderTree(tree){
   rootHTML += '<div class="node-row interactive-row" onclick="window.__toggleRoot()">';
   rootHTML += '<span class="toggle-icon">'+rootIcon+'</span>';
   rootHTML += '<span class="key">features:</span>';
-  rootHTML += '<span class="val-string">['+tree.children.length+' items]</span>';
-  rootHTML += '</div></div>';
+  rootHTML += '<span class="val-string">['+tree.children.filter(function(c){return c.type!=='endpoint'}).length+' items]</span>';
+  rootHTML += '</div>';
+  var epCount = tree.children.filter(function(c){return c.type==='endpoint'}).length;
+  if(epCount > 0){
+    var epIcon = state.collapsed['app'] ? '+' : '&minus;';
+    rootHTML += '<div class="node-row interactive-row" onclick="window.__toggleRoot()">';
+    rootHTML += '<span class="toggle-icon">'+epIcon+'</span>';
+    rootHTML += '<span class="key">endpoints:</span>';
+    rootHTML += '<span class="val-string">['+epCount+' items]</span>';
+    rootHTML += '</div>';
+  }
+  rootHTML += '</div>';
   col1.innerHTML = rootHTML;
 
   tree.children.forEach(function(feat){
+    if(feat.type === 'endpoint'){
+      var epcHTML = '<div class="node-card" id="card-'+feat.id+'">';
+      epcHTML += '<div class="node-title">'+esc(feat.title)+'<span class="endpoint-badge"><span class="method-val">'+esc(feat.actions.length > 0 ? '' : '')+'</span></span></div>';
+      feat.details.forEach(function(d){
+        if(d.type === 'route'){
+          epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="endpoint-badge"><span class="route-val">'+esc(d.v)+'</span></span></div>';
+        } else if(d.type === 'method'){
+          epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="endpoint-badge"><span class="method-val">'+esc(d.v)+'</span></span></div>';
+        } else if(d.type === 'sub'){
+          var subCollapsed = state.collapsed[d.sub];
+          var subIcon = subCollapsed ? '+' : '&minus;';
+          epcHTML += '<div class="node-row interactive-row" data-sub="'+d.sub+'" onclick="window.__toggleSub(\''+d.sub+'\')">';
+          epcHTML += '<span class="toggle-icon">'+subIcon+'</span>';
+          epcHTML += '<span class="key">'+esc(d.k)+':</span>';
+          epcHTML += '<span class="val-string">'+esc(d.v)+'</span>';
+          epcHTML += '</div>';
+        } else if(d.type === 'desc'){
+          epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span></div>';
+          epcHTML += '<div class="node-row desc-row"><span class="val-string">'+esc(d.v)+'</span></div>';
+        } else {
+          epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="val-string">'+esc(d.v)+'</span></div>';
+        }
+      });
+      epcHTML += '</div>';
+      col2.innerHTML += epcHTML;
+
+      var epcSub = '';
+      if(feat.params.length){
+        var pcollapsed = state.collapsed['ep-params-'+feat.id.replace('ep-','')];
+        epcSub += '<div class="node-card" id="sub-ep-params-'+feat.id.replace('ep-','')+'"'+(pcollapsed?' style="display:none"':'')+'>';
+        epcSub += '<div class="node-title">Params <span class="badge">'+feat.params.length+'</span></div>';
+        feat.params.forEach(function(p){
+          epcSub += '<div class="node-row param-key-row"><span class="key" style="color:#AA7A9A">'+esc(p.k)+':</span></div>';
+          epcSub += '<div class="node-row param-val-row"><span class="val-string">'+esc(p.v)+'</span></div>';
+        });
+        epcSub += '</div>';
+      }
+      if(feat.responses.length){
+        var rcollapsed = state.collapsed['ep-responses-'+feat.id.replace('ep-','')];
+        epcSub += '<div class="node-card" id="sub-ep-responses-'+feat.id.replace('ep-','')+'"'+(rcollapsed?' style="display:none"':'')+'>';
+        epcSub += '<div class="node-title">Responses <span class="badge">'+feat.responses.length+'</span></div>';
+        feat.responses.forEach(function(r){
+          epcSub += '<div class="node-row response-key-row"><span class="key">'+esc(r.name)+':</span></div>';
+          r.fields.forEach(function(f){
+            epcSub += '<div class="node-row field-key-row"><span class="key">'+esc(f.k)+':</span></div>';
+            epcSub += '<div class="node-row field-val-row"><span class="val-string">'+esc(f.v)+'</span></div>';
+          });
+        });
+        epcSub += '</div>';
+      }
+      if(feat.actions.length){
+        var acollapsed = state.collapsed['ep-actions-'+feat.id.replace('ep-','')];
+        epcSub += '<div class="node-card" id="sub-ep-actions-'+feat.id.replace('ep-','')+'"'+(acollapsed?' style="display:none"':'')+'>';
+        epcSub += '<div class="node-title">Actions <span class="badge">'+feat.actions.length+'</span></div>';
+        feat.actions.forEach(function(a){
+          epcSub += '<div class="node-row"><span class="act-num">'+a.number+'.</span><span class="val-string">'+esc(a.statement)+'</span></div>';
+          a.conditions.forEach(function(c){
+            epcSub += '<div class="node-row cond-key-row"><span class="key">'+esc(c.type)+':</span></div>';
+            epcSub += '<div class="node-row cond-val-row"><span class="val-string">"'+esc(c.expr)+'"</span></div>';
+          });
+          a.enforces.forEach(function(e){
+            epcSub += '<div class="node-row enforce-key-row"><span class="key">enforce:</span></div>';
+            epcSub += '<div class="node-row enforce-val-row"><span class="val-string">'+esc(e)+'</span></div>';
+          });
+        });
+        epcSub += '</div>';
+      }
+      if(feat.returns.length){
+        var retcollapsed = state.collapsed['ep-returns-'+feat.id.replace('ep-','')];
+        epcSub += '<div class="node-card" id="sub-ep-returns-'+feat.id.replace('ep-','')+'"'+(retcollapsed?' style="display:none"':'')+'>';
+        epcSub += '<div class="node-title">Returns <span class="badge">'+feat.returns.length+'</span></div>';
+        feat.returns.forEach(function(r){
+          epcSub += '<div class="node-row return-key-row"><span class="key">'+r.status+':</span></div>';
+          epcSub += '<div class="node-row return-val-row"><span class="return-status">'+r.status+'</span>';
+          if(r.payload) epcSub += '<span class="return-payload">'+esc(r.payload)+'</span>';
+          if(r.condition) epcSub += '<span class="return-cond">'+esc(r.condition.type)+' "'+esc(r.condition.expr)+'"</span>';
+          epcSub += '</div>';
+        });
+        epcSub += '</div>';
+      }
+      col3.innerHTML += epcSub;
+      return;
+    }
     var featHTML = '<div class="node-card" id="card-'+feat.id+'">';
     featHTML += '<div class="node-title">'+esc(feat.title)+'</div>';
     feat.details.forEach(function(d){
@@ -239,6 +397,21 @@ function applySubVisibility(){
     if(asub) asub.style.display=state.collapsed['actions-'+fi]?'none':'block';
     ftIdx++;
   }
+  var epIdx=0;
+  while(true){
+    var epCard=document.getElementById('card-ep-'+epIdx);
+    if(!epCard) break;
+    var ei=epIdx;
+    var eps=document.getElementById('sub-ep-params-'+ei);
+    if(eps) eps.style.display=state.collapsed['ep-params-'+ei]?'none':'block';
+    var eprs=document.getElementById('sub-ep-responses-'+ei);
+    if(eprs) eprs.style.display=state.collapsed['ep-responses-'+ei]?'none':'block';
+    var epa=document.getElementById('sub-ep-actions-'+ei);
+    if(epa) epa.style.display=state.collapsed['ep-actions-'+ei]?'none':'block';
+    var epret=document.getElementById('sub-ep-returns-'+ei);
+    if(epret) epret.style.display=state.collapsed['ep-returns-'+ei]?'none':'block';
+    epIdx++;
+  }
   var col3=document.getElementById('col-3');
   var anyVisible=false;
   document.querySelectorAll('#col-3 .node-card').forEach(function(c){if(c.style.display!=='none')anyVisible=true;});
@@ -288,6 +461,43 @@ function drawConnections(){
         drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'actions',svg);}
     }
     ftIdx++;
+  }
+  var epIdx = 0;
+  while(true){
+    var epCard = document.getElementById('card-ep-'+epIdx);
+    if(!epCard) break;
+    var epl = epCard.getBoundingClientRect();
+    drawBezier(rl.right, rl.top+rl.height/2, epl.left, epl.top+epl.height/2, svg);
+    var ei = epIdx;
+    var eps = document.getElementById('sub-ep-params-'+ei);
+    if(eps&&!state.collapsed['ep-params-'+ei]){
+      var tr = epCard.querySelector('[data-sub="ep-params-'+ei+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=eps.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'params',svg);}
+    }
+    var eprs = document.getElementById('sub-ep-responses-'+ei);
+    if(eprs&&!state.collapsed['ep-responses-'+ei]){
+      var tr = epCard.querySelector('[data-sub="ep-responses-'+ei+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=eprs.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'responses',svg);}
+    }
+    var epa = document.getElementById('sub-ep-actions-'+ei);
+    if(epa&&!state.collapsed['ep-actions-'+ei]){
+      var tr = epCard.querySelector('[data-sub="ep-actions-'+ei+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=epa.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'actions',svg);}
+    }
+    var epret = document.getElementById('sub-ep-returns-'+ei);
+    if(epret&&!state.collapsed['ep-returns-'+ei]){
+      var tr = epCard.querySelector('[data-sub="ep-returns-'+ei+'"]');
+      if(tr){var tl=tr.getBoundingClientRect();var sl=epret.getBoundingClientRect();
+        drawBezier(tl.right, tl.top+tl.height/2, sl.left, sl.top+sl.height/2, svg);
+        drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'returns',svg);}
+    }
+    epIdx++;
   }
 }
 

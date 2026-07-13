@@ -39,13 +39,19 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | :--- | :--- | :--- |
 | `app` / `product` | Top-level | Defines the namespace or structural root of the configuration. |
 | `description` | Top/Block-level | Provides context or documentation string metadata. |
-| `version` | Top/Block-level | Declares the version identifier for the application or feature. |
-| `feature` | Block-level | Declares a sub-system module, API endpoint, or discrete capability. |
+| `version` | Top/Block-level | Declares the version identifier for the application, feature, or endpoint. |
+| `feature` | Block-level | Declares a sub-system module or discrete capability. |
+| `endpoint` | Block-level | Declares a synchronous HTTP transport network endpoint with route, method, params, responses, actions, and returns. |
 | `params` | Block-level | A dedicated container block specifying input definitions. |
 | `param` | Item-level | Declares a discrete parameter variable name. |
 | `actions` | Block-level | A dedicated container block specifying execution routines. |
 | `action` | Item-level | Declares a logical execution string or mutation step. |
 | `enforce` | Item-level | Declares a condition that must hold for the action to succeed. |
+| `responses` | Block-level | A dedicated container block for response schema definitions inside an endpoint. |
+| `response` | Item-level | Declares a named response schema with typed fields. |
+| `field` | Item-level | Declares a typed field inside a response schema. Defaults to `string` if no `type` is specified. |
+| `returns` | Block-level | A dedicated container block for return mapping definitions inside an endpoint. |
+| `return` | Item-level | Maps a status code to a response reference or string payload with optional `if`/`unless` condition. |
 
 ### 2.2 Parameter Fields
 
@@ -57,7 +63,27 @@ The Butter grammar is defined cleanly by key blocks, nested structural declarati
 | `validate` | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
 | `length` | Exact digit/numeric length constraint (e.g. `length 13`). Only on `int`/`float`. Mutually exclusive with `validate`. |
 
-### 2.3 Action Fields
+### 2.3 Endpoint Blocks
+
+Endpoints define synchronous HTTP transport network architecture alongside features. They support `version`, `params`, `responses`, `actions`, and `returns` sub-blocks with strict scope separation from features (feature keywords cannot appear in endpoint blocks and vice versa).
+
+#### Response Fields
+
+| Field | Purpose |
+| :--- | :--- |
+| `field` | Declares a typed field inside a response. Supports recursive nested sub-fields via an indented block. Defaults to `string` if no `type` is specified. |
+
+#### Return Syntax
+
+```
+return <StatusCode> [<ResponseReference> | <"String">] [| if/unless <"Condition">]
+```
+
+- Status code: 3-digit integer
+- Payload: response reference name or quoted string literal
+- Condition: optional `if`/`unless` with quoted expression
+
+### 2.4 Action Fields
 
 | Field | Purpose |
 | :--- | :--- |
@@ -108,6 +134,51 @@ feature ProcessPayment
 ```
 
 **`todo.butter`** — Complete todo app using `product` instead of `app`, with integer defaults, enum types, and multiple features. See the file at `todo.butter` in the project root. A working single-page application built from this spec is available at `todo.html` — each feature's actions run as sequential execution steps, one after another.
+
+**`endpoint.butter`** — Endpoint example with responses and returns:
+
+```butter
+app CheckoutAPI
+description "Payment checkout API"
+version "1.0.0"
+
+endpoint ProcessOrder
+  description "Validates checkout items and processes the transaction"
+  version "1.0.0"
+  route "/api/checkout/orders"
+  method POST
+  params
+    param checkout_token
+      type string
+      required true
+    param coupon_code
+      type string
+      default "WELCOME10"
+    param dry_run
+      type bool
+      default false
+  responses
+    response OrderSuccess
+      field order_id
+        type int
+      field total
+        type float
+      field status
+      field created_at
+    response ValidationError
+      field error
+      field details
+  actions
+    action "Validate the checkout token is active and not expired"
+    action "Calculate the order total with applicable discounts"
+    action "Process the payment transaction" | unless "dry_run == true"
+    action "Log the dry run estimate without processing payment" | if "dry_run == true"
+  returns
+    return 201 OrderSuccess | if "dry_run == false"
+    return 200 "Dry run completed successfully" | if "dry_run == true"
+    return 400 "Invalid or expired checkout token"
+    return 500 "Internal processing error"
+```
 
 ---
 
@@ -345,10 +416,11 @@ Define your layout structures securely within the nested domain module layer.
 package ast
 
 type AppSpec struct {
-	App         string        `json:"app"`
-	Description string        `json:"description,omitempty"`
-	Version     string        `json:"version,omitempty"`
-	Features    []FeatureSpec `json:"features"`
+	App         string          `json:"app"`
+	Description string          `json:"description,omitempty"`
+	Version     string          `json:"version,omitempty"`
+	Features    []FeatureSpec   `json:"features"`
+	Endpoints   []EndpointSpec `json:"endpoints,omitempty"`
 }
 
 type FeatureSpec struct {
@@ -357,6 +429,36 @@ type FeatureSpec struct {
 	Version     string       `json:"version,omitempty"`
 	Params      []ParamSpec  `json:"params,omitempty"`
 	Actions     []ActionSpec `json:"actions,omitempty"`
+}
+
+type EndpointSpec struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Version     string         `json:"version,omitempty"`
+	Route       string         `json:"route"`
+	Method      string         `json:"method"`
+	Params      []ParamSpec    `json:"params,omitempty"`
+	Responses   []ResponseSpec `json:"responses,omitempty"`
+	Actions     []ActionSpec   `json:"actions,omitempty"`
+	Returns     []ReturnSpec   `json:"returns"`
+}
+
+type ResponseSpec struct {
+	Name   string      `json:"name"`
+	Fields []FieldSpec `json:"fields"`
+}
+
+type FieldSpec struct {
+	Name     string      `json:"name"`
+	Type     string      `json:"type"`
+	SubFields []FieldSpec `json:"sub_fields,omitempty"`
+}
+
+type ReturnSpec struct {
+	StatusCode     int            `json:"status_code"`
+	Payload        string         `json:"payload,omitempty"`
+	PayloadIsString bool          `json:"payload_is_string,omitempty"`
+	Condition      *ConditionSpec `json:"condition,omitempty"`
 }
 
 type ParamSpec struct {
@@ -930,7 +1032,7 @@ butter-extension/
     {"open": "[", "close": "]"}
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(feature|params|actions|param\\s+\\w+)\\b.*$",
+    "increaseIndentPattern": "^\\s*(feature|params|actions|param\\s+\\w+|endpoint|responses|returns|response\\s+\\w+|field\\s+\\w+)\\b.*$",
     "decreaseIndentPattern": "^\\s*$"
   }
 }
@@ -944,6 +1046,16 @@ butter-extension/
   "scopeName": "source.butter",
   "patterns": [
     { "include": "#comments" },
+    { "include": "#app_name" },
+    { "include": "#feature_name" },
+    { "include": "#endpoint_name" },
+    { "include": "#param_name" },
+    { "include": "#response_name" },
+    { "include": "#field_name" },
+    { "include": "#type_value" },
+    { "include": "#return_ref" },
+    { "include": "#return_payload_string" },
+    { "include": "#status_codes" },
     { "include": "#keywords" },
     { "include": "#conditionals" },
     { "include": "#strings" },
@@ -968,6 +1080,13 @@ butter-extension/
         "2": { "name": "entity.name.function.butter" }
       }
     },
+    "endpoint_name": {
+      "match": "\\b(endpoint)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" }
+      }
+    },
     "param_name": {
       "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
       "captures": {
@@ -975,9 +1094,46 @@ butter-extension/
         "2": { "name": "variable.parameter.butter" }
       }
     },
+    "response_name": {
+      "match": "\\b(response)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.class.butter" }
+      }
+    },
+    "field_name": {
+      "match": "\\b(field)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "variable.parameter.butter" }
+      }
+    },
     "keywords": {
-      "match": "\\b(app|product|description|version|feature|params|param|type|required|default|actions|action)\\b",
+      "match": "\\b(app|product|description|version|feature|endpoint|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|responses|response|field|returns|return)\\b",
       "name": "keyword.control.butter"
+    },
+    "type_value": {
+      "match": "\\b(type)\\s+(\\S+)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "support.type.butter" }
+      }
+    },
+    "return_ref": {
+      "match": "\\b(return)\\s+(\\d{3})\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" },
+        "3": { "name": "entity.name.class.butter" }
+      }
+    },
+    "return_payload_string": {
+      "match": "\\b(return)\\s+(\\d{3})\\s+(\"[^\"]*\")",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" },
+        "3": { "name": "string.quoted.double.butter" }
+      }
     },
     "conditionals": {
       "match": "\\b(if|unless|when|while)\\b",
@@ -991,6 +1147,13 @@ butter-extension/
     "constants": {
       "match": "\\b(true|false)\\b",
       "name": "constant.language.boolean.butter"
+    },
+    "status_codes": {
+      "match": "\\b(return)\\s+(\\d{3})\\b",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" }
+      }
     }
   }
 }

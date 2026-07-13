@@ -3,7 +3,7 @@ const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { ButterCompletionProvider, ButterHoverProvider } = require('./completion');
+const { ButterCompletionProvider, ButterHoverProvider, ButterDefinitionProvider } = require('./completion');
 
 function activate(context) {
   const diagnostics = vscode.languages.createDiagnosticCollection('butter');
@@ -122,7 +122,8 @@ function activate(context) {
       }
     }),
     vscode.languages.registerCompletionItemProvider('butter', new ButterCompletionProvider(), '|', ' ', '['),
-    vscode.languages.registerHoverProvider('butter', new ButterHoverProvider())
+    vscode.languages.registerHoverProvider('butter', new ButterHoverProvider()),
+    vscode.languages.registerDefinitionProvider('butter', new ButterDefinitionProvider())
   );
 
   vscode.workspace.textDocuments.forEach(lint);

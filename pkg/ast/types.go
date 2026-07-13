@@ -1,10 +1,11 @@
 package ast
 
 type AppSpec struct {
-	App         string        `json:"app" yaml:"app"`
-	Description string        `json:"description,omitempty" yaml:"description,omitempty"`
-	Version     string        `json:"version,omitempty" yaml:"version,omitempty"`
-	Features    []FeatureSpec `json:"features" yaml:"features"`
+	App         string          `json:"app" yaml:"app"`
+	Description string          `json:"description,omitempty" yaml:"description,omitempty"`
+	Version     string          `json:"version,omitempty" yaml:"version,omitempty"`
+	Features    []FeatureSpec   `json:"features" yaml:"features"`
+	Endpoints   []EndpointSpec `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
 }
 
 type FeatureSpec struct {
@@ -37,4 +38,38 @@ type ConditionSpec struct {
 	Type       string `json:"type" yaml:"type"`
 	Expression string `json:"expression" yaml:"expression"`
 	Line       int    `json:"-" yaml:"-"`
+}
+
+type EndpointSpec struct {
+	Name        string         `json:"name" yaml:"name"`
+	Description string         `json:"description,omitempty" yaml:"description,omitempty"`
+	Version     string         `json:"version,omitempty" yaml:"version,omitempty"`
+	Route       string         `json:"route" yaml:"route"`
+	Method      string         `json:"method" yaml:"method"`
+	Params      []ParamSpec    `json:"params,omitempty" yaml:"params,omitempty"`
+	Responses   []ResponseSpec `json:"responses,omitempty" yaml:"responses,omitempty"`
+	Actions     []ActionSpec   `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Returns     []ReturnSpec   `json:"returns" yaml:"returns"`
+	Line        int            `json:"-" yaml:"-"`
+}
+
+type ResponseSpec struct {
+	Name   string      `json:"name" yaml:"name"`
+	Fields []FieldSpec `json:"fields" yaml:"fields"`
+	Line   int         `json:"-" yaml:"-"`
+}
+
+type FieldSpec struct {
+	Name     string      `json:"name" yaml:"name"`
+	Type     string      `json:"type" yaml:"type"`
+	SubFields []FieldSpec `json:"sub_fields,omitempty" yaml:"sub_fields,omitempty"`
+	Line     int         `json:"-" yaml:"-"`
+}
+
+type ReturnSpec struct {
+	StatusCode     int            `json:"status_code" yaml:"status_code"`
+	Payload        string         `json:"payload,omitempty" yaml:"payload,omitempty"`
+	PayloadIsString bool          `json:"payload_is_string,omitempty" yaml:"payload_is_string,omitempty"`
+	Condition      *ConditionSpec `json:"condition,omitempty" yaml:"condition,omitempty"`
+	Line           int            `json:"-" yaml:"-"`
 }

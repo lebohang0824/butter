@@ -6,7 +6,14 @@
     { "include": "#comments" },
     { "include": "#app_name" },
     { "include": "#feature_name" },
+    { "include": "#endpoint_name" },
     { "include": "#param_name" },
+    { "include": "#response_name" },
+    { "include": "#field_name" },
+    { "include": "#type_value" },
+    { "include": "#return_ref" },
+    { "include": "#return_payload_string" },
+    { "include": "#status_codes" },
     { "include": "#keywords" },
     { "include": "#conditionals" },
     { "include": "#strings" },
@@ -31,6 +38,13 @@
         "2": { "name": "entity.name.function.butter" }
       }
     },
+    "endpoint_name": {
+      "match": "\\b(endpoint)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" }
+      }
+    },
     "param_name": {
       "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
       "captures": {
@@ -38,9 +52,38 @@
         "2": { "name": "variable.parameter.butter" }
       }
     },
+    "response_name": {
+      "match": "\\b(response)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.class.butter" }
+      }
+    },
+    "field_name": {
+      "match": "\\b(field)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "variable.parameter.butter" }
+      }
+    },
     "keywords": {
-      "match": "\\b(app|product|description|version|feature|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action)\\b",
+      "match": "\\b(app|product|description|version|feature|endpoint|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|responses|response|field|returns|return)\\b",
       "name": "keyword.control.butter"
+    },
+    "type_value": {
+      "match": "\\b(type)\\s+(\\S+)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "support.type.butter" }
+      }
+    },
+    "return_ref": {
+      "match": "\\b(return)\\s+(\\d{3})\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" },
+        "3": { "name": "entity.name.class.butter" }
+      }
     },
     "conditionals": {
       "match": "\\b(if|unless|when|while)\\b",
@@ -54,6 +97,21 @@
     "constants": {
       "match": "\\b(true|false)\\b",
       "name": "constant.language.boolean.butter"
+    },
+    "return_payload_string": {
+      "match": "\\b(return)\\s+(\\d{3})\\s+(\"[^\"]*\")",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" },
+        "3": { "name": "string.quoted.double.butter" }
+      }
+    },
+    "status_codes": {
+      "match": "\\b(return)\\s+(\\d{3})\\b",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "constant.numeric.integer.butter" }
+      }
     }
   }
 }

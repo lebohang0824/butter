@@ -10,7 +10,7 @@
     {"open": "[", "close": "]"}
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(feature|params|actions|param\\s+\\w+)\\b.*$",
+    "increaseIndentPattern": "^\\s*(feature|endpoint|params|actions|responses|returns|param\\s+\\w+|response\\s+\\w+|field\\s+\\w+)\\b.*$",
     "decreaseIndentPattern": "^\\s*$"
   }
 }

@@ -29,6 +29,7 @@ feature ReleaseFlow
         # ── Step 3: Versioning & Changelog updates ──────────────────
         # AI agents: Automatically manage project versioning and update human-readable logs.
         action "Update version" | unless "Only .butter or compiled JSON files changed"
+            enforce "Should not consider .butter, .json, .yaml spec files as changes that require a version bump"
             enforce "Update the version number in the project files"
             enforce "Update minor version number for bug fixes/tweaks"
             enforce "Update major version number for enhancements"
