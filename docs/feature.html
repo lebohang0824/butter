@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature — Butter Specification Language</title>
+<meta name="description" content="Complete documentation for the Butter feature primitive — parameters, actions, conditions, enforce rules, and sequential execution.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.14.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#syntax">Syntax</a>
+    <a href="#sub-blocks">Sub-blocks</a>
+    <a href="#params">Params</a>
+    <a href="#param-fields">Param Fields</a>
+    <a href="#actions">Actions</a>
+    <a href="#conditions">Conditions</a>
+    <a href="#enforce">Enforce Rules</a>
+    <a href="#scope">Scope Isolation</a>
+    <a href="#selective-compilation">Selective Compilation</a>
+    <a href="#compiled-output">Compiled Output</a>
+    <a href="#examples">Examples</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Feature</h1>
+    <p class="subtitle">The primary organisational unit in Butter. A feature declares a discrete capability — a module, API, or sub-system — with typed parameters, sequential actions, and conditional execution logic.</p>
+  </div>
+
+  <p>A <code>feature</code> block describes <em>what to build</em> and <em>how to build it</em>. It declares typed input parameters, a sequential list of execution steps (actions), and optional conditions that decide which actions run. When compiled to JSON and fed to an AI agent, the feature gives the agent a complete execution model — not just a data schema.</p>
+
+  <p>Features are self-contained. All parameters, actions, and conditions are scoped entirely within the feature block. There are no cross-feature references, no shared state, no global side effects. This isolation means each feature can be compiled, tested, and reasoned about independently.</p>
+
+  <h3>Key Properties</h3>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Keyword</td><td><code>feature</code></td></tr>
+    <tr><td>Context</td><td>Top-level block under <code>app</code> / <code>product</code></td></tr>
+    <tr><td>Required fields</td><td>Name (identifier after <code>feature</code>)</td></tr>
+    <tr><td>Optional fields</td><td><code>description</code>, <code>version</code></td></tr>
+    <tr><td>Sub-blocks</td><td><code>params</code>, <code>actions</code></td></tr>
+    <tr><td>Scope</td><td>Strictly local — no cross-feature references</td></tr>
+  </table>
+</section>
+
+<section id="syntax">
+  <h2>Syntax</h2>
+  <p>A feature is declared at the top level of a <code>.butter</code> file, directly under the <code>app</code> / <code>product</code> header:</p>
+
+  <pre><code class="language-butter">app MyApp
+description "My application"
+version "1.0.0"
+
+feature FeatureName
+  description "What this feature does"
+  version "1.0.0"
+
+  params
+    param ParamName
+      type string
+      required true
+
+  actions
+    action "First step"
+    action "Second step" | if "ParamName is set"</code></pre>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Each <code>feature</code> must have a unique name within the spec — duplicate feature names produce a semantic error.</li>
+    <li>The feature name is an identifier: letters, digits, underscores, and hyphens are allowed.</li>
+    <li>The content under a <code>feature</code> must be indented (spaces or tabs — tabs normalise to 4 spaces).</li>
+    <li>Valid keywords inside a feature: <code>description</code>, <code>version</code>, <code>params</code>, <code>actions</code>.</li>
+    <li>A feature can have zero params and zero actions — an empty feature is valid.</li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> The <code>endpoint</code> primitive shares the same top-level context as <code>feature</code> but adds HTTP-specific fields (route, method, responses, returns). See the <a href="endpoint.html">Endpoint documentation</a> for details.</blockquote>
+</section>
+
+<section id="sub-blocks">
+  <h2>Sub-blocks</h2>
+  <p>A feature contains two optional sub-blocks, each declared with a container keyword followed by an indented block of items:</p>
+
+  <table>
+    <tr><th>Container</th><th>Item keyword</th><th>Purpose</th></tr>
+    <tr><td><code>params</code></td><td><code>param</code></td><td>Declares typed input parameters the feature accepts</td></tr>
+    <tr><td><code>actions</code></td><td><code>action</code></td><td>Declares sequential execution steps the AI agent must perform</td></tr>
+  </table>
+
+  <pre><code class="language-butter">feature ProcessPayment
+  description "Processes financial transactions"
+  version "1.0.0"
+
+  params
+    param OrderID
+      type string
+      required true
+    param Amount
+      type float
+      required true
+
+  actions
+    action "Validate routing balance metrics"
+    action "Apply cryptocurrency surcharge" | when "PaymentMethod is Crypto"
+    action "Flag for manual review" | if "Amount > 10000"</code></pre>
+</section>
+
+<section id="params">
+  <h2>Params</h2>
+  <p>The <code>params</code> block declares the inputs a feature accepts. Each <code>param</code> is a named variable with a type and optional constraints. Parameters define the boundary between what the caller provides and what the feature's actions operate on.</p>
+
+  <pre><code class="language-butter">params
+  param Title
+    type string
+    required true
+  param Priority
+    type enum["low", "medium", "high", "urgent"]
+    default "medium"
+  param Limit
+    type int
+    default 50
+    validate ">=1"
+    validate "<=200"</code></pre>
+
+  <h3>Implicit Defaults</h3>
+  <ul>
+    <li>A <code>param</code> without an explicit <code>type</code> defaults to <code>string</code>.</li>
+    <li>A <code>param</code> without an explicit <code>required</code> defaults to <code>false</code>.</li>
+  </ul>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Parameter names must be unique within a feature — duplicates produce a semantic error.</li>
+    <li>A parameter marked <code>required true</code> with a <code>default</code> triggers a warning (the default is never used).</li>
+    <li><code>validate</code> rules require <code>type int</code> or <code>type float</code>.</li>
+    <li><code>length</code> and <code>validate</code> are mutually exclusive on the same parameter.</li>
+  </ul>
+</section>
+
+<section id="param-fields">
+  <h2>Param Fields</h2>
+  <p>Each <code>param</code> supports five fields. All are optional — a bare <code>param Name</code> is valid and defaults to an optional string.</p>
+
+  <table>
+    <tr><th>Field</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td><code>type</code></td><td>Data type constraint</td><td><code>type string</code>, <code>type int</code>, <code>type float</code>, <code>type bool</code>, <code>type enum["a", "b"]</code></td></tr>
+    <tr><td><code>required</code></td><td>Whether the parameter must be provided</td><td><code>required true</code></td></tr>
+    <tr><td><code>default</code></td><td>Fallback value when the parameter is omitted</td><td><code>default "medium"</code>, <code>default 50</code>, <code>default false</code></td></tr>
+    <tr><td><code>validate</code></td><td>Numeric comparison rule (only <code>int</code>/<code>float</code>). Multiple lines allowed. Mutually exclusive with <code>length</code>.</td><td><code>validate ">=1"</code>, <code>validate "<=200"</code></td></tr>
+    <tr><td><code>length</code></td><td>Exact digit length constraint (only <code>int</code>/<code>float</code>). Mutually exclusive with <code>validate</code>.</td><td><code>length 13</code></td></tr>
+  </table>
+
+  <h3>Types</h3>
+  <table>
+    <tr><th>Type</th><th>Description</th><th>Default value</th></tr>
+    <tr><td><code>string</code></td><td>Text value (default if <code>type</code> is omitted)</td><td><code>""</code></td></tr>
+    <tr><td><code>int</code></td><td>Integer value</td><td><code>0</code></td></tr>
+    <tr><td><code>float</code></td><td>Floating-point value</td><td><code>0</code></td></tr>
+    <tr><td><code>bool</code></td><td>Boolean value</td><td><code>false</code></td></tr>
+    <tr><td><code>enum["a", "b"]</code></td><td>Restricted set of string values</td><td>First value in the list</td></tr>
+  </table>
+
+  <h3>Validate Rules</h3>
+  <p>The <code>validate</code> field accepts comparison operators followed by a number. Supported operators:</p>
+
+  <table>
+    <tr><th>Operator</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>&gt;</code></td><td>Greater than</td><td><code>validate "&gt;0"</code></td></tr>
+    <tr><td><code>&gt;=</code></td><td>Greater than or equal</td><td><code>validate "&gt;=1"</code></td></tr>
+    <tr><td><code>&lt;</code></td><td>Less than</td><td><code>validate "&lt;100"</code></td></tr>
+    <tr><td><code>&lt;=</code></td><td>Less than or equal</td><td><code>validate "&lt;=200"</code></td></tr>
+    <tr><td><code>=</code></td><td>Equal to</td><td><code>validate "=5"</code></td></tr>
+    <tr><td><code>==</code></td><td>Equal to</td><td><code>validate "==5"</code></td></tr>
+    <tr><td><code>!=</code></td><td>Not equal to</td><td><code>validate "!=0"</code></td></tr>
+    <tr><td><code>=&lt;</code></td><td>Less than or equal (alternative syntax)</td><td><code>validate "=&lt;100"</code></td></tr>
+  </table>
+
+  <p>Multiple validate rules can be stacked:</p>
+  <pre><code class="language-butter">param Limit
+  type int
+  default 50
+  validate ">=1"
+  validate "<=200"</code></pre>
+</section>
+
+<section id="actions">
+  <h2>Actions</h2>
+  <p>The <code>actions</code> block declares the sequential execution steps that an AI agent must perform. Actions are the core of Butter's intent model — they tell the AI <em>what to do</em>, in <em>what order</em>, and <em>under what conditions</em>.</p>
+
+  <pre><code class="language-butter">actions
+  action "Validate title is not empty"
+  action "Assign unique identifier to the new task"
+  action "Set creation timestamp to current time"
+  action "Send notification to assigned user" | if "Priority == urgent"
+  action "Schedule reminder for due date" | when "DueDate is not empty"</code></pre>
+
+  <h3>Execution Model</h3>
+  <ul>
+    <li><strong>Sequential</strong> — Actions run one after another in the order they are declared. Never in parallel.</li>
+    <li><strong>Deterministic</strong> — Given the same inputs, the same actions will execute in the same order.</li>
+    <li><strong>Conditional</strong> — An action with a condition only runs when the condition evaluates to true.</li>
+    <li><strong>Atomic</strong> — Each action is a single step. Complex operations should be broken into multiple actions.</li>
+  </ul>
+
+  <h3>Statement Format</h3>
+  <p>The action statement is a quoted string describing what to do. It should be written as an imperative instruction:</p>
+
+  <pre><code class="language-butter">action "Validate the checkout token is active"
+action "Calculate the order total with applicable discounts"
+action "Process the payment transaction"
+action "Log the transaction audit trail"</code></pre>
+
+  <blockquote><strong>Writing tip:</strong> Write action statements as if you are instructing a developer. Be specific about what to validate, calculate, or create. Vague actions like "handle the data" produce vague implementations.</blockquote>
+</section>
+
+<section id="conditions">
+  <h2>Conditions</h2>
+  <p>Actions can have optional conditions attached via the pipe (<code>|</code>) character. A condition determines whether the action runs based on the current parameter values or external state.</p>
+
+  <pre><code class="language-butter">action "Process payment" | if "Amount > 0"
+action "Skip validation" | unless "TrustedSource == true"
+action "Notify admin" | when "ThresholdExceeded"
+action "Keep alive" | while "ConnectionActive"</code></pre>
+
+  <table>
+    <tr><th>Keyword</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>if</code></td><td>Executes <strong>only if</strong> the predicate evaluates to true</td><td><code>| if "Amount > 10000"</code></td></tr>
+    <tr><td><code>unless</code></td><td>Executes <strong>except when</strong> the predicate evaluates to true</td><td><code>| unless "dry_run == true"</code></td></tr>
+    <tr><td><code>when</code></td><td>Reactive or event-driven hook; triggers upon an external event or state shift</td><td><code>| when "DueDate is not empty"</code></td></tr>
+    <tr><td><code>while</code></td><td>Active polling or operational state persistence; the condition must remain continuously active</td><td><code>| while "ConnectionActive"</code></td></tr>
+  </table>
+
+  <h3>Condition Expressions</h3>
+  <p>The expression inside the quotes is a natural-language predicate. The AI agent interprets it against the available parameters and context. Common patterns:</p>
+
+  <ul>
+    <li><strong>Equality:</strong> <code>"Status == active"</code>, <code>"Status != archived"</code></li>
+    <li><strong>Numeric comparison:</strong> <code>"Amount > 10000"</code>, <code>"Limit <= 200"</code></li>
+    <li><strong>Existence:</strong> <code>"CouponCode is set"</code>, <code>"DueDate is not empty"</code></li>
+    <li><strong>Boolean:</strong> <code>"dry_run == true"</code>, <code>"TrustedSource"</code></li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> Conditions are written in natural language inside quotes. The AI agent interprets them — there is no formal expression evaluator. Keep expressions clear and unambiguous for best results.</blockquote>
+</section>
+
+<section id="enforce">
+  <h2>Enforce Rules</h2>
+  <p>Actions can have zero or more <code>enforce</code> rules as indented children. An enforce rule declares a condition that <em>must</em> hold for the action to succeed — it is a constraint, not a conditional branch.</p>
+
+  <pre><code class="language-butter">action "Validate routing balance metrics"
+  enforce "The payment gateway must have sufficient routing capacity"
+  enforce "Failed validations must log the routing error before halting"</code></pre>
+
+  <h3>Enforce vs Condition</h3>
+  <table>
+    <tr><th>Aspect</th><th>Condition (<code>| if</code>)</th><th>Enforce</th></tr>
+    <tr><td>Purpose</td><td>Decides whether the action runs</td><td>Declares a constraint that must hold during execution</td></tr>
+    <tr><td>Placement</td><td>Inline after the action statement</td><td>Indented child under the action</td></tr>
+    <tr><td>Skip behaviour</td><td>Action is skipped if condition is false</td><td>Action always runs; enforce is an invariant</td></tr>
+    <tr><td>Multiple allowed?</td><td>One condition per action</td><td>Multiple enforce rules per action</td></tr>
+  </table>
+
+  <h3>Writing Enforce Rules</h3>
+  <p>Write enforce rules as invariants — things that must always be true for the action to succeed. They are instructions to the AI agent about validation boundaries:</p>
+
+  <pre><code class="language-butter">action "Charge customer payment method"
+  enforce "The charge amount must not exceed the order total"
+  enforce "The payment method must be verified before charging"
+  enforce "A receipt must be generated after successful charge"</code></pre>
+</section>
+
+<section id="scope">
+  <h2>Scope Isolation</h2>
+  <p>Every feature in Butter is strictly self-contained. Parameters, actions, and conditions within a feature have no knowledge of or dependency on other features. This design has critical implications:</p>
+
+  <ul>
+    <li><strong>No cross-references</strong> — A feature cannot reference a parameter from another feature.</li>
+    <li><strong>No shared state</strong> — Features are independent execution models. One feature's actions do not affect another's.</li>
+    <li><strong>Independent compilation</strong> — Each feature can be isolated, compiled, and reasoned about on its own.</li>
+    <li><strong>Zero noise</strong> — When you extract a single feature, the output contains zero references to unrelated code.</li>
+  </ul>
+
+  <p>This isolation is what makes <a href="#selective-compilation">selective compilation</a> possible. Because each feature is a complete, self-contained unit, the compiler can extract it without resolving external dependencies or performing cross-file linking.</p>
+
+  <pre><code class="language-butter">feature CreateTask
+  params
+    param Title
+      type string
+      required true
+  actions
+    action "Validate title is not empty"
+    action "Assign unique identifier"
+
+feature DeleteTask
+  params
+    param TaskID
+      type string
+      required true
+  actions
+    action "Verify TaskID exists"
+    action "Remove task record"</code></pre>
+
+  <p>Compiling with <code>--only feature:CreateTask</code> produces output containing only <code>CreateTask</code> — the AI agent sees zero mention of <code>DeleteTask</code>, its parameters, or its actions.</p>
+</section>
+
+<section id="selective-compilation">
+  <h2>Selective Compilation</h2>
+  <p>Butter's CLI supports extracting specific features via the <code>--only</code> and <code>--exclude</code> flags. This is the primary mechanism for building targeted AI prompts.</p>
+
+  <h3>Extract a Single Feature</h3>
+  <pre><code class="language-bash">butter compile app.butter --only feature:CreateTask -f json</code></pre>
+
+  <h3>Extract Multiple Features</h3>
+  <pre><code class="language-bash">butter compile app.butter --only feature:CreateTask,feature:DeleteTask -f json</code></pre>
+
+  <h3>Exclude a Feature</h3>
+  <pre><code class="language-butter">butter compile app.butter --exclude feature:DeleteTask -f json</code></pre>
+
+  <h3>How It Works</h3>
+  <ol>
+    <li>The compiler parses the full <code>.butter</code> file into a complete AST.</li>
+    <li>Semantic analysis runs on the full AST (all features are validated).</li>
+    <li>The filter engine prunes the AST — un-matched feature branches are dropped.</li>
+    <li>The global context (app name, description, version) is always preserved.</li>
+    <li>The isolated sub-graph is serialised to the requested format.</li>
+  </ol>
+
+  <blockquote><strong>Error handling:</strong> If <code>--only</code> references a feature name that does not exist in the spec, compilation fails with an error. If <code>--exclude</code> references a non-existent feature, it also fails. The compiler never silently ignores typos.</blockquote>
+
+  <h3>Human-to-AI Handoff</h3>
+  <p>Selective compilation is designed for the prompt-stacking workflow:</p>
+  <ol>
+    <li><strong>Write</strong> the feature spec inside your <code>.butter</code> file.</li>
+    <li><strong>Extract</strong> with <code>butter compile app.butter --only feature:CreateTask -f json -o prompt.json</code>.</li>
+    <li><strong>Paste</strong> the JSON into your AI chat alongside instructions:</li>
+  </ol>
+
+  <pre><code class="language-text">Implement the code for the following Butter contract definition.
+Actions are sequential execution steps — run them in the listed order.
+Respect all conditions, types, and constraints.
+
+[Paste JSON here]</code></pre>
+</section>
+
+<section id="compiled-output">
+  <h2>Compiled Output</h2>
+  <p>When compiled to JSON, a feature produces a structured object with all its parameters, actions, conditions, and enforce rules:</p>
+
+  <pre><code class="language-butter">feature ProcessPayment
+  description "Processes financial transactions"
+  version "1.0.0"
+
+  params
+    param OrderID
+      type string
+      required true
+    param Amount
+      type float
+      required true
+
+  actions
+    action "Validate routing balance metrics"
+      enforce "The payment gateway must have sufficient routing capacity"
+    action "Apply cryptocurrency surcharge" | when "PaymentMethod is Crypto"
+    action "Flag for manual review" | if "Amount > 10000"</code></pre>
+
+  <p>Compiles to:</p>
+
+  <pre><code class="language-json">{
+  "name": "ProcessPayment",
+  "description": "Processes financial transactions",
+  "version": "1.0.0",
+  "params": [
+    {
+      "name": "OrderID",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "Amount",
+      "type": "float",
+      "required": true
+    }
+  ],
+  "actions": [
+    {
+      "statement": "Validate routing balance metrics",
+      "enforce": [
+        "The payment gateway must have sufficient routing capacity"
+      ]
+    },
+    {
+      "statement": "Apply cryptocurrency surcharge",
+      "condition": {
+        "type": "when",
+        "expression": "PaymentMethod is Crypto"
+      }
+    },
+    {
+      "statement": "Flag for manual review",
+      "condition": {
+        "type": "if",
+        "expression": "Amount > 10000"
+      }
+    }
+  ]
+}</code></pre>
+</section>
+
+<section id="examples">
+  <h2>Examples</h2>
+
+  <h3>Minimal Feature</h3>
+  <pre><code class="language-butter">feature Greet
+  params
+    param Name
+      type string
+      required true
+      default "World"
+  actions
+    action "Say hello to the user"</code></pre>
+
+  <h3>Feature with Multiple Conditionals</h3>
+  <pre><code class="language-butter">feature NotifyUser
+  description "Sends notifications based on priority and channel preference"
+  version "1.0.0"
+
+  params
+    param Recipient
+      type string
+      required true
+    param Priority
+      type enum["low", "medium", "high", "urgent"]
+      default "medium"
+    param Channel
+      type enum["email", "sms", "push"]
+      default "email"
+
+  actions
+    action "Validate recipient contact information"
+    action "Queue message for delivery"
+    action "Mark as high-priority" | if "Priority == urgent"
+    action "Escalate to on-call manager" | if "Priority == urgent"
+    action "Send via SMS gateway" | when "Channel is sms"
+    action "Send via push notification" | when "Channel is push"
+    action "Retry delivery on failure" | while "Delivery attempt fails"</code></pre>
+
+  <h3>Feature with Enforce Rules</h3>
+  <pre><code class="language-butter">feature ChargePayment
+  description "Processes payment charges with safety constraints"
+  version "1.0.0"
+
+  params
+    param Amount
+      type float
+      required true
+      validate ">0"
+    param Currency
+      type string
+      default "USD"
+
+  actions
+    action "Verify sufficient account balance"
+      enforce "Balance must exceed charge amount by at least 10%"
+      enforce "Account must not be frozen or suspended"
+    action "Apply currency conversion rate"
+    action "Submit charge to payment processor"
+      enforce "Charge must include idempotency key"
+      enforce "Processor response must be logged"</code></pre>
+
+  <h3>TodoApp Feature Set</h3>
+  <p>The <a href="todo.html">TodoApp demo</a> showcases a complete feature set with four features — CreateTask, ListTasks, UpdateTask, and DeleteTask — each with typed parameters, sequential actions, and conditional execution. See the full spec in <a href="index.html#examples">Examples</a>.</p>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>

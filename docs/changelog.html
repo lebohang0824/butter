@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.13.0</div>
+    <div class="version">v1.14.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-14-0">v1.14.0</a>
     <a href="#v1-13-0">v1.13.0</a>
     <a href="#v1-12-0">v1.12.0</a>
     <a href="#v1-11-2">v1.11.2</a>
@@ -39,10 +40,31 @@
     <a href="#v1-2-0">v1.2.0</a>
     <a href="#v1-1-0">v1.1.0</a>
     <a href="#v1-0-0">v1.0.0</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
+    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
   </nav>
 </aside>
 
 <main class="main">
+
+<section id="v1-14-0">
+  <h2>v1.14.0 — 2026-07-13</h2>
+  <ul>
+    <li><strong>Selective Compilation</strong> — New <code>--only</code> and <code>--exclude</code> flags on <code>butter compile</code> for targeted extraction of specific features and endpoints. Supports comma-separated multiple targets (e.g. <code>--only endpoint:ProcessOrder,feature:ApplyCoupon</code>).</li>
+    <li><strong><code>--only</code> flag</strong> — Compile only specific blocks by type and name. The compiler prunes un-matched AST branches and preserves global context (app name, description, version). Fails with an error if a referenced block does not exist in the spec.</li>
+    <li><strong><code>--exclude</code> flag</strong> — Exclude specific blocks from compilation. Fails with an error if a referenced block does not exist in the spec. Cannot be combined with <code>--only</code>.</li>
+    <li><strong>Feature documentation</strong> — New dedicated documentation page (<code>docs/feature.html</code>) covering the feature primitive: syntax, params, param fields, actions, conditions, enforce rules, scope isolation, selective compilation, and compiled output.</li>
+    <li><strong>Endpoint documentation</strong> — New dedicated documentation page (<code>docs/endpoint.html</code>) covering the endpoint primitive: syntax, HTTP fields (route, method), params, responses, fields, actions, returns, scope isolation, selective compilation, and compiled output.</li>
+    <li><strong>CLI reference update</strong> — Documented <code>--format</code>, <code>--only</code>, and <code>--exclude</code> flags with examples and selective compilation workflow.</li>
+    <li><strong>Navigation update</strong> — Added Feature and Endpoint links to all documentation page sidebars.</li>
+  </ul>
+</section>
 
 <section id="v1-13-0">
   <h2>v1.13.0 — 2026-07-13</h2>

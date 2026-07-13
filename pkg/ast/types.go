@@ -4,7 +4,7 @@ type AppSpec struct {
 	App         string          `json:"app" yaml:"app"`
 	Description string          `json:"description,omitempty" yaml:"description,omitempty"`
 	Version     string          `json:"version,omitempty" yaml:"version,omitempty"`
-	Features    []FeatureSpec   `json:"features" yaml:"features"`
+	Features    []FeatureSpec   `json:"features,omitempty" yaml:"features,omitempty"`
 	Endpoints   []EndpointSpec `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
 }
 

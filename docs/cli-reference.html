@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.13.0</div>
+    <div class="version">v1.14.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -28,6 +28,8 @@
     <a href="#exit-codes">Exit Codes</a>
     <a href="#error-format">Error Output Format</a>
     <a href="#errors">Error Reference</a>
+    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
+    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
     <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
     <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
     <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
@@ -53,15 +55,42 @@
     </thead>
     <tbody>
       <tr><td>--output</td><td>-o</td><td>Custom output path (defaults to <code>&lt;input&gt;.json</code>)</td></tr>
+      <tr><td>--format</td><td>-f</td><td>Output format (default: <code>json</code>). Supported: <code>json</code>, <code>yaml</code>, <code>prompt</code>, <code>htmltree</code>, <code>sim</code></td></tr>
       <tr><td>--check</td><td></td><td>Validate syntax without generating output</td></tr>
+      <tr><td>--only</td><td></td><td>Compile only specific blocks (e.g. <code>endpoint:ProcessOrder</code>, <code>feature:ApplyCoupon</code>). Comma-separated for multiple targets. Fails if a target does not exist in the spec.</td></tr>
+      <tr><td>--exclude</td><td></td><td>Exclude specific blocks from compilation (e.g. <code>endpoint:HealthCheck</code>). Comma-separated. Fails if a target does not exist in the spec.</td></tr>
     </tbody>
   </table>
 
   <h4>Examples</h4>
-  <pre><code class="language-bash">butter compile demo.butter
+  <pre><code class="language-bash"># Full compile
+butter compile demo.butter
 butter compile demo.butter --output result.json
 butter compile demo.butter -o result.json
-butter compile --check demo.butter</code></pre>
+
+# Validate without output
+butter compile --check demo.butter
+
+# Selective compilation — extract a single endpoint
+butter compile api.butter --only endpoint:ProcessOrder -f json
+
+# Selective compilation — extract multiple blocks
+butter compile api.butter --only endpoint:ProcessOrder,feature:ApplyCoupon -f json
+
+# Selective compilation — exclude a block
+butter compile api.butter --exclude endpoint:HealthCheck -f json
+
+# Extract to a specific output file
+butter compile api.butter --only endpoint:ProcessOrder -f json -o prompt_slice.json</code></pre>
+
+  <h4>Selective Compilation</h4>
+  <p>The <code>--only</code> and <code>--exclude</code> flags enable targeted extraction of specific <a href="feature.html">features</a> and <a href="endpoint.html">endpoints</a> from a spec. The filter syntax is <code>block_type:name</code> where <code>block_type</code> is <code>endpoint</code> or <code>feature</code>.</p>
+
+  <p>When <code>--only</code> is used, only the named blocks are included in the output. The global context (app name, description, version) is always preserved. When <code>--exclude</code> is used, the named blocks are removed and everything else is kept. The two flags cannot be used together.</p>
+
+  <p>Both flags fail with an error if a referenced block does not exist in the spec — typos are caught at compile time, never silently ignored.</p>
+
+  <blockquote><strong>Use case:</strong> Selective compilation is designed for the human-to-AI handoff workflow. Extract a single endpoint as a clean JSON payload, paste it into an AI chat with implementation instructions, and get a single-shot generation that matches the contract exactly. See the <a href="feature.html#selective-compilation">Feature</a> and <a href="endpoint.html#selective-compilation">Endpoint</a> docs for detailed workflows.</blockquote>
 </section>
 
 <section id="fmt">

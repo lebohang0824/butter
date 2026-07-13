@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"butter/pkg/ast"
 	"butter/pkg/formatter"
 	"butter/pkg/lexer"
 	"butter/pkg/output"
@@ -24,13 +25,15 @@ func formatList() string {
 	return strings.Join(output.Names(), ", ")
 }
 
-const Version = "1.13.0"
+const Version = "1.14.0"
 
 var outputFile string
 var outputFormat string
 var checkMode bool
 var showVersion bool
 var fmtCheckMode bool
+var onlyFilter string
+var excludeFilter string
 
 var rootCmd = &cobra.Command{
 	Use:   "butter",
@@ -88,6 +91,24 @@ var compileCmd = &cobra.Command{
 
 		if hasErrors {
 			return fmt.Errorf("semantic analysis failed — output not generated")
+		}
+
+		onlyFilters, err := ast.ParseFilters(onlyFilter)
+		if err != nil {
+			return fmt.Errorf("invalid --only filter: %w", err)
+		}
+		excludeFilters, err := ast.ParseFilters(excludeFilter)
+		if err != nil {
+			return fmt.Errorf("invalid --exclude filter: %w", err)
+		}
+
+		if len(onlyFilters) > 0 && len(excludeFilters) > 0 {
+			return fmt.Errorf("--only and --exclude cannot be used together")
+		}
+
+		appAST, err = ast.FilterAppSpec(appAST, onlyFilters, excludeFilters)
+		if err != nil {
+			return err
 		}
 
 		extIface, ok := output.Get(outputFormat)
@@ -156,6 +177,8 @@ func init() {
 	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json for json, .yaml for yaml)")
 	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", fmt.Sprintf("Output format (default: json). Supported: %s", formatList()))
 	compileCmd.Flags().BoolVar(&checkMode, "check", false, "Check syntax without generating output")
+	compileCmd.Flags().StringVar(&onlyFilter, "only", "", "Compile only specific blocks (e.g. endpoint:ProcessOrder,feature:ApplyCoupon)")
+	compileCmd.Flags().StringVar(&excludeFilter, "exclude", "", "Exclude specific blocks from compilation (e.g. endpoint:HealthCheck)")
 	fmtCmd.Flags().BoolVar(&fmtCheckMode, "check", false, "Check formatting without modifying")
 	rootCmd.AddCommand(compileCmd)
 	rootCmd.AddCommand(fmtCmd)

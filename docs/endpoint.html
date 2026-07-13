@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Endpoint — Butter Specification Language</title>
+<meta name="description" content="Complete documentation for the Butter endpoint primitive — route, method, params, responses, actions, returns, and HTTP transport architecture.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.14.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#syntax">Syntax</a>
+    <a href="#http-fields">HTTP Fields</a>
+    <a href="#sub-blocks">Sub-blocks</a>
+    <a href="#params">Params</a>
+    <a href="#responses">Responses</a>
+    <a href="#fields">Fields</a>
+    <a href="#actions">Actions</a>
+    <a href="#returns">Returns</a>
+    <a href="#scope">Scope Isolation</a>
+    <a href="#selective-compilation">Selective Compilation</a>
+    <a href="#compiled-output">Compiled Output</a>
+    <a href="#examples">Examples</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Endpoint</h1>
+    <p class="subtitle">Declares a synchronous HTTP transport endpoint — route, method, parameters, response schemas, execution actions, and return mappings. The complete API contract in a single self-contained block.</p>
+  </div>
+
+  <p>An <code>endpoint</code> block describes a complete HTTP API contract: the route and HTTP method, typed input parameters, response schemas with typed fields, sequential execution actions, and return mappings that connect status codes to response payloads. Everything the AI agent needs to implement the endpoint is packaged within the block boundaries.</p>
+
+  <p>Like <a href="feature.html">features</a>, endpoints are strictly self-contained. All params, responses, actions, and returns are scoped within the endpoint block. No cross-endpoint references, no shared state. This isolation enables selective compilation — extracting a single endpoint produces a zero-noise payload for AI consumption.</p>
+
+  <h3>Key Properties</h3>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Keyword</td><td><code>endpoint</code></td></tr>
+    <tr><td>Context</td><td>Top-level block under <code>app</code> / <code>product</code></td></tr>
+    <tr><td>Required fields</td><td>Name (identifier), <code>route</code>, <code>method</code></td></tr>
+    <tr><td>Optional fields</td><td><code>description</code>, <code>version</code></td></tr>
+    <tr><td>Sub-blocks</td><td><code>params</code>, <code>responses</code>, <code>actions</code>, <code>returns</code></td></tr>
+    <tr><td>Scope</td><td>Strictly local — no cross-endpoint references</td></tr>
+  </table>
+</section>
+
+<section id="syntax">
+  <h2>Syntax</h2>
+  <p>An endpoint is declared at the top level of a <code>.butter</code> file, directly under the <code>app</code> / <code>product</code> header:</p>
+
+  <pre><code class="language-butter">app MyApp
+description "My API"
+version "1.0.0"
+
+endpoint ProcessOrder
+  description "Processes an order and returns a summary"
+  version "1.0.0"
+  route "/api/orders"
+  method "POST"
+
+  params
+    param order_token
+      type string
+      required true
+
+  responses
+    response OrderSuccess
+      field order_id
+        type int
+      field total
+        type float
+
+  actions
+    action "Validate the order token"
+    action "Calculate order total"
+
+  returns
+    return 201 OrderSuccess
+    return 400 "Invalid order token" | if "Order token validation fails"</code></pre>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Each <code>endpoint</code> must have a unique name within the spec — duplicate endpoint names produce a semantic error.</li>
+    <li>The endpoint name is an identifier: letters, digits, underscores, and hyphens are allowed.</li>
+    <li>The content under an <code>endpoint</code> must be indented.</li>
+    <li>Valid keywords inside an endpoint: <code>description</code>, <code>version</code>, <code>route</code>, <code>method</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, <code>returns</code>.</li>
+    <li><code>route</code> and <code>method</code> are required — an endpoint without them produces a semantic error.</li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> The <code>feature</code> primitive covers domain logic without HTTP transport concerns. Use <code>feature</code> for business capabilities and <code>endpoint</code> for API contracts. See the <a href="feature.html">Feature documentation</a> for details.</blockquote>
+</section>
+
+<section id="http-fields">
+  <h2>HTTP Fields</h2>
+  <p>Endpoints declare two HTTP-specific fields that features do not have:</p>
+
+  <h3><code>route</code></h3>
+  <p>The URL path for the endpoint. Must be a quoted string starting with <code>/</code>:</p>
+
+  <pre><code class="language-butter">route "/api/checkout/orders"
+route "/api/users/:id/profile"
+route "/api/products"</code></pre>
+
+  <h3><code>method</code></h3>
+  <p>The HTTP method. Must be a quoted string matching one of the standard HTTP methods:</p>
+
+  <pre><code class="language-butter">method "GET"
+method "POST"
+method "PUT"
+method "DELETE"
+method "PATCH"</code></pre>
+
+  <h3>Semantic Validation</h3>
+  <ul>
+    <li>An endpoint without a <code>route</code> produces the error: <code>endpoint "..." is missing a route</code></li>
+    <li>An endpoint without a <code>method</code> produces the error: <code>endpoint "..." is missing a method</code></li>
+    <li>Both are hard errors — compilation halts and no output is generated.</li>
+  </ul>
+</section>
+
+<section id="sub-blocks">
+  <h2>Sub-blocks</h2>
+  <p>An endpoint contains four optional sub-blocks:</p>
+
+  <table>
+    <tr><th>Container</th><th>Item keyword</th><th>Purpose</th></tr>
+    <tr><td><code>params</code></td><td><code>param</code></td><td>Declares typed input parameters the endpoint accepts</td></tr>
+    <tr><td><code>responses</code></td><td><code>response</code></td><td>Declares named response schemas with typed fields</td></tr>
+    <tr><td><code>actions</code></td><td><code>action</code></td><td>Declares sequential execution steps the AI agent must perform</td></tr>
+    <tr><td><code>returns</code></td><td><code>return</code></td><td>Maps HTTP status codes to response schemas or string payloads</td></tr>
+  </table>
+
+  <pre><code class="language-butter">endpoint CreateOrder
+  route "/api/orders"
+  method "POST"
+
+  params
+    param customer_id
+      type string
+      required true
+
+  responses
+    response OrderCreated
+      field order_id
+        type int
+      field status
+
+  actions
+    action "Validate customer exists"
+
+  returns
+    return 201 OrderCreated
+    return 400 "Invalid customer ID"</code></pre>
+</section>
+
+<section id="params">
+  <h2>Params</h2>
+  <p>The <code>params</code> block inside an endpoint declares the input parameters the endpoint accepts. The syntax and field types are identical to feature params — see the <a href="feature.html#params">Feature Params documentation</a> for the full reference on types, defaults, validate rules, and length constraints.</p>
+
+  <pre><code class="language-butter">params
+  param checkout_token
+    type string
+    required true
+  param coupon_code
+    type string
+    required false
+    default "WELCOME10"
+  param dry_run
+    type bool
+    required false
+    default false</code></pre>
+
+  <h3>Endpoint Param Conventions</h3>
+  <p>While feature params are typically PascalCase identifiers (e.g. <code>Title</code>, <code>OrderID</code>), endpoint params often use snake_case to match HTTP parameter naming conventions (e.g. <code>checkout_token</code>, <code>order_id</code>). Both styles are valid — choose the convention that matches your API design.</p>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Parameter names must be unique within an endpoint.</li>
+    <li>Default values must match declared types.</li>
+    <li>Enum defaults must exist in the defined list.</li>
+    <li><code>validate</code> requires <code>type int</code> or <code>type float</code>.</li>
+    <li><code>length</code> and <code>validate</code> are mutually exclusive.</li>
+  </ul>
+</section>
+
+<section id="responses">
+  <h2>Responses</h2>
+  <p>The <code>responses</code> block declares named response schemas. Each response has a name and a list of typed fields. Response names are referenced by <a href="#returns">return statements</a> to connect status codes to their payload schemas.</p>
+
+  <pre><code class="language-butter">responses
+  response OrderSuccessPayload
+    field order_id
+      type int
+    field total_amount
+      type float
+    field currency
+    field line_items
+      type array[string]
+
+  response ValidationError
+    field error
+    field details
+    field field_name</code></pre>
+
+  <h3>Response Name Conventions</h3>
+  <p>Response names are identifiers — use PascalCase or descriptive names that clearly communicate the payload's purpose:</p>
+
+  <ul>
+    <li><code>OrderSuccessPayload</code> — descriptive, clearly a success response</li>
+    <li><code>ValidationError</code> — communicates the error type</li>
+    <li><code>UserProfile</code> — domain-specific, clear intent</li>
+  </ul>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Response names referenced in <code>return</code> statements must be defined in the <code>responses</code> block. Unresolved references produce a semantic error.</li>
+    <li>Response names within a single endpoint must be unique.</li>
+  </ul>
+</section>
+
+<section id="fields">
+  <h2>Fields</h2>
+  <p>Each <code>response</code> contains one or more <code>field</code> entries. Fields declare the shape of the response payload that the AI agent should produce.</p>
+
+  <pre><code class="language-butter">response OrderSuccess
+  field order_id
+    type int
+  field total_amount
+    type float
+  field customer_name
+  field line_items
+    type array[string]</code></pre>
+
+  <h3>Field Syntax</h3>
+  <ul>
+    <li><strong>Name:</strong> The identifier after <code>field</code> (e.g. <code>order_id</code>).</li>
+    <li><strong>Type:</strong> Optional <code>type</code> keyword. Defaults to <code>string</code> if omitted.</li>
+    <li><strong>Nesting:</strong> Fields can contain sub-fields for complex nested structures.</li>
+  </ul>
+
+  <h3>Nested Fields</h3>
+  <p>Fields support nesting for complex response structures. Indent additional <code>field</code> entries under a parent field:</p>
+
+  <pre><code class="language-butter">response InvoiceLineItem
+  field sku
+  field description
+  field unitPrice
+    type float
+  field quantity
+    type int
+
+response OrderSuccess
+  field orderId
+  field total_amount
+    type float
+  field currency
+  field lineItems
+    type array[InvoiceLineItem]</code></pre>
+
+  <h3>Compiled Output</h3>
+  <p>Fields compile to a JSON array of objects. Each field has <code>name</code>, <code>type</code>, and optionally <code>sub_fields</code>:</p>
+
+  <pre><code class="language-json">{
+  "name": "OrderSuccess",
+  "fields": [
+    { "name": "orderId", "type": "string" },
+    { "name": "total_amount", "type": "float" },
+    { "name": "currency", "type": "string" },
+    { "name": "lineItems", "type": "array[InvoiceLineItem]" }
+  ]
+}</code></pre>
+</section>
+
+<section id="actions">
+  <h2>Actions</h2>
+  <p>The <code>actions</code> block inside an endpoint declares the sequential execution steps for processing the request. The syntax and execution model are identical to feature actions — see the <a href="feature.html#actions">Feature Actions documentation</a> for the full reference on action statements, conditions, and the sequential execution model.</p>
+
+  <pre><code class="language-butter">actions
+  action "Verify checkout token is valid and active"
+  action "Calculate final prices using coupon_code" | if "coupon_code exists"
+  action "Authorize payment transaction via external provider" | unless "dry_run == true"
+  action "Commit transaction details and reserve inventory" | unless "dry_run == true"</code></pre>
+
+  <h3>Endpoint Action Conventions</h3>
+  <p>Endpoint actions typically describe request processing steps: validation, business logic, external calls, and side effects. They follow the same sequential, deterministic model as feature actions — one step at a time, in declared order.</p>
+</section>
+
+<section id="returns">
+  <h2>Returns</h2>
+  <p>The <code>returns</code> block maps HTTP status codes to response schemas or string payloads. Each return statement connects a status code to either a named response (defined in <code>responses</code>) or a quoted string literal, with an optional condition.</p>
+
+  <pre><code class="language-butter">returns
+  return 201 OrderSuccessPayload
+  return 200 OrderSuccessPayload | if "Dry run validation succeeded"
+  return 400 "Invalid or expired checkout token" | if "Checkout token validation fails"
+  return 402 "Payment authorization failed" | unless "Payment gateway processes transaction"
+  return 500 "External payment provider connection times out"
+  return 404</code></pre>
+
+  <h3>Return Statement Format</h3>
+  <pre><code class="language-butter">return &lt;status_code&gt; [&lt;payload&gt;] [| if/unless "&lt;condition&gt;"]</code></pre>
+
+  <table>
+    <tr><th>Component</th><th>Required</th><th>Description</th></tr>
+    <tr><td><code>status_code</code></td><td>Yes</td><td>HTTP status code (integer): <code>200</code>, <code>201</code>, <code>400</code>, <code>404</code>, <code>500</code>, etc.</td></tr>
+    <tr><td><code>payload</code></td><td>No</td><td>Either a response name (references <code>responses</code> block) or a quoted string literal</td></tr>
+    <tr><td>Condition</td><td>No</td><td>Optional <code>| if</code> or <code>| unless</code> with a quoted expression</td></tr>
+  </table>
+
+  <h3>Payload Types</h3>
+
+  <h4>Response Reference</h4>
+  <p>Reference a named response from the <code>responses</code> block. The AI agent uses the response schema to structure the output:</p>
+
+  <pre><code class="language-butter">return 201 OrderSuccessPayload</code></pre>
+
+  <h4>String Literal</h4>
+  <p>A quoted string for simple error messages or status text:</p>
+
+  <pre><code class="language-butter">return 400 "Invalid or expired checkout token"
+return 500 "Internal processing error"</code></pre>
+
+  <h4>Status Code Only</h4>
+  <p>A bare status code with no payload — for responses with no body:</p>
+
+  <pre><code class="language-butter">return 204
+return 404</code></pre>
+
+  <h3>Conditions on Returns</h3>
+  <p>Return statements support <code>| if</code> and <code>| unless</code> conditions (but not <code>| when</code> or <code>| while</code>). The condition determines which return path is taken based on the request context:</p>
+
+  <pre><code class="language-butter">return 201 OrderSuccess | if "Payment succeeds"
+return 200 "Dry run completed" | if "dry_run == true"
+return 400 "Validation failed" | unless "Input is valid"
+return 500 "Timeout" | if "External provider connection times out"</code></pre>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Response names referenced in return statements must be defined in the <code>responses</code> block. If a return references <code>OrderSuccessPayload</code> but no such response exists, compilation fails.</li>
+    <li>Status codes must be valid HTTP status codes (integers).</li>
+    <li>Return conditions only support <code>if</code> and <code>unless</code> — <code>when</code> and <code>while</code> are not valid for return statements.</li>
+  </ul>
+
+  <h3>Compiled Output</h3>
+  <p>Each return compiles to a JSON object with <code>status_code</code>, optional <code>payload</code>, optional <code>payload_is_string</code> (true for string literals), and optional <code>condition</code>:</p>
+
+  <pre><code class="language-json">{
+  "status_code": 201,
+  "payload": "OrderSuccessPayload"
+},
+{
+  "status_code": 400,
+  "payload": "Invalid or expired checkout token",
+  "payload_is_string": true,
+  "condition": {
+    "type": "if",
+    "expression": "Checkout token validation fails"
+  }
+},
+{
+  "status_code": 404
+}</code></pre>
+</section>
+
+<section id="scope">
+  <h2>Scope Isolation</h2>
+  <p>Every endpoint in Butter is strictly self-contained. Parameters, responses, actions, and returns within an endpoint have no knowledge of or dependency on other endpoints or features. This design ensures:</p>
+
+  <ul>
+    <li><strong>No cross-references</strong> — An endpoint cannot reference params, responses, or actions from another endpoint.</li>
+    <li><strong>No shared state</strong> — Each endpoint is an independent API contract.</li>
+    <li><strong>Independent compilation</strong> — Each endpoint can be isolated and compiled on its own.</li>
+    <li><strong>Zero noise</strong> — Extracting a single endpoint produces output with zero references to other endpoints.</li>
+  </ul>
+
+  <p>This isolation is what makes <a href="#selective-compilation">selective compilation</a> possible. Because each endpoint is a complete, self-contained unit, the compiler can extract it without resolving external dependencies.</p>
+
+  <pre><code class="language-butter">endpoint ProcessOrder
+  route "/api/orders"
+  method "POST"
+  params
+    param token
+      type string
+      required true
+  actions
+    action "Validate token"
+
+endpoint GetOrderStatus
+  route "/api/orders/:id"
+  method "GET"
+  params
+    param order_id
+      type string
+      required true
+  actions
+    action "Look up order by ID"</code></pre>
+
+  <p>Compiling with <code>--only endpoint:ProcessOrder</code> produces output containing only <code>ProcessOrder</code> — zero mention of <code>GetOrderStatus</code>.</p>
+</section>
+
+<section id="selective-compilation">
+  <h2>Selective Compilation</h2>
+  <p>Butter's CLI supports extracting specific endpoints via the <code>--only</code> and <code>--exclude</code> flags:</p>
+
+  <h3>Extract a Single Endpoint</h3>
+  <pre><code class="language-bash">butter compile api.butter --only endpoint:ProcessOrder -f json</code></pre>
+
+  <h3>Extract Multiple Endpoints</h3>
+  <pre><code class="language-bash">butter compile api.butter --only endpoint:ProcessOrder,endpoint:GetOrderStatus -f json</code></pre>
+
+  <h3>Mix Features and Endpoints</h3>
+  <pre><code class="language-bash">butter compile api.butter --only endpoint:ProcessOrder,feature:ApplyCoupon -f json</code></pre>
+
+  <h3>Exclude an Endpoint</h3>
+  <pre><code class="language-bash">butter compile api.butter --exclude endpoint:HealthCheck -f json</code></pre>
+
+  <h3>How It Works</h3>
+  <ol>
+    <li>The compiler parses the full <code>.butter</code> file into a complete AST.</li>
+    <li>Semantic analysis runs on the full AST (all endpoints are validated).</li>
+    <li>The filter engine prunes the AST — un-matched endpoint branches are dropped.</li>
+    <li>The global context (app name, description, version) is always preserved.</li>
+    <li>The isolated sub-graph is serialised to the requested format.</li>
+  </ol>
+
+  <blockquote><strong>Error handling:</strong> If <code>--only</code> references an endpoint name that does not exist in the spec, compilation fails with an error. If <code>--exclude</code> references a non-existent endpoint, it also fails. The compiler never silently ignores typos.</blockquote>
+
+  <h3>Human-to-AI Handoff</h3>
+  <p>Selective compilation is designed for the prompt-stacking workflow:</p>
+  <ol>
+    <li><strong>Write</strong> the endpoint spec inside your <code>.butter</code> file.</li>
+    <li><strong>Extract</strong> with <code>butter compile api.butter --only endpoint:ProcessOrder -f json -o prompt.json</code>.</li>
+    <li><strong>Paste</strong> the JSON into your AI chat alongside instructions:</li>
+  </ol>
+
+  <pre><code class="language-text">Implement the code for the following Butter contract definition.
+Use Go with the Gin framework. Ensure every listed action is a
+distinct function step and match the return criteria exactly.
+
+[Paste JSON here]</code></pre>
+</section>
+
+<section id="compiled-output">
+  <h2>Compiled Output</h2>
+  <p>When compiled to JSON, an endpoint produces a complete API contract with route, method, params, responses, actions, and returns:</p>
+
+  <pre><code class="language-butter">endpoint ProcessOrder
+  description "Validates checkout items and processes the transaction"
+  version "1.0.0"
+  route "/api/checkout/orders"
+  method "POST"
+
+  params
+    param checkout_token
+      type string
+      required true
+    param coupon_code
+      type string
+      default "WELCOME10"
+    param dry_run
+      type bool
+      default false
+
+  responses
+    response OrderSuccessPayload
+      field order_id
+        type int
+      field total_amount
+        type float
+      field currency
+
+  actions
+    action "Validate checkout token is valid and active"
+    action "Calculate final prices using coupon_code" | if "coupon_code exists"
+    action "Authorize payment transaction" | unless "dry_run == true"
+
+  returns
+    return 201 OrderSuccessPayload
+    return 200 "Dry run completed" | if "dry_run == true"
+    return 400 "Invalid checkout token"
+    return 500 "Payment provider timeout"</code></pre>
+
+  <p>Compiles to:</p>
+
+  <pre><code class="language-json">{
+  "name": "ProcessOrder",
+  "description": "Validates checkout items and processes the transaction",
+  "version": "1.0.0",
+  "route": "/api/checkout/orders",
+  "method": "POST",
+  "params": [
+    {
+      "name": "checkout_token",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "coupon_code",
+      "type": "string",
+      "required": false,
+      "default": "WELCOME10"
+    },
+    {
+      "name": "dry_run",
+      "type": "bool",
+      "required": false,
+      "default": "false"
+    }
+  ],
+  "responses": [
+    {
+      "name": "OrderSuccessPayload",
+      "fields": [
+        { "name": "order_id", "type": "int" },
+        { "name": "total_amount", "type": "float" },
+        { "name": "currency", "type": "string" }
+      ]
+    }
+  ],
+  "actions": [
+    { "statement": "Validate checkout token is valid and active" },
+    {
+      "statement": "Calculate final prices using coupon_code",
+      "condition": { "type": "if", "expression": "coupon_code exists" }
+    },
+    {
+      "statement": "Authorize payment transaction",
+      "condition": { "type": "unless", "expression": "dry_run == true" }
+    }
+  ],
+  "returns": [
+    { "status_code": 201, "payload": "OrderSuccessPayload" },
+    {
+      "status_code": 200,
+      "payload": "Dry run completed",
+      "payload_is_string": true,
+      "condition": { "type": "if", "expression": "dry_run == true" }
+    },
+    { "status_code": 400, "payload": "Invalid checkout token", "payload_is_string": true },
+    { "status_code": 500, "payload": "Payment provider timeout", "payload_is_string": true }
+  ]
+}</code></pre>
+</section>
+
+<section id="examples">
+  <h2>Examples</h2>
+
+  <h3>Minimal Endpoint</h3>
+  <pre><code class="language-butter">endpoint HealthCheck
+  route "/api/health"
+  method "GET"
+
+  returns
+    return 200 "OK"</code></pre>
+
+  <h3>Full CRUD Endpoints</h3>
+  <pre><code class="language-butter">app TaskAPI
+description "Task management API"
+version "1.0.0"
+
+endpoint ListTasks
+  route "/api/tasks"
+  method "GET"
+  params
+    param status
+      type enum["all", "active", "completed"]
+      default "all"
+    param limit
+      type int
+      default 50
+      validate ">=1"
+      validate "<=200"
+  responses
+    response TaskList
+      field tasks
+        type array[Task]
+      field total_count
+        type int
+  actions
+    action "Query task repository with filters"
+    action "Apply pagination metadata"
+  returns
+    return 200 TaskList
+
+endpoint CreateTask
+  route "/api/tasks"
+  method "POST"
+  params
+    param title
+      type string
+      required true
+    param priority
+      type enum["low", "medium", "high"]
+      default "medium"
+  responses
+    response TaskCreated
+      field id
+        type int
+      field title
+      field priority
+      field created_at
+  actions
+    action "Validate title is not empty"
+    action "Assign unique identifier"
+    action "Set creation timestamp"
+  returns
+    return 201 TaskCreated
+    return 400 "Title is required" | if "title is empty"
+
+endpoint DeleteTask
+  route "/api/tasks/:id"
+  method "DELETE"
+  params
+    param id
+      type string
+      required true
+  actions
+    action "Verify task exists"
+    action "Remove task from storage"
+  returns
+    return 204
+    return 404 "Task not found" | if "Task does not exist"</code></pre>
+
+  <h3>Endpoint with Nested Response Fields</h3>
+  <pre><code class="language-butter">endpoint GetOrderDetails
+  route "/api/orders/:id"
+  method "GET"
+
+  params
+    param order_id
+      type string
+      required true
+
+  responses
+    response InvoiceLineItem
+      field sku
+      field description
+      field unitPrice
+        type float
+      field quantity
+        type int
+    response OrderDetail
+      field orderId
+      field total_amount
+        type float
+      field currency
+      field lineItems
+        type array[InvoiceLineItem]
+
+  actions
+    action "Look up order by order_id"
+    action "Fetch associated line items"
+
+  returns
+    return 200 OrderDetail
+    return 404 "Order not found"</code></pre>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>
