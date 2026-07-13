@@ -31,6 +31,10 @@ func Analyze(app *ast.AppSpec) []Diagnostic {
 	a.checkEndpointMissingMethod()
 	a.checkEndpointDefaultTypes()
 	a.checkEndpointEnumDefaults()
+	a.checkDuplicateListeners()
+	a.checkDuplicateListenerParams()
+	a.checkListenerMissingTopic()
+	a.checkListenerReturnStates()
 	return a.diags
 }
 
@@ -257,6 +261,54 @@ func (a *Analyzer) checkEndpointEnumDefaults() {
 			}
 			if !found {
 				a.addError(p.Line, "default value %q for parameter %q in endpoint %q is not in the enum list %v", defaultStr, p.Name, ep.Name, values)
+			}
+		}
+	}
+}
+
+func (a *Analyzer) checkDuplicateListeners() {
+	seen := make(map[string]int)
+	for _, l := range a.app.Listeners {
+		if prevLine, ok := seen[l.Name]; ok {
+			a.addError(l.Line, "duplicate listener %q (first defined at line %d)", l.Name, prevLine)
+		} else {
+			seen[l.Name] = l.Line
+		}
+	}
+}
+
+func (a *Analyzer) checkDuplicateListenerParams() {
+	for _, l := range a.app.Listeners {
+		seen := make(map[string]int)
+		for _, p := range l.Params {
+			if prevLine, ok := seen[p.Name]; ok {
+				a.addError(p.Line, "duplicate parameter %q in listener %q (first defined at line %d)", p.Name, l.Name, prevLine)
+			} else {
+				seen[p.Name] = p.Line
+			}
+		}
+	}
+}
+
+func (a *Analyzer) checkListenerMissingTopic() {
+	for _, l := range a.app.Listeners {
+		if l.Topic == "" {
+			a.addError(l.Line, "listener %q is missing required 'topic'", l.Name)
+		}
+	}
+}
+
+func (a *Analyzer) checkListenerReturnStates() {
+	validStates := map[string]bool{
+		"ack":   true,
+		"nack":  true,
+		"retry": true,
+		"dlq":   true,
+	}
+	for _, l := range a.app.Listeners {
+		for _, ret := range l.Returns {
+			if !validStates[ret.State] {
+				a.addError(ret.Line, "invalid message state %q in listener %q — expected 'ack', 'nack', 'retry', or 'dlq'", ret.State, l.Name)
 			}
 		}
 	}

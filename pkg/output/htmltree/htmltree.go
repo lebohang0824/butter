@@ -209,6 +209,29 @@ function buildTree(spec){
     state.collapsed['ep-returns-'+ei] = true;
     tree.children.push(epc);
   });
+  (spec.listeners||[]).forEach(function(l,li){
+    var listener = {id:'l-'+li,title:l.name,type:'listener',details:[],params:[],actions:[],returns:[],children:[]};
+    if(l.description) listener.details.push({k:'description',v:l.description,type:'desc'});
+    if(l.version) listener.details.push({k:'version',v:l.version});
+    listener.details.push({k:'topic',v:l.topic,type:'topic'});
+    (l.params||[]).forEach(function(p){
+      var parts=[p.type]; if(p.required) parts.push('required');
+      if(p.default!==undefined&&p.default!==null&&p.default!=='') parts.push('default: '+p.default);
+      listener.params.push({k:p.name,v:parts.join(', ')});
+    });
+    (l.actions||[]).forEach(function(a,ai){
+      var act={number:ai+1,statement:a.statement,conditions:[],enforces:[]};
+      if(a.condition) act.conditions.push({type:a.condition.type,expr:a.condition.expression});
+      if(a.enforce) a.enforce.forEach(function(e){act.enforces.push(e);});
+      listener.actions.push(act);
+    });
+    (l.returns||[]).forEach(function(r){ listener.returns.push({state:r.state,condition:r.condition?{type:r.condition.type,expr:r.condition.expression}:null}); });
+    listener.details.push({k:'params',v:(l.params||[]).length+' items',sub:'l-params-'+li,type:'sub'});
+    listener.details.push({k:'actions',v:(l.actions||[]).length+' items',sub:'l-actions-'+li,type:'sub'});
+    listener.details.push({k:'returns',v:(l.returns||[]).length+' items',sub:'l-returns-'+li,type:'sub'});
+    state.collapsed['l-params-'+li]=true; state.collapsed['l-actions-'+li]=true; state.collapsed['l-returns-'+li]=true;
+    tree.children.push(listener);
+  });
   return tree;
 }
 
@@ -234,7 +257,7 @@ function renderTree(tree){
   rootHTML += '<div class="node-row interactive-row" onclick="window.__toggleRoot()">';
   rootHTML += '<span class="toggle-icon">'+rootIcon+'</span>';
   rootHTML += '<span class="key">features:</span>';
-  rootHTML += '<span class="val-string">['+tree.children.filter(function(c){return c.type!=='endpoint'}).length+' items]</span>';
+  rootHTML += '<span class="val-string">['+tree.children.filter(function(c){return !c.type;}).length+' items]</span>';
   rootHTML += '</div>';
   var epCount = tree.children.filter(function(c){return c.type==='endpoint'}).length;
   if(epCount > 0){
@@ -245,15 +268,24 @@ function renderTree(tree){
     rootHTML += '<span class="val-string">['+epCount+' items]</span>';
     rootHTML += '</div>';
   }
+  var listenerCount = tree.children.filter(function(c){return c.type==='listener'}).length;
+  if(listenerCount > 0){
+    rootHTML += '<div class="node-row interactive-row" onclick="window.__toggleRoot()">';
+    rootHTML += '<span class="toggle-icon">'+rootIcon+'</span><span class="key">listeners:</span><span class="val-string">['+listenerCount+' items]</span></div>';
+  }
   rootHTML += '</div>';
   col1.innerHTML = rootHTML;
 
   tree.children.forEach(function(feat){
-    if(feat.type === 'endpoint'){
+    if(feat.type === 'endpoint' || feat.type === 'listener'){
+      var isListener = feat.type === 'listener';
+      var prefix = isListener ? 'l' : 'ep';
       var epcHTML = '<div class="node-card" id="card-'+feat.id+'">';
-      epcHTML += '<div class="node-title">'+esc(feat.title)+'<span class="endpoint-badge"><span class="method-val">'+esc(feat.actions.length > 0 ? '' : '')+'</span></span></div>';
+      epcHTML += '<div class="node-title">'+esc(feat.title)+'</div>';
       feat.details.forEach(function(d){
-        if(d.type === 'route'){
+        if(d.type === 'topic'){
+          epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="endpoint-badge"><span class="route-val">'+esc(d.v)+'</span></span></div>';
+        } else if(d.type === 'route'){
           epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="endpoint-badge"><span class="route-val">'+esc(d.v)+'</span></span></div>';
         } else if(d.type === 'method'){
           epcHTML += '<div class="node-row"><span class="key">'+esc(d.k)+':</span><span class="endpoint-badge"><span class="method-val">'+esc(d.v)+'</span></span></div>';
@@ -277,8 +309,8 @@ function renderTree(tree){
 
       var epcSub = '';
       if(feat.params.length){
-        var pcollapsed = state.collapsed['ep-params-'+feat.id.replace('ep-','')];
-        epcSub += '<div class="node-card" id="sub-ep-params-'+feat.id.replace('ep-','')+'"'+(pcollapsed?' style="display:none"':'')+'>';
+        var pcollapsed = state.collapsed[prefix+'-params-'+feat.id.replace(prefix+'-','')];
+        epcSub += '<div class="node-card" id="sub-'+prefix+'-params-'+feat.id.replace(prefix+'-','')+'"'+(pcollapsed?' style="display:none"':'')+'>';
         epcSub += '<div class="node-title">Params <span class="badge">'+feat.params.length+'</span></div>';
         feat.params.forEach(function(p){
           epcSub += '<div class="node-row param-key-row"><span class="key" style="color:#AA7A9A">'+esc(p.k)+':</span></div>';
@@ -286,7 +318,7 @@ function renderTree(tree){
         });
         epcSub += '</div>';
       }
-      if(feat.responses.length){
+      if(!isListener && feat.responses.length){
         var rcollapsed = state.collapsed['ep-responses-'+feat.id.replace('ep-','')];
         epcSub += '<div class="node-card" id="sub-ep-responses-'+feat.id.replace('ep-','')+'"'+(rcollapsed?' style="display:none"':'')+'>';
         epcSub += '<div class="node-title">Responses <span class="badge">'+feat.responses.length+'</span></div>';
@@ -300,8 +332,8 @@ function renderTree(tree){
         epcSub += '</div>';
       }
       if(feat.actions.length){
-        var acollapsed = state.collapsed['ep-actions-'+feat.id.replace('ep-','')];
-        epcSub += '<div class="node-card" id="sub-ep-actions-'+feat.id.replace('ep-','')+'"'+(acollapsed?' style="display:none"':'')+'>';
+        var acollapsed = state.collapsed[prefix+'-actions-'+feat.id.replace(prefix+'-','')];
+        epcSub += '<div class="node-card" id="sub-'+prefix+'-actions-'+feat.id.replace(prefix+'-','')+'"'+(acollapsed?' style="display:none"':'')+'>';
         epcSub += '<div class="node-title">Actions <span class="badge">'+feat.actions.length+'</span></div>';
         feat.actions.forEach(function(a){
           epcSub += '<div class="node-row"><span class="act-num">'+a.number+'.</span><span class="val-string">'+esc(a.statement)+'</span></div>';
@@ -317,12 +349,13 @@ function renderTree(tree){
         epcSub += '</div>';
       }
       if(feat.returns.length){
-        var retcollapsed = state.collapsed['ep-returns-'+feat.id.replace('ep-','')];
-        epcSub += '<div class="node-card" id="sub-ep-returns-'+feat.id.replace('ep-','')+'"'+(retcollapsed?' style="display:none"':'')+'>';
+        var retcollapsed = state.collapsed[prefix+'-returns-'+feat.id.replace(prefix+'-','')];
+        epcSub += '<div class="node-card" id="sub-'+prefix+'-returns-'+feat.id.replace(prefix+'-','')+'"'+(retcollapsed?' style="display:none"':'')+'>';
         epcSub += '<div class="node-title">Returns <span class="badge">'+feat.returns.length+'</span></div>';
         feat.returns.forEach(function(r){
-          epcSub += '<div class="node-row return-key-row"><span class="key">'+r.status+':</span></div>';
-          epcSub += '<div class="node-row return-val-row"><span class="return-status">'+r.status+'</span>';
+          var returnValue = isListener ? r.state : r.status;
+          epcSub += '<div class="node-row return-key-row"><span class="key">'+esc(returnValue)+':</span></div>';
+          epcSub += '<div class="node-row return-val-row"><span class="return-status">'+esc(returnValue)+'</span>';
           if(r.payload) epcSub += '<span class="return-payload">'+esc(r.payload)+'</span>';
           if(r.condition) epcSub += '<span class="return-cond">'+esc(r.condition.type)+' "'+esc(r.condition.expr)+'"</span>';
           epcSub += '</div>';
@@ -412,6 +445,18 @@ function applySubVisibility(){
     if(epret) epret.style.display=state.collapsed['ep-returns-'+ei]?'none':'block';
     epIdx++;
   }
+  var listenerIdx=0;
+  while(true){
+    var listenerCard=document.getElementById('card-l-'+listenerIdx);
+    if(!listenerCard) break;
+    var lps=document.getElementById('sub-l-params-'+listenerIdx);
+    if(lps) lps.style.display=state.collapsed['l-params-'+listenerIdx]?'none':'block';
+    var las=document.getElementById('sub-l-actions-'+listenerIdx);
+    if(las) las.style.display=state.collapsed['l-actions-'+listenerIdx]?'none':'block';
+    var lrs=document.getElementById('sub-l-returns-'+listenerIdx);
+    if(lrs) lrs.style.display=state.collapsed['l-returns-'+listenerIdx]?'none':'block';
+    listenerIdx++;
+  }
   var col3=document.getElementById('col-3');
   var anyVisible=false;
   document.querySelectorAll('#col-3 .node-card').forEach(function(c){if(c.style.display!=='none')anyVisible=true;});
@@ -498,6 +543,23 @@ function drawConnections(){
         drawLabel((tl.right+sl.left)/2,(tl.top+tl.height/2+sl.top+sl.height/2)/2-6,'returns',svg);}
     }
     epIdx++;
+  }
+  var listenerIdx = 0;
+  while(true){
+    var listenerCard = document.getElementById('card-l-'+listenerIdx);
+    if(!listenerCard) break;
+    var listenerRect = listenerCard.getBoundingClientRect();
+    drawBezier(rl.right, rl.top+rl.height/2, listenerRect.left, listenerRect.top+listenerRect.height/2, svg);
+    ['params','actions','returns'].forEach(function(kind){
+      var sub = document.getElementById('sub-l-'+kind+'-'+listenerIdx);
+      if(sub&&!state.collapsed['l-'+kind+'-'+listenerIdx]){
+        var row=listenerCard.querySelector('[data-sub="l-'+kind+'-'+listenerIdx+'"]');
+        if(row){var rowRect=row.getBoundingClientRect(),subRect=sub.getBoundingClientRect();
+          drawBezier(rowRect.right,rowRect.top+rowRect.height/2,subRect.left,subRect.top+subRect.height/2,svg);
+          drawLabel((rowRect.right+subRect.left)/2,(rowRect.top+rowRect.height/2+subRect.top+subRect.height/2)/2-6,kind,svg);}
+      }
+    });
+    listenerIdx++;
   }
 }
 

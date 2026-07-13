@@ -197,8 +197,6 @@ func detectProvider(key string) string {
 	return "Gemini"
 }
 
-
-
 func callAI(provider, apiKey, prompt string, maxTokens int) (string, error) {
 	client := &http.Client{Timeout: 60 * time.Second}
 	switch provider {
@@ -532,23 +530,29 @@ func isValidAICode(code string) bool {
 	return false
 }
 
-
-
 type codeGenFeature struct {
-	Name        string           `json:"name"`
-	Description string           `json:"description,omitempty"`
-	Params      []codeGenParam   `json:"params,omitempty"`
-	Actions     []codeGenAction  `json:"actions,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Params      []codeGenParam  `json:"params,omitempty"`
+	Actions     []codeGenAction `json:"actions,omitempty"`
 }
 
 type codeGenEndpoint struct {
-	Name        string           `json:"name"`
-	Description string           `json:"description,omitempty"`
-	Route       string           `json:"route"`
-	Method      string           `json:"method"`
-	Params      []codeGenParam   `json:"params,omitempty"`
-	Actions     []codeGenAction  `json:"actions,omitempty"`
-	Returns     []codeGenReturn  `json:"returns,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Route       string          `json:"route"`
+	Method      string          `json:"method"`
+	Params      []codeGenParam  `json:"params,omitempty"`
+	Actions     []codeGenAction `json:"actions,omitempty"`
+	Returns     []codeGenReturn `json:"returns,omitempty"`
+}
+
+type codeGenListener struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Topic       string          `json:"topic"`
+	Params      []codeGenParam  `json:"params,omitempty"`
+	Actions     []codeGenAction `json:"actions,omitempty"`
 }
 
 type codeGenParam struct {
@@ -559,8 +563,8 @@ type codeGenParam struct {
 }
 
 type codeGenAction struct {
-	Statement string           `json:"statement"`
-	Condition *codeGenCond     `json:"condition,omitempty"`
+	Statement string       `json:"statement"`
+	Condition *codeGenCond `json:"condition,omitempty"`
 }
 
 type codeGenCond struct {
@@ -577,9 +581,11 @@ func buildMinSpec(spec *ast.AppSpec) []byte {
 	min := struct {
 		Features  []codeGenFeature  `json:"features"`
 		Endpoints []codeGenEndpoint `json:"endpoints,omitempty"`
+		Listeners []codeGenListener `json:"listeners,omitempty"`
 	}{
 		Features:  make([]codeGenFeature, len(spec.Features)),
 		Endpoints: make([]codeGenEndpoint, len(spec.Endpoints)),
+		Listeners: make([]codeGenListener, len(spec.Listeners)),
 	}
 	for i, f := range spec.Features {
 		mf := codeGenFeature{Name: f.Name, Description: f.Description}
@@ -616,6 +622,20 @@ func buildMinSpec(spec *ast.AppSpec) []byte {
 		}
 		min.Endpoints[i] = mep
 	}
+	for i, listener := range spec.Listeners {
+		ml := codeGenListener{Name: listener.Name, Description: listener.Description, Topic: listener.Topic}
+		for _, p := range listener.Params {
+			ml.Params = append(ml.Params, codeGenParam{Name: p.Name, Type: p.Type, Required: p.Required, Default: p.Default})
+		}
+		for _, a := range listener.Actions {
+			ma := codeGenAction{Statement: a.Statement}
+			if a.Condition != nil {
+				ma.Condition = &codeGenCond{Type: a.Condition.Type, Expression: a.Condition.Expression}
+			}
+			ml.Actions = append(ml.Actions, ma)
+		}
+		min.Listeners[i] = ml
+	}
 	b, _ := json.Marshal(min)
 	return b
 }
@@ -625,16 +645,17 @@ func buildCodePrompt(spec *ast.AppSpec) string {
 	return `You are a code generator. Your task is to generate ONLY valid JavaScript code.
 NO explanation, NO markdown fences, NO comments outside the code.
 
-Generate window.AISim with a run(name, params) method that returns an array of result objects, one per action in that feature/endpoint, in order. Each result has:
+Generate window.AISim with a run(name, params) method that returns an array of result objects, one per action in that feature, endpoint, or listener, in order. Each result has:
   { action: "the statement text", status: "ran"|"skipped", detail: "human-readable explanation" }
 
-Implement each feature's and endpoint's behavior realistically:
+Implement each feature's, endpoint's, and listener's behavior realistically:
 - For "ran" actions, include realistic output (generated IDs, timestamps, computed values)
 - For "skipped" actions, explain why (condition not met, validation failed, etc.)
 - ALWAYS use the params object to evaluate conditions and drive action logic
 - Parse natural language conditions using params (e.g. "Title is not empty" → params.Title)
 - If a param key doesn't match the spec, try common variants (snake_case, camelCase)
 - For endpoints, consider the route, method, and return mapping when generating actions
+- For listeners, consider the message topic and asynchronous message-processing semantics when generating actions
 
 RULE: Return ONLY raw JavaScript. No markdown. No explanation. No text before or after. Start with: window.AISim =
 
@@ -812,8 +833,17 @@ function renderFeatures() {
     li.addEventListener('click', function(){selectItem(i,'endpoint');});
     list.appendChild(li);
   });
+  (SPEC.listeners||[]).forEach(function(listener,i){
+    const li = document.createElement('li');
+    li.textContent = listener.name;
+    li.dataset.index = i;
+    li.dataset.type = 'listener';
+    li.addEventListener('click', function(){selectItem(i,'listener');});
+    list.appendChild(li);
+  });
   if ((SPEC.features||[]).length > 0) selectItem(0,'feature');
   else if ((SPEC.endpoints||[]).length > 0) selectItem(0,'endpoint');
+  else if ((SPEC.listeners||[]).length > 0) selectItem(0,'listener');
 }
 
 function selectItem(index, type) {
@@ -847,6 +877,21 @@ function selectItem(index, type) {
     renderEndpointParams(ep);
     renderEndpointResponses(ep);
     renderEndpointReturns(ep);
+  } else if (type === 'listener') {
+    var listener = SPEC.listeners[index];
+    document.getElementById('feature-title').textContent = listener.name;
+    document.getElementById('feature-desc').textContent = listener.description || '';
+    var listenerPanel = document.getElementById('params-panel');
+    listenerPanel.innerHTML = '';
+    var listenerHeader = document.createElement('div');
+    listenerHeader.className = 'endpoint-header';
+    var topicDiv = document.createElement('div');
+    topicDiv.className = 'endpoint-route';
+    topicDiv.textContent = 'topic: ' + (listener.topic || '');
+    listenerHeader.appendChild(topicDiv);
+    listenerPanel.appendChild(listenerHeader);
+    renderEndpointParams(listener);
+    renderListenerReturns(listener);
   } else {
     var feature = SPEC.features[index];
     document.getElementById('feature-title').textContent = feature.name;
@@ -1049,9 +1094,23 @@ function renderEndpointReturns(ep) {
   panel.appendChild(card);
 }
 
+function renderListenerReturns(listener) {
+  var panel = document.getElementById('params-panel');
+  if (!listener.returns || listener.returns.length === 0) return;
+  var card = document.createElement('div'); card.className = 'params-card';
+  var h3 = document.createElement('h3'); h3.textContent = 'Return Mapping'; card.appendChild(h3);
+  listener.returns.forEach(function(r){
+    var retCard = document.createElement('div'); retCard.className = 'return-card';
+    var state = document.createElement('span'); state.className = 'return-status'; state.textContent = r.state; retCard.appendChild(state);
+    if (r.condition) { var cond = document.createElement('span'); cond.className = 'return-cond'; cond.textContent = r.condition.type + ' "' + r.condition.expression + '"'; retCard.appendChild(cond); }
+    card.appendChild(retCard);
+  });
+  panel.appendChild(card);
+}
+
 function gatherParams(item, type) {
   var params = {};
-  var src = type === 'endpoint' ? (item.params||[]) : (item.params||[]);
+  var src = item.params||[];
   src.forEach(function(p){
     var id = paramId(p.name);
     if (p.type === 'bool') {
@@ -1074,7 +1133,7 @@ function gatherParams(item, type) {
 
 function runSimulation() {
   if (currentFeature === null) return;
-  var item = currentType === 'endpoint' ? SPEC.endpoints[currentFeature] : SPEC.features[currentFeature];
+  var item = currentType === 'endpoint' ? SPEC.endpoints[currentFeature] : currentType === 'listener' ? SPEC.listeners[currentFeature] : SPEC.features[currentFeature];
   var params = gatherParams(item, currentType);
   var panel = document.getElementById('flow-panel');
   panel.innerHTML = '';
@@ -1196,6 +1255,17 @@ function runSimulation() {
       retDiv.appendChild(rc);
     });
     panel.appendChild(retDiv);
+  }
+  if (currentType === 'listener' && item.returns && item.returns.length > 0) {
+    var listenerReturns = document.createElement('div');
+    listenerReturns.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid var(--border);';
+    listenerReturns.innerHTML = '<h3 style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px;">Possible Return States</h3>';
+    item.returns.forEach(function(r){
+      var rc = document.createElement('div'); rc.className = 'return-card';
+      rc.textContent = r.state + (r.condition ? ' — ' + r.condition.type + ' "' + r.condition.expression + '"' : '');
+      listenerReturns.appendChild(rc);
+    });
+    panel.appendChild(listenerReturns);
   }
   setTimeout(function(){
     var last = panel.lastElementChild;

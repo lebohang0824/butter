@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|endpoint|param|type|required|default|validate|length|route|method|response|field|return)\s+\S`)
+var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|endpoint|listener|param|type|required|default|validate|length|route|method|topic|response|field|return)\s+\S`)
 
 var validateSpaceRe = regexp.MustCompile(`^(\s*validate\s+")([><=!]+)\s+(\d+(?:\.\d+)?)"`)
 
@@ -52,6 +52,10 @@ func startsWithEndpoint(s string) bool {
 	return strings.HasPrefix(strings.TrimSpace(s), "endpoint ")
 }
 
+func startsWithListener(s string) bool {
+	return strings.HasPrefix(strings.TrimSpace(s), "listener ")
+}
+
 func pass1(lines []string) []string {
 	result := make([]string, 0, len(lines))
 	for i := 0; i < len(lines); i++ {
@@ -75,7 +79,7 @@ func pass2(lines []string) []string {
 				if isEmpty(prev) || commentRe.MatchString(prev) {
 					continue
 				}
-				if startsWithFeature(prev) || startsWithEndpoint(prev) {
+				if startsWithFeature(prev) || startsWithEndpoint(prev) || startsWithListener(prev) {
 					rightBelowFeature = true
 				}
 				break
@@ -86,7 +90,7 @@ func pass2(lines []string) []string {
 					result = append(result, "")
 				}
 			}
-		} else if startsWithFeature(line) || startsWithEndpoint(line) {
+		} else if startsWithFeature(line) || startsWithEndpoint(line) || startsWithListener(line) {
 			if len(result) > 0 && !isEmpty(result[len(result)-1]) {
 				result = append(result, "")
 			}

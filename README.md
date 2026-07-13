@@ -51,13 +51,19 @@ Butter is a **specification language for AI intent**. It sits between you and th
 | :---          | :---          | :--- |
 | `app` / `product` | Top-level     | Defines the namespace or structural root of the configuration |
 | `description` | Top/Block     | Provides context or documentation string metadata |
-| `version`     | Top/Block     | Declares the version identifier for the application or feature |
+| `version`     | Top/Block     | Declares the version identifier for the application, feature, endpoint, or listener |
 | `feature`     | Block-level   | Declares a sub-system module, API endpoint, or discrete capability |
+| `endpoint`    | Block-level   | Declares a synchronous HTTP transport contract |
+| `listener`    | Block-level   | Declares an asynchronous message consumer contract |
+| `topic`       | Block-level   | Declares the message topic or queue consumed by a listener |
 | `params`      | Block-level   | A dedicated container block specifying input definitions |
 | `param`       | Item-level    | Declares a discrete parameter variable name |
 | `actions`     | Block-level   | A dedicated container block specifying execution routines |
 | `action`      | Item-level    | Declares a logical execution string or mutation step |
 | `enforce`     | Item-level    | Declares a condition that must hold for the action to succeed |
+| `returns` / `return` | Block/Item-level | Maps endpoint responses or listener message states |
+
+Listener returns use one of `ack`, `nack`, `retry`, or `dlq`; listeners declare their consumed message queue or topic with `topic`.
 
 ### Parameter Fields
 

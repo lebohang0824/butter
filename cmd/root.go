@@ -25,7 +25,7 @@ func formatList() string {
 	return strings.Join(output.Names(), ", ")
 }
 
-const Version = "1.14.0"
+const Version = "1.15.0"
 
 var outputFile string
 var outputFormat string

@@ -4,17 +4,19 @@ const DOCS = {
   app: 'Declare the root application specification.\n\n```butter\napp MyApp\n\tdescription "..."\n\tversion "1.0.0"\n```',
   product: 'Declare the root product specification (alias for `app`).\n\n```butter\nproduct MyProduct\n\tdescription "..."\n\tversion "1.0.0"\n```',
   description: 'A human-readable description of the current block.\n\n```butter\ndescription "My application"\n```',
-  version: 'Version identifier for the app, feature, or endpoint.\n\n```butter\nversion "1.0.0"\n```',
+  version: 'Version identifier for the app, feature, endpoint, or listener.\n\n```butter\nversion "1.0.0"\n```',
   feature: 'Define a logical feature group within the app.\n\n```butter\nfeature MyFeature\n\tdescription "..."\n\tparams\n\t\tparam X\n\t\t\ttype string\n```',
   endpoint: 'Define a synchronous HTTP network gateway with route, method, params, responses, actions, and return mappings.\n\n```butter\nendpoint ProcessOrder\n\tdescription "Process a checkout order"\n\troute "/api/checkout/orders"\n\tmethod "POST"\n\tparams\n\t\tparam checkout_token\n\t\t\ttype string\n\t\t\trequired true\n```',
-  params: 'Begin a parameter definition block for the current feature or endpoint.\n\n```butter\nparams\n\tparam Name\n\t\ttype string\n```',
+  listener: 'Define an asynchronous message consumer with topic, params, actions, and return state mappings.\n\n```butter\nlistener ProcessEvent\n\tdescription "Process incoming events"\n\ttopic "events.process"\n\tparams\n\t\tparam event_id\n\t\t\ttype string\n\t\t\trequired true\n```',
+  topic: 'Define the message topic or queue name for the listener.\n\n```butter\ntopic "events.process"\n```',
+  params: 'Begin a parameter definition block for the current feature, endpoint, or listener.\n\n```butter\nparams\n\tparam Name\n\t\ttype string\n```',
   param: 'Define a single configuration parameter.\n\n```butter\nparam ParamName\n\ttype string\n\trequired true\n```',
   type: 'Set the data type of a parameter or field.\n\nValues: `string`, `int`, `float`, `bool`, `enum[...]`',
   required: 'Mark the parameter as required (`true`) or optional (`false`).',
   default: 'Set a default value for the parameter, used when no value is provided.',
   validate: 'Add a numeric validation rule (e.g., `">0"`, `">=1"`, `"=<100"`). Requires `int` or `float` type.',
   length: 'Enforce a maximum length for string or numeric parameters.',
-  actions: 'Begin an action definition block for the current feature or endpoint.\n\n```butter\nactions\n\taction "Do something"\n```',
+  actions: 'Begin an action definition block for the current feature, endpoint, or listener.\n\n```butter\nactions\n\taction "Do something"\n```',
   action: 'Define a behavioral action step with a quoted description.\n\n```butter\naction "Execute the pipeline"\n\tenforce "Must be valid"\n```',
   enforce: 'Specify an invariant enforcement rule for the action.\n\n```butter\nenforce "The value must be positive"\n```',
   route: 'Define the relative URL path pattern for the endpoint.\n\n```butter\nroute "/api/resource/{id}"\n```',
@@ -22,8 +24,12 @@ const DOCS = {
   responses: 'Begin a response schema definition block. Each response defines an internal JSON payload format.\n\n```butter\nresponses\n\tresponse OrderSuccess\n\t\tfield order_id\n\t\t\ttype string\n```',
   response: 'Define a reusable, internal response payload schema.\n\n```butter\nresponse OrderSuccess\n\tfield order_id\n\t\ttype string\n\tfield total_amount\n\t\ttype float\n```',
   field: 'Declare a JSON key inside a response schema. Defines the name and type of a single output field. Defaults to `string` if no type is given.\n\n```butter\nresponse OrderSuccess\n\tfield order_id\n\tfield total_amount\n\t\ttype float\n```',
-  returns: 'Begin a return mapping block that binds execution outcomes to HTTP status codes.\n\n```butter\nreturns\n\treturn 200 OrderSuccess | if "Transaction succeeded"\n\treturn 400 "Invalid input" | if "Validation fails"\n```',
+  returns: 'Begin a return mapping block that binds execution outcomes to HTTP status codes (endpoint) or message states (listener).\n\n```butter\nreturns\n\treturn 200 OrderSuccess | if "Transaction succeeded"\n\treturn 400 "Invalid input" | if "Validation fails"\n```',
   return: 'Map an HTTP status code to a response payload or string literal with an optional condition.\n\nSyntax: `return <StatusCode> [<ResponseName> | <"String">] [| if/unless <"Condition">]`\n\n```butter\nreturn 201 OrderSuccess | if "Transaction authorized"\nreturn 400 "Invalid token" | if "Token validation fails"\nreturn 500 | if "Provider times out"\n```',
+  ack: 'Acknowledge successful message processing. The message is removed from the queue.\n\n```butter\nreturn ack | if "Processing succeeded"\n```',
+  nack: 'Negative acknowledgment. The message is rejected and may be requeued.\n\n```butter\nreturn nack | if "Invalid message format"\n```',
+  retry: 'Request message retry. The message will be reprocessed later.\n\n```butter\nreturn retry | if "Temporary failure"\n```',
+  dlq: 'Send message to dead letter queue. The message is moved to a dead letter queue for manual inspection.\n\n```butter\nreturn dlq | if "Permanent failure"\n```',
   if: 'Execute this action only when the condition is true.\n\n```butter\naction "Do something" | if "condition == true"\n```',
   unless: 'Execute this action only when the condition is false.\n\n```butter\naction "Do something" | unless "condition == false"\n```',
   when: 'Execute this action when the condition becomes true.\n\n```butter\naction "Do something" | when "event occurs"\n```',
@@ -66,6 +72,7 @@ const TOP_LEVEL = setDocs([
   item('version', vscode.CompletionItemKind.Keyword),
   snippet('feature', 'feature ${1:FeatureName}\n\t${0}'),
   snippet('endpoint', 'endpoint ${1:EndpointName}\n\t${0}'),
+  snippet('listener', 'listener ${1:ListenerName}\n\t${0}'),
 ]);
 
 const APP_BODY = setDocs([
@@ -73,6 +80,7 @@ const APP_BODY = setDocs([
   item('version', vscode.CompletionItemKind.Keyword),
   snippet('feature', 'feature ${1:FeatureName}\n\t${0}'),
   snippet('endpoint', 'endpoint ${1:EndpointName}\n\t${0}'),
+  snippet('listener', 'listener ${1:ListenerName}\n\t${0}'),
 ]);
 
 const FEATURE_BODY = setDocs([
@@ -89,6 +97,15 @@ const ENDPOINT_BODY = setDocs([
   item('method', vscode.CompletionItemKind.Keyword),
   item('params', vscode.CompletionItemKind.Keyword),
   item('responses', vscode.CompletionItemKind.Keyword),
+  item('actions', vscode.CompletionItemKind.Keyword),
+  item('returns', vscode.CompletionItemKind.Keyword),
+]);
+
+const LISTENER_BODY = setDocs([
+  item('description', vscode.CompletionItemKind.Keyword),
+  item('version', vscode.CompletionItemKind.Keyword),
+  item('topic', vscode.CompletionItemKind.Keyword),
+  item('params', vscode.CompletionItemKind.Keyword),
   item('actions', vscode.CompletionItemKind.Keyword),
   item('returns', vscode.CompletionItemKind.Keyword),
 ]);
@@ -128,6 +145,17 @@ const FIELD_BODY = setDocs([
 
 const RETURNS_BODY = setDocs([
   snippet('return', 'return ${1:200} ${2:ResponseName} | if "${3:condition}"'),
+]);
+
+const LISTENER_RETURNS_BODY = setDocs([
+  snippet('return', 'return ${1:ack} | if "${2:condition}"'),
+]);
+
+const MESSAGE_STATES = setDocs([
+  item('ack', vscode.CompletionItemKind.Constant),
+  item('nack', vscode.CompletionItemKind.Constant),
+  item('retry', vscode.CompletionItemKind.Constant),
+  item('dlq', vscode.CompletionItemKind.Constant),
 ]);
 
 const TYPES = setDocs([
@@ -247,6 +275,13 @@ function suggestionKind(context) {
     if (gk === 'returns') return 'returns-body';
     return 'endpoint-body';
   }
+  if (pk === 'listener') {
+    if (currentIndent === 1) return 'listener-body';
+    if (gk === 'params') return 'params-body';
+    if (gk === 'actions') return 'actions-body';
+    if (gk === 'returns') return 'listener-returns-body';
+    return 'listener-body';
+  }
   if (pk === 'params') return 'params-body';
   if (pk === 'param') return 'param-body';
   if (pk === 'actions') return 'actions-body';
@@ -292,6 +327,7 @@ class ButterCompletionProvider {
       case 'app-body': return APP_BODY;
       case 'feature-body': return FEATURE_BODY;
       case 'endpoint-body': return ENDPOINT_BODY;
+      case 'listener-body': return LISTENER_BODY;
       case 'params-body': return PARAMS_BODY;
       case 'param-body': return PARAM_BODY;
       case 'actions-body': return ACTIONS_BODY;
@@ -300,6 +336,7 @@ class ButterCompletionProvider {
       case 'response-body': return RESPONSE_BODY;
       case 'field-body': return FIELD_BODY;
       case 'returns-body': return RETURNS_BODY;
+      case 'listener-returns-body': return LISTENER_RETURNS_BODY;
       default: return TOP_LEVEL;
     }
   }

@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.15.0] - 2026-07-13
+
+- **`listener` language support** — Syntax highlighting and IntelliSense recognize listener declarations, the required `topic` field, and `ack`, `nack`, `retry`, and `dlq` return states.
+- **Listener indentation** — Auto-indentation recognizes `listener` blocks.
+
 ## [1.13.0] - 2026-07-13
 
 - **`endpoint` enhancement** — New top-level block for defining synchronous HTTP transport network architecture alongside features. Supports `version`, `params`, `responses`, `actions`, and `returns` sub-blocks with strict scope separation from features.

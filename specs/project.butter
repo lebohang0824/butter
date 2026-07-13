@@ -35,6 +35,7 @@ feature ReleaseFlow
             enforce "Update major version number for enhancements"
 
         action "Update changelog to reflect new changes" | unless "Only .butter or compiled JSON files changed"
+            enforce "Exclude documentation changes in the changelog"
         action "Update all documents (.md and docs/index.html)" | if "The core compiler has new enhancements"
         action "Update docs/extensions.html" | if "New output extension is added"
 

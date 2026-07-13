@@ -1,0 +1,49 @@
+app EventProcessingSystem
+description "A system for processing asynchronous events"
+version "1.0.0"
+
+listener ProcessOrderEvent
+	description "Listen for order processing events from Kafka"
+	version "1.0.0"
+	topic "orders.process"
+	params
+		param order_id
+			type string
+			required true
+		param customer_id
+			type string
+			required true
+		param amount
+			type float
+			required true
+	actions
+		action "Validate order data"
+			enforce "Order ID must not be empty"
+		action "Process payment"
+			enforce "Amount must be positive"
+		action "Update inventory"
+		action "Send confirmation email"
+	returns
+		return ack | if "Order processed successfully"
+		return nack | if "Invalid order data"
+		return retry | if "Payment gateway timeout"
+		return dlq | if "Permanent processing failure"
+
+listener UserActivityTracker
+	description "Track user activity events"
+	topic "users.activity"
+	params
+		param user_id
+			type string
+			required true
+		param event_type
+			type string
+			required true
+		param timestamp
+			type string
+	actions
+		action "Log activity to database"
+		action "Update user analytics"
+	returns
+		return ack
+		return retry | if "Database connection failed"

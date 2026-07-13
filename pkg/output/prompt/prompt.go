@@ -102,6 +102,42 @@ func (promptExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 		}
 	}
 
+	for i, l := range spec.Listeners {
+		if i > 0 || len(spec.Features) > 0 || len(spec.Endpoints) > 0 {
+			b.WriteString("\n")
+		}
+		fmt.Fprintf(&b, "## Listener: %s\n", l.Name)
+		if l.Version != "" {
+			fmt.Fprintf(&b, "**Version:** %s\n", l.Version)
+		}
+		if l.Description != "" {
+			fmt.Fprintf(&b, "%s\n", l.Description)
+		}
+		fmt.Fprintf(&b, "**topic** `%s`\n", l.Topic)
+
+		if len(l.Params) > 0 {
+			b.WriteString("\n### Params\n")
+			for _, p := range l.Params {
+				b.WriteString(formatParam(p))
+			}
+		}
+
+		if len(l.Actions) > 0 {
+			b.WriteString("\n### Execution Sequence\n")
+			b.WriteString("**CRITICAL:** Execute the following steps strictly in order. Do not proceed to the next step until the current one is complete.\n\n")
+			for j, a := range l.Actions {
+				b.WriteString(formatAction(a, j+1))
+			}
+		}
+
+		if len(l.Returns) > 0 {
+			b.WriteString("\n### Return Mapping\n")
+			for _, r := range l.Returns {
+				b.WriteString(formatListenerReturn(r))
+			}
+		}
+	}
+
 	return []byte(b.String()), nil
 }
 
@@ -176,6 +212,17 @@ func formatReturn(r ast.ReturnSpec) string {
 	if r.Payload != "" {
 		sb.WriteString(fmt.Sprintf(" **%s**", r.Payload))
 	}
+	if r.Condition != nil {
+		keyword := strings.ToUpper(r.Condition.Type)
+		sb.WriteString(fmt.Sprintf(" | **%s** `%s`", keyword, r.Condition.Expression))
+	}
+	sb.WriteString("\n")
+	return sb.String()
+}
+
+func formatListenerReturn(r ast.ListenerReturnSpec) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("* `return %s`", r.State))
 	if r.Condition != nil {
 		keyword := strings.ToUpper(r.Condition.Type)
 		sb.WriteString(fmt.Sprintf(" | **%s** `%s`", keyword, r.Condition.Expression))

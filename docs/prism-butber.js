@@ -38,6 +38,16 @@ Prism.languages.butter = {
       }
     }
   },
+  'listener-declaration': {
+    pattern: /\b(listener)\s+([A-Za-z_]\w*)/,
+    inside: {
+      'keyword': /listener/,
+      'function': {
+        pattern: /[A-Za-z_]\w*/,
+        alias: 'function'
+      }
+    }
+  },
   'param-declaration': {
     pattern: /\b(param)\s+([A-Za-z_]\w*)/,
     inside: {
@@ -79,6 +89,14 @@ Prism.languages.butter = {
       }
     }
   },
+  'listener-return': {
+    pattern: /\b(return)\s+(ack|nack|retry|dlq)\b(?:\s*\|\s*(if|unless)\b)?/,
+    inside: {
+      'keyword': /return/,
+      'number': /ack|nack|retry|dlq/,
+      'conditional': /if|unless/
+    }
+  },
   'return-string': {
     pattern: /\b(return)\s+(\d{3})\s+("[^"]*")/,
     inside: {
@@ -98,5 +116,5 @@ Prism.languages.butter = {
     }
   },
   'conditional': /\b(?:if|unless|when|while)\b/,
-  'keyword': /\b(?:app|product|description|version|feature|endpoint|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|responses|response|field|returns|return)\b/
+  'keyword': /\b(?:app|product|description|version|feature|endpoint|listener|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|topic|responses|response|field|returns|return)\b/
 };

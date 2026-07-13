@@ -7,6 +7,7 @@
     { "include": "#app_name" },
     { "include": "#feature_name" },
     { "include": "#endpoint_name" },
+    { "include": "#listener_name" },
     { "include": "#param_name" },
     { "include": "#response_name" },
     { "include": "#field_name" },
@@ -14,6 +15,7 @@
     { "include": "#return_ref" },
     { "include": "#return_payload_string" },
     { "include": "#status_codes" },
+    { "include": "#listener_return" },
     { "include": "#keywords" },
     { "include": "#conditionals" },
     { "include": "#strings" },
@@ -45,6 +47,13 @@
         "2": { "name": "entity.name.function.butter" }
       }
     },
+    "listener_name": {
+      "match": "\\b(listener)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" }
+      }
+    },
     "param_name": {
       "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
       "captures": {
@@ -67,7 +76,7 @@
       }
     },
     "keywords": {
-      "match": "\\b(app|product|description|version|feature|endpoint|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|responses|response|field|returns|return)\\b",
+      "match": "\\b(app|product|description|version|feature|endpoint|listener|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|topic|responses|response|field|returns|return)\\b",
       "name": "keyword.control.butter"
     },
     "type_value": {
@@ -112,6 +121,17 @@
         "1": { "name": "keyword.control.butter" },
         "2": { "name": "constant.numeric.integer.butter" }
       }
+    },
+    "listener_return": {
+      "match": "\\b(return)\\s+(ack|nack|retry|dlq)\\b",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "support.constant.message-state.butter" }
+      }
+    },
+    "message_states": {
+      "match": "\\b(ack|nack|retry|dlq)\\b",
+      "name": "support.constant.message-state.butter"
     }
   }
 }

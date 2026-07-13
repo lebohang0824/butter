@@ -1,11 +1,12 @@
 package ast
 
 type AppSpec struct {
-	App         string          `json:"app" yaml:"app"`
-	Description string          `json:"description,omitempty" yaml:"description,omitempty"`
-	Version     string          `json:"version,omitempty" yaml:"version,omitempty"`
-	Features    []FeatureSpec   `json:"features,omitempty" yaml:"features,omitempty"`
-	Endpoints   []EndpointSpec `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
+	App         string           `json:"app" yaml:"app"`
+	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
+	Version     string           `json:"version,omitempty" yaml:"version,omitempty"`
+	Features    []FeatureSpec    `json:"features,omitempty" yaml:"features,omitempty"`
+	Endpoints   []EndpointSpec   `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
+	Listeners   []ListenerSpec   `json:"listeners,omitempty" yaml:"listeners,omitempty"`
 }
 
 type FeatureSpec struct {
@@ -72,4 +73,21 @@ type ReturnSpec struct {
 	PayloadIsString bool          `json:"payload_is_string,omitempty" yaml:"payload_is_string,omitempty"`
 	Condition      *ConditionSpec `json:"condition,omitempty" yaml:"condition,omitempty"`
 	Line           int            `json:"-" yaml:"-"`
+}
+
+type ListenerSpec struct {
+	Name        string               `json:"name" yaml:"name"`
+	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
+	Version     string               `json:"version,omitempty" yaml:"version,omitempty"`
+	Topic       string               `json:"topic" yaml:"topic"`
+	Params      []ParamSpec          `json:"params,omitempty" yaml:"params,omitempty"`
+	Actions     []ActionSpec         `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Returns     []ListenerReturnSpec `json:"returns" yaml:"returns"`
+	Line        int                  `json:"-" yaml:"-"`
+}
+
+type ListenerReturnSpec struct {
+	State     string         `json:"state" yaml:"state"`
+	Condition *ConditionSpec `json:"condition,omitempty" yaml:"condition,omitempty"`
+	Line      int            `json:"-" yaml:"-"`
 }

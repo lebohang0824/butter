@@ -77,8 +77,14 @@ func (p *Parser) Parse() (*ast.AppSpec, error) {
 				return nil, err
 			}
 			appSpec.Endpoints = append(appSpec.Endpoints, *ep)
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "listener" {
+			listener, err := p.parseListener()
+			if err != nil {
+				return nil, err
+			}
+			appSpec.Listeners = append(appSpec.Listeners, *listener)
 		} else {
-			return nil, fmt.Errorf("line %d: unexpected '%s' at the top level — expected 'app' (or 'product'), 'description', 'version', 'feature', or 'endpoint'", p.curToken.Line, p.curToken.Value)
+			return nil, fmt.Errorf("line %d: unexpected '%s' at the top level — expected 'app' (or 'product'), 'description', 'version', 'feature', 'endpoint', or 'listener'", p.curToken.Line, p.curToken.Value)
 		}
 	}
 
@@ -564,6 +570,166 @@ func (p *Parser) parseReturn() (*ast.ReturnSpec, error) {
 		ret.Payload = p.curToken.Value
 		p.nextToken()
 	}
+
+	if p.curToken.Type == lexer.TokenPipe {
+		p.nextToken()
+		condType := p.curToken.Value
+		if condType != "if" && condType != "unless" {
+			return nil, fmt.Errorf("line %d: unsupported condition '%s' after '|' — expected 'if' or 'unless'", p.curToken.Line, condType)
+		}
+		condLine := p.curToken.Line
+		p.nextToken()
+		if p.curToken.Type != lexer.TokenString {
+			return nil, fmt.Errorf("line %d: condition expression after '|' must be a quoted string", p.curToken.Line)
+		}
+		ret.Condition = &ast.ConditionSpec{
+			Type:       condType,
+			Expression: p.curToken.Value,
+			Line:       condLine,
+		}
+		p.nextToken()
+	}
+	p.nextToken()
+
+	return ret, nil
+}
+
+func (p *Parser) parseListener() (*ast.ListenerSpec, error) {
+	p.nextToken()
+	if p.curToken.Type != lexer.TokenIdentifier {
+		return nil, fmt.Errorf("line %d: expected a listener name after 'listener'", p.curToken.Line)
+	}
+
+	listener := &ast.ListenerSpec{Name: p.curToken.Value, Line: p.curToken.Line}
+	p.nextToken()
+
+	if p.curToken.Type != lexer.TokenNewline {
+		return nil, fmt.Errorf("line %d: expected a newline after the listener name", p.curToken.Line)
+	}
+	p.skipNewlines()
+
+	if p.curToken.Type != lexer.TokenIndent {
+		return nil, fmt.Errorf("line %d: expected an indented block under this listener", p.curToken.Line)
+	}
+	p.nextToken()
+
+	for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+		if p.curToken.Type == lexer.TokenNewline {
+			p.nextToken()
+			continue
+		}
+
+		if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "description" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted string for listener description", p.curToken.Line)
+			}
+			listener.Description = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "version" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted version string for the listener", p.curToken.Line)
+			}
+			listener.Version = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "topic" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected quoted string for topic", p.curToken.Line)
+			}
+			listener.Topic = p.curToken.Value
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "params" {
+			p.nextToken()
+			if p.curToken.Type != lexer.TokenNewline {
+				return nil, fmt.Errorf("line %d: expected a newline after 'params'", p.curToken.Line)
+			}
+			p.skipNewlines()
+			if p.curToken.Type != lexer.TokenIndent {
+				return nil, fmt.Errorf("line %d: expected an indented block under 'params'", p.curToken.Line)
+			}
+			p.nextToken()
+
+			for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+				if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "param" {
+					param, err := p.parseParam()
+					if err != nil {
+						return nil, err
+					}
+					listener.Params = append(listener.Params, *param)
+				} else if p.curToken.Type == lexer.TokenNewline {
+					p.nextToken()
+				} else {
+					return nil, fmt.Errorf("line %d: expected 'param' inside this block, got '%s'", p.curToken.Line, p.curToken.Value)
+				}
+			}
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "actions" {
+			p.nextToken()
+			p.skipNewlines()
+			if p.curToken.Type == lexer.TokenIndent {
+				p.nextToken()
+			}
+
+			for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+				if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "action" {
+					action, err := p.parseAction()
+					if err != nil {
+						return nil, err
+					}
+					listener.Actions = append(listener.Actions, *action)
+				} else if p.curToken.Type == lexer.TokenNewline {
+					p.nextToken()
+				} else {
+					return nil, fmt.Errorf("line %d: expected 'action' inside this block, got '%s'", p.curToken.Line, p.curToken.Value)
+				}
+			}
+			p.nextToken()
+		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "returns" {
+			p.nextToken()
+			p.skipNewlines()
+			if p.curToken.Type != lexer.TokenIndent {
+				return nil, fmt.Errorf("line %d: expected an indented block under 'returns'", p.curToken.Line)
+			}
+			p.nextToken()
+
+			for p.curToken.Type != lexer.TokenDedent && p.curToken.Type != lexer.TokenEOF {
+				if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "return" {
+					ret, err := p.parseListenerReturn()
+					if err != nil {
+						return nil, err
+					}
+					listener.Returns = append(listener.Returns, *ret)
+				} else if p.curToken.Type == lexer.TokenNewline {
+					p.nextToken()
+				} else {
+					return nil, fmt.Errorf("line %d: expected 'return' inside this block, got '%s'", p.curToken.Line, p.curToken.Value)
+				}
+			}
+			p.nextToken()
+		} else {
+			return nil, fmt.Errorf("line %d: unexpected '%s' inside listener — expected 'description', 'version', 'topic', 'params', 'actions', or 'returns'", p.curToken.Line, p.curToken.Value)
+		}
+	}
+
+	if p.curToken.Type == lexer.TokenDedent {
+		p.nextToken()
+	}
+
+	return listener, nil
+}
+
+func (p *Parser) parseListenerReturn() (*ast.ListenerReturnSpec, error) {
+	retLine := p.curToken.Line
+	p.nextToken()
+
+	state := p.curToken.Value
+	if state != "ack" && state != "nack" && state != "retry" && state != "dlq" {
+		return nil, fmt.Errorf("line %d: invalid message state '%s' — expected 'ack', 'nack', 'retry', or 'dlq'", p.curToken.Line, state)
+	}
+	ret := &ast.ListenerReturnSpec{State: state, Line: retLine}
+	p.nextToken()
 
 	if p.curToken.Type == lexer.TokenPipe {
 		p.nextToken()

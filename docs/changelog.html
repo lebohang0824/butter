@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.14.0</div>
+    <div class="version">v1.15.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v1-15-0">v1.15.0</a>
     <a href="#v1-14-0">v1.14.0</a>
     <a href="#v1-13-0">v1.13.0</a>
     <a href="#v1-12-0">v1.12.0</a>
@@ -40,18 +41,24 @@
     <a href="#v1-2-0">v1.2.0</a>
     <a href="#v1-1-0">v1.1.0</a>
     <a href="#v1-0-0">v1.0.0</a>
-    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
-    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
-    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
-    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
-    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
-    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
-    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
-    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
   </nav>
 </aside>
 
 <main class="main">
+
+<section id="v1-15-0">
+  <h2>v1.15.0 — 2026-07-13</h2>
+  <ul>
+    <li><strong>Listener Primitive</strong> — New <code>listener</code> block type for asynchronous message processing. Mirrors the <code>endpoint</code> structure but uses <code>topic</code> instead of <code>route</code>/<code>method</code>, and message states (<code>ack</code>, <code>nack</code>, <code>retry</code>, <code>dlq</code>) instead of HTTP status codes. Designed for Kafka, RabbitMQ, SQS, and other message broker systems.</li>
+    <li><strong>Topic Field</strong> — Listeners declare a <code>topic</code> field that specifies the message queue or topic to consume from. Required — a listener without a topic produces a semantic error.</li>
+    <li><strong>Message States</strong> — Listener returns use four message states: <code>ack</code> (acknowledge success), <code>nack</code> (reject message), <code>retry</code> (request reprocessing), <code>dlq</code> (move to dead letter queue). Each state can have optional <code>| if</code>/<code>| unless</code> conditions.</li>
+    <li><strong>Selective Compilation Support</strong> — Listeners participate in <code>--only</code> and <code>--exclude</code> filtering. Use <code>listener:ProcessOrderEvent</code> to extract or exclude specific listeners.</li>
+    <li><strong>VS Code Extension Updates</strong> — Syntax highlighting for <code>listener</code> keyword, <code>topic</code> field, and message state constants. Autocomplete support for listener blocks, topic field, and return states.</li>
+    <li><strong>Formatter Support</strong> — The formatter correctly handles blank line insertion for listener blocks, matching the behavior of features and endpoints.</li>
+    <li><strong>Prompt Output</strong> — Listener blocks render to prompt markdown format with topic, params, actions, and return mappings.</li>
+    <li><strong>Visual Outputs</strong> — The HTML tree and AI simulator render listeners with their topics, params, actions, and message-state return mappings.</li>
+  </ul>
+</section>
 
 <section id="v1-14-0">
   <h2>v1.14.0 — 2026-07-13</h2>

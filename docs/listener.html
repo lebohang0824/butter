@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listener — Butter Specification Language</title>
+<meta name="description" content="Complete documentation for the Butter listener primitive — topic, params, actions, return states, and asynchronous message processing.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v1.15.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#overview">Overview</a>
+    <a href="#syntax">Syntax</a>
+    <a href="#message-fields">Message Fields</a>
+    <a href="#sub-blocks">Sub-blocks</a>
+    <a href="#params">Params</a>
+    <a href="#actions">Actions</a>
+    <a href="#returns">Returns</a>
+    <a href="#message-states">Message States</a>
+    <a href="#scope">Scope Isolation</a>
+    <a href="#selective-compilation">Selective Compilation</a>
+    <a href="#compiled-output">Compiled Output</a>
+    <a href="#examples">Examples</a>
+    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
+    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
+    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
+    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
+    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
+    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
+    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
+    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
+    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="overview">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Listener</h1>
+    <p class="subtitle">Declares an asynchronous message consumer — topic, parameters, execution actions, and return state mappings. The complete message processing contract in a single self-contained block.</p>
+  </div>
+
+  <p>A <code>listener</code> block describes a complete asynchronous message processing contract: the topic or queue to consume from, typed input parameters, sequential execution actions, and return state mappings that define how messages are acknowledged or rejected. Everything the AI agent needs to implement the listener is packaged within the block boundaries.</p>
+
+  <p>Like <a href="feature.html">features</a> and <a href="endpoint.html">endpoints</a>, listeners are strictly self-contained. All params, actions, and returns are scoped within the listener block. No cross-listener references, no shared state. This isolation enables selective compilation — extracting a single listener produces a zero-noise payload for AI consumption.</p>
+
+  <h3>Key Properties</h3>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Keyword</td><td><code>listener</code></td></tr>
+    <tr><td>Context</td><td>Top-level block under <code>app</code> / <code>product</code></td></tr>
+    <tr><td>Required fields</td><td>Name (identifier), <code>topic</code></td></tr>
+    <tr><td>Optional fields</td><td><code>description</code>, <code>version</code></td></tr>
+    <tr><td>Sub-blocks</td><td><code>params</code>, <code>actions</code>, <code>returns</code></td></tr>
+    <tr><td>Scope</td><td>Strictly local — no cross-listener references</td></tr>
+  </table>
+</section>
+
+<section id="syntax">
+  <h2>Syntax</h2>
+  <p>A listener is declared at the top level of a <code>.butter</code> file, directly under the <code>app</code> / <code>product</code> header:</p>
+
+  <pre><code class="language-butter">app MyApp
+description "My Async API"
+version "1.0.0"
+
+listener ProcessOrderEvent
+  description "Processes incoming order events"
+  version "1.0.0"
+  topic "orders.process"
+
+  params
+    param OrderId
+      type string
+      required true
+
+  actions
+    action "Validate order data"
+    action "Process payment"
+
+  returns
+    return ack | if "Order processed successfully"
+    return nack | if "Invalid order data"
+    return retry | if "Payment gateway timeout"
+    return dlq | if "Permanent processing failure"</code></pre>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Each <code>listener</code> must have a unique name within the spec — duplicate listener names produce a semantic error.</li>
+    <li>The listener name is an identifier: letters, digits, underscores, and hyphens are allowed.</li>
+    <li>The content under a <code>listener</code> must be indented.</li>
+    <li>Valid keywords inside a listener: <code>description</code>, <code>version</code>, <code>topic</code>, <code>params</code>, <code>actions</code>, <code>returns</code>.</li>
+    <li><code>topic</code> is required — a listener without a topic produces a semantic error.</li>
+  </ul>
+
+  <blockquote><strong>Note:</strong> The <code>feature</code> primitive covers domain logic without transport concerns. The <code>endpoint</code> primitive handles synchronous HTTP. Use <code>listener</code> for asynchronous message processing with Kafka, RabbitMQ, SQS, or similar systems.</blockquote>
+</section>
+
+<section id="message-fields">
+  <h2>Message Fields</h2>
+  <p>Listeners declare one message-specific field that features and endpoints do not have:</p>
+
+  <h3><code>topic</code></h3>
+  <p>The message topic or queue name to consume from. Must be a quoted string:</p>
+
+  <pre><code class="language-butter">topic "orders.process"
+topic "users.activity"
+topic "payments.completed"
+topic "notifications.email"</code></pre>
+
+  <h3>Semantic Validation</h3>
+  <ul>
+    <li>A listener without a <code>topic</code> produces the error: <code>listener "..." is missing required 'topic'</code></li>
+    <li>This is a hard error — compilation halts and no output is generated.</li>
+  </ul>
+</section>
+
+<section id="sub-blocks">
+  <h2>Sub-blocks</h2>
+  <p>A listener contains three optional sub-blocks:</p>
+
+  <table>
+    <tr><th>Container</th><th>Item keyword</th><th>Purpose</th></tr>
+    <tr><td><code>params</code></td><td><code>param</code></td><td>Declares typed input parameters the listener receives from the message</td></tr>
+    <tr><td><code>actions</code></td><td><code>action</code></td><td>Declares sequential execution steps the AI agent must perform</td></tr>
+    <tr><td><code>returns</code></td><td><code>return</code></td><td>Maps message processing outcomes to acknowledgment states</td></tr>
+  </table>
+
+  <pre><code class="language-butter">listener ProcessEvent
+  topic "events.process"
+
+  params
+    param EventId
+      type string
+      required true
+
+  actions
+    action "Validate event data"
+    action "Process event"
+
+  returns
+    return ack | if "Event processed successfully"
+    return retry | if "Temporary failure"</code></pre>
+</section>
+
+<section id="params">
+  <h2>Params</h2>
+  <p>The <code>params</code> block inside a listener declares the input parameters extracted from the message. The syntax and field types are identical to feature and endpoint params — see the <a href="feature.html#params">Feature Params documentation</a> for the full reference on types, defaults, validate rules, and length constraints.</p>
+
+  <pre><code class="language-butter">params
+  param MessageId
+    type string
+    required true
+  param UserId
+    type string
+    required true
+  param Payload
+    type string
+  param Priority
+    type int
+    default 0</code></pre>
+
+  <h3>Listener Param Conventions</h3>
+  <p>Listener params typically represent message fields. Use CamelCase consistently (for example, <code>OrderId</code> and <code>EventType</code>) to match Butter's documentation examples.</p>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Parameter names must be unique within a listener.</li>
+    <li>Default values must match declared types.</li>
+    <li>Enum defaults must exist in the defined list.</li>
+    <li><code>validate</code> requires <code>type int</code> or <code>type float</code>.</li>
+    <li><code>length</code> and <code>validate</code> are mutually exclusive.</li>
+  </ul>
+</section>
+
+<section id="actions">
+  <h2>Actions</h2>
+  <p>The <code>actions</code> block inside a listener declares the sequential execution steps for processing the message. The syntax and execution model are identical to feature and endpoint actions — see the <a href="feature.html#actions">Feature Actions documentation</a> for the full reference on action statements, conditions, and the sequential execution model.</p>
+
+  <pre><code class="language-butter">actions
+  action "Validate message schema"
+  action "Extract order data from payload"
+  action "Process payment transaction"
+  action "Update inventory counts"
+  action "Send confirmation notification"</code></pre>
+
+  <h3>Listener Action Conventions</h3>
+  <p>Listener actions typically describe message processing steps: validation, data extraction, business logic, external calls, and side effects. They follow the same sequential, deterministic model as feature and endpoint actions — one step at a time, in declared order.</p>
+</section>
+
+<section id="returns">
+  <h2>Returns</h2>
+  <p>The <code>returns</code> block maps message processing outcomes to acknowledgment states. Each return statement specifies a message state (ack, nack, retry, or dlq) with an optional condition.</p>
+
+  <pre><code class="language-butter">returns
+  return ack | if "Message processed successfully"
+  return nack | if "Invalid message format"
+  return retry | if "Temporary processing failure"
+  return dlq | if "Permanent processing failure"</code></pre>
+
+  <h3>Return Statement Format</h3>
+  <pre><code class="language-butter">return &lt;state&gt; [| if/unless "&lt;condition&gt;"]</code></pre>
+
+  <table>
+    <tr><th>Component</th><th>Required</th><th>Description</th></tr>
+    <tr><td><code>state</code></td><td>Yes</td><td>Message processing state: <code>ack</code>, <code>nack</code>, <code>retry</code>, or <code>dlq</code></td></tr>
+    <tr><td>Condition</td><td>No</td><td>Optional <code>| if</code> or <code>| unless</code> with a quoted expression</td></tr>
+  </table>
+
+  <h3>Conditions on Returns</h3>
+  <p>Return statements support <code>| if</code> and <code>| unless</code> conditions (but not <code>| when</code> or <code>| while</code>). The condition determines which return state is taken based on the processing context:</p>
+
+  <pre><code class="language-butter">return ack | if "Processing succeeds"
+return retry | unless "Max retries exceeded"
+return dlq | if "Message is malformed"</code></pre>
+
+  <h3>Semantic Rules</h3>
+  <ul>
+    <li>Return states must be one of: <code>ack</code>, <code>nack</code>, <code>retry</code>, <code>dlq</code>. Invalid states produce a semantic error.</li>
+    <li>Return conditions only support <code>if</code> and <code>unless</code> — <code>when</code> and <code>while</code> are not valid for return statements.</li>
+  </ul>
+</section>
+
+<section id="message-states">
+  <h2>Message States</h2>
+  <p>Listener returns use message states instead of HTTP status codes. Each state tells the message broker how to handle the message after processing:</p>
+
+  <table>
+    <tr><th>State</th><th>Description</th><th>Typical Use Case</th></tr>
+    <tr><td><code>ack</code></td><td>Acknowledge — message is successfully processed and removed from the queue</td><td>Successful processing, valid data, completed workflow</td></tr>
+    <tr><td><code>nack</code></td><td>Negative acknowledgment — message is rejected and may be requeued or discarded</td><td>Invalid message format, business rule violation, permanently invalid data</td></tr>
+    <tr><td><code>retry</code></td><td>Retry — message will be reprocessed later (often with backoff)</td><td>Temporary failures, rate limiting, transient errors, service unavailability</td></tr>
+    <tr><td><code>dlq</code></td><td>Dead letter queue — message is moved to a dead letter queue for manual inspection</td><td>Permanent failures, unprocessable messages, messages that exceed retry limits</td></tr>
+  </table>
+
+  <h3>When to Use Each State</h3>
+  <pre><code class="language-butter">returns
+  return ack | if "Order processed and confirmed"
+  return nack | if "Order data is invalid or malformed"
+  return retry | if "Payment gateway is temporarily unavailable"
+  return dlq | if "Order exceeds maximum retry attempts"</code></pre>
+
+  <h3>Compiled Output</h3>
+  <p>Each return compiles to a JSON object with <code>state</code> and optional <code>condition</code>:</p>
+
+  <pre><code class="language-json">{
+  "state": "ack",
+  "condition": {
+    "type": "if",
+    "expression": "Order processed successfully"
+  }
+},
+{
+  "state": "retry",
+  "condition": {
+    "type": "if",
+    "expression": "Payment gateway timeout"
+  }
+}</code></pre>
+</section>
+
+<section id="scope">
+  <h2>Scope Isolation</h2>
+  <p>Every listener in Butter is strictly self-contained. Parameters, actions, and returns within a listener have no knowledge of or dependency on other listeners, endpoints, or features. This design ensures:</p>
+
+  <ul>
+    <li><strong>No cross-references</strong> — A listener cannot reference params, actions, or returns from another listener.</li>
+    <li><strong>No shared state</strong> — Each listener is an independent message processing contract.</li>
+    <li><strong>Independent compilation</strong> — Each listener can be isolated and compiled on its own.</li>
+    <li><strong>Zero noise</strong> — Extracting a single listener produces output with zero references to other listeners.</li>
+  </ul>
+
+  <p>This isolation is what makes <a href="#selective-compilation">selective compilation</a> possible. Because each listener is a complete, self-contained unit, the compiler can extract it without resolving external dependencies.</p>
+
+  <pre><code class="language-butter">listener ProcessOrder
+  topic "orders.process"
+  params
+    param OrderId
+      type string
+      required true
+  actions
+    action "Process order"
+
+listener TrackUserActivity
+  topic "users.activity"
+  params
+    param UserId
+      type string
+      required true
+  actions
+    action "Log activity"</code></pre>
+
+  <p>Compiling with <code>--only listener:ProcessOrder</code> produces output containing only <code>ProcessOrder</code> — zero mention of <code>TrackUserActivity</code>.</p>
+</section>
+
+<section id="selective-compilation">
+  <h2>Selective Compilation</h2>
+  <p>Butter's CLI supports extracting specific listeners via the <code>--only</code> and <code>--exclude</code> flags:</p>
+
+  <h3>Extract a Single Listener</h3>
+  <pre><code class="language-bash">butter compile events.butter --only listener:ProcessOrder -f json</code></pre>
+
+  <h3>Extract Multiple Listeners</h3>
+  <pre><code class="language-bash">butter compile events.butter --only listener:ProcessOrder,listener:TrackActivity -f json</code></pre>
+
+  <h3>Mix Block Types</h3>
+  <pre><code class="language-bash">butter compile events.butter --only listener:ProcessOrder,endpoint:HealthCheck -f json</code></pre>
+
+  <h3>Exclude a Listener</h3>
+  <pre><code class="language-bash">butter compile events.butter --exclude listener:DebugListener -f json</code></pre>
+
+  <h3>How It Works</h3>
+  <ol>
+    <li>The compiler parses the full <code>.butter</code> file into a complete AST.</li>
+    <li>Semantic analysis runs on the full AST (all listeners are validated).</li>
+    <li>The filter engine prunes the AST — un-matched listener branches are dropped.</li>
+    <li>The global context (app name, description, version) is always preserved.</li>
+    <li>The isolated sub-graph is serialised to the requested format.</li>
+  </ol>
+
+  <blockquote><strong>Error handling:</strong> If <code>--only</code> references a listener name that does not exist in the spec, compilation fails with an error. If <code>--exclude</code> references a non-existent listener, it also fails. The compiler never silently ignores typos.</blockquote>
+
+  <h3>Human-to-AI Handoff</h3>
+  <p>Selective compilation is designed for the prompt-stacking workflow:</p>
+  <ol>
+    <li><strong>Write</strong> the listener spec inside your <code>.butter</code> file.</li>
+    <li><strong>Extract</strong> with <code>butter compile events.butter --only listener:ProcessOrder -f json -o prompt.json</code>.</li>
+    <li><strong>Paste</strong> the JSON into your AI chat alongside instructions:</li>
+  </ol>
+
+  <pre><code class="language-text">Implement the code for the following Butter listener contract definition.
+Use Go with the Kafka consumer library. Ensure every listed action is a
+distinct function step and match the return states exactly.
+
+[Paste JSON here]</code></pre>
+</section>
+
+<section id="compiled-output">
+  <h2>Compiled Output</h2>
+  <p>When compiled to JSON, a listener produces a complete message processing contract with topic, params, actions, and returns:</p>
+
+  <pre><code class="language-butter">listener ProcessOrderEvent
+  description "Processes incoming order events"
+  version "1.0.0"
+  topic "orders.process"
+
+  params
+    param OrderId
+      type string
+      required true
+    param CustomerId
+      type string
+      required true
+    param Amount
+      type float
+      required true
+
+  actions
+    action "Validate order data"
+    action "Process payment"
+    action "Update inventory"
+
+  returns
+    return ack | if "Order processed successfully"
+    return nack | if "Invalid order data"
+    return retry | if "Payment gateway timeout"
+    return dlq | if "Permanent processing failure"</code></pre>
+
+  <p>Compiles to:</p>
+
+  <pre><code class="language-json">{
+  "name": "ProcessOrderEvent",
+  "description": "Processes incoming order events",
+  "version": "1.0.0",
+  "topic": "orders.process",
+  "params": [
+    {
+      "name": "OrderId",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "CustomerId",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "Amount",
+      "type": "float",
+      "required": true
+    }
+  ],
+  "actions": [
+    { "statement": "Validate order data" },
+    { "statement": "Process payment" },
+    { "statement": "Update inventory" }
+  ],
+  "returns": [
+    {
+      "state": "ack",
+      "condition": { "type": "if", "expression": "Order processed successfully" }
+    },
+    {
+      "state": "nack",
+      "condition": { "type": "if", "expression": "Invalid order data" }
+    },
+    {
+      "state": "retry",
+      "condition": { "type": "if", "expression": "Payment gateway timeout" }
+    },
+    {
+      "state": "dlq",
+      "condition": { "type": "if", "expression": "Permanent processing failure" }
+    }
+  ]
+}</code></pre>
+</section>
+
+<section id="examples">
+  <h2>Examples</h2>
+
+  <h3>Minimal Listener</h3>
+  <pre><code class="language-butter">listener HealthCheckConsumer
+  topic "system.health"
+
+  returns
+    return ack</code></pre>
+
+  <h3>Full Kafka Consumer</h3>
+  <pre><code class="language-butter">app OrderProcessing
+description "Order processing system"
+version "1.0.0"
+
+listener ProcessOrderEvent
+  description "Process incoming order events from Kafka"
+  version "1.0.0"
+  topic "orders.process"
+  params
+    param OrderId
+      type string
+      required true
+    param CustomerId
+      type string
+      required true
+    param Items
+      type string
+      required true
+    param TotalAmount
+      type float
+      required true
+  actions
+    action "Parse and validate order JSON schema"
+    action "Verify customer exists and is active"
+    action "Validate all item SKUs against inventory"
+    action "Calculate final price with taxes and discounts"
+    action "Process payment via payment gateway"
+    action "Reserve inventory for all order items"
+    action "Generate order confirmation"
+    action "Send confirmation email to customer"
+  returns
+    return ack | if "Order fully processed and confirmed"
+    return nack | if "Order data is invalid or malformed"
+    return retry | if "Payment gateway is temporarily unavailable"
+    return dlq | if "Order exceeds maximum retry attempts"
+
+listener TrackUserActivity
+  description "Track user activity events for analytics"
+  topic "users.activity"
+  params
+    param UserId
+      type string
+      required true
+    param EventType
+      type string
+      required true
+    param PageUrl
+      type string
+    param Timestamp
+      type string
+  actions
+    action "Validate event schema"
+    action "Enrich event with geolocation data"
+    action "Write to analytics database"
+    action "Update real-time dashboard metrics"
+  returns
+    return ack | if "Event successfully recorded"
+    return retry | if "Database connection timeout"
+    return dlq | if "Event schema is permanently invalid"</code></pre>
+
+  <h3>RabbitMQ Consumer</h3>
+  <pre><code class="language-butter">listener ProcessPaymentWebhook
+  description "Process payment webhook callbacks"
+  topic "payments.webhooks"
+  params
+    param WebhookId
+      type string
+      required true
+    param EventType
+      type string
+      required true
+    param Payload
+      type string
+      required true
+  actions
+    action "Verify webhook signature"
+    action "Parse payment event payload"
+    action "Update order payment status"
+    action "Trigger post-payment workflows"
+  returns
+    return ack | if "Webhook processed successfully"
+    return nack | if "Invalid webhook signature"
+    return retry | if "Order service temporarily unavailable"
+    return dlq | if "Webhook payload is permanently unprocessable"</code></pre>
+
+  <h3>AWS SQS Consumer</h3>
+  <pre><code class="language-butter">listener ProcessNotification
+  description "Process notification messages from SQS"
+  topic "arn:aws:sqs:us-east-1:123456789:notifications"
+  params
+    param NotificationId
+      type string
+      required true
+    param RecipientId
+      type string
+      required true
+    param Channel
+      type enum["email", "sms", "push"]
+      required true
+    param Message
+      type string
+      required true
+  actions
+    action "Validate notification schema"
+    action "Check recipient preferences"
+    action "Route to appropriate channel handler"
+    action "Send notification"
+    action "Log delivery status"
+  returns
+    return ack | if "Notification delivered successfully"
+    return nack | if "Recipient not found or inactive"
+    return retry | if "Channel service is rate limited"
+    return dlq | if "Notification is permanently undeliverable"</code></pre>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>
