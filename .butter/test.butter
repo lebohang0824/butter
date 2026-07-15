@@ -1,0 +1,13 @@
+# Test Specification
+app TestApp
+description "A test specification for Butter Cloud"
+version "1.0.0"
+
+feature BasicFeature
+  description "Basic feature for testing the visual editor"
+  version "1.0.0"
+
+  actions
+    action "Validate input"
+    action "Process data"
+    action "Return result"
