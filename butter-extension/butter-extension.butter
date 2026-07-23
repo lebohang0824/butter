@@ -1,6 +1,6 @@
 # Butter VS Code Extension Documentation
 product ButterExtension
-description "VS Code extension providing syntax highlighting, IntelliSense (code completion and hover), formatting, linting, and language configuration for the Butter specification language — a language that communicates intent to AI agents by compiling structured specs into JSON that guides agents toward up to 100% expected results in a single shot."
+description "VS Code extension providing syntax highlighting, IntelliSense (code completion and hover), formatting, linting, and language configuration for the Butter specification language — a language that communicates intent to AI agents by compiling structured specs into JSON that guides agents toward near-100% expected results in a single shot."
 version "1.15.0"
 
 feature SyntaxHighlighting

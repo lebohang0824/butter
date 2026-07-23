@@ -1,6 +1,6 @@
 ![Butter](butter.png)
 
-**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to JSON or YAML and feed it to an AI agent. The agent follows the spec and produces implementations that match **up to 100% of expected results** in a single shot. Less hallucination, less token waste, less back-and-forth.
+**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to JSON or YAML and feed it to an AI agent. The agent follows the spec and produces implementations that match **near-100% of expected results** in a single shot. Less hallucination, less token waste, less back-and-forth.
 
 ---
 
@@ -37,7 +37,7 @@ Butter is a **specification language for AI intent**. It sits between you and th
 
 - **Constrained output space** — Types (`string`, `int`, `float`, `bool`, `enum[...]`), required flags, defaults, validate rules, length constraints, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
 
-- **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: "Implement this spec." The agent produces code that matches up to 100% of expected results in a single pass. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
+- **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: "Implement this spec." The agent produces code that matches near-100% of expected results in a single pass. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
 
 - **Zero-dependency core** — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, no bloat, predictable compilation every time.
 
@@ -303,7 +303,7 @@ Butter's true value emerges when you feed the compiled output to an AI agent. He
 
 3. **Feed the JSON to an AI agent** — Include the compiled JSON in your prompt with a simple instruction: *"Implement every feature in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all conditions, types, constraints, and enforce rules."*
 
-4. **Get up to 100% alignment in one shot** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and under what conditions. Hallucination drops, token waste drops, and you get working code on the first try.
+4. **Get near-100% alignment in one shot** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and under what conditions. Hallucination drops, token waste drops, and you get working code on the first try.
 
 ### Example
 

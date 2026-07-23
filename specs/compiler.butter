@@ -1,6 +1,6 @@
 # Butter Project Documentation
 product ButterCompiler
-description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to JSON/YAML, and feed the output to AI agents who produce implementations matching up to 100% of expected results in a single shot."
+description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to JSON/YAML, and feed the output to AI agents who produce implementations matching near-100% of expected results in a single shot."
 version "1.9.0"
 
 feature CompilationPipeline

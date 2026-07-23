@@ -2,7 +2,7 @@
 
 ![Butter Logo](https://raw.githubusercontent.com/lebohang0824/butter/main/butter-extension/butter.png)
 
-A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to JSON, and feed to AI agents who produce implementations matching up to 100% of expected results in a single shot.
+A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to JSON, and feed to AI agents who produce implementations matching near-100% of expected results in a single shot.
 
 ## Features
 

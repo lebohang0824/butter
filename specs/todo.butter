@@ -3,7 +3,7 @@
 # execution steps — run them one after another in the listed order. Respect all
 # conditions (if/unless/when/while), types, constraints, and enforce rules.
 app TodoApp
-description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching up to 100% of expected behaviour in a single shot."
+description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching near-100% of expected behaviour in a single shot."
 version "1.0.0"
 
 feature CreateTask

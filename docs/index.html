@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Butter — Specification Language for AI Agents</title>
-<meta name="description" content="Butter is a specification language that communicates intent to AI agents. Write .butter specs, compile to JSON, and feed to AI agents who produce implementations matching up to 100% of expected results in a single shot.">
+<meta name="description" content="Butter is a specification language that communicates intent to AI agents. Write .butter specs, compile to JSON, and feed to AI agents who produce implementations matching near-100% of expected results in a single shot.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -47,7 +47,7 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>Butter</h1>
-    <p class="subtitle">A specification language that communicates intent to AI agents. Write <code>.butter</code> specs, compile to JSON, and feed to AI agents who produce implementations matching <strong>up to 100% of expected results</strong> in a single shot.</p>
+    <p class="subtitle">A specification language that communicates intent to AI agents. Write <code>.butter</code> specs, compile to JSON, and feed to AI agents who produce implementations matching <strong>near-100% of expected results</strong> in a single shot.</p>
   </div>
   <p>AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and JSON/YAML describe data, not intent. Butter is a <strong>specification language for AI intent</strong>: you write a <code>.butter</code> spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.</p>
   <pre><code class="language-butter"># Quick taste of Butter
@@ -78,7 +78,7 @@ feature ProcessPayment
     <li><strong>Intent over data</strong> — JSON/YAML describe <em>what data looks like</em>. Butter describes <em>what to do</em>: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps, and conditions decide which actions run. The AI gets a complete execution model, not a data schema.</li>
     <li><strong>Sequential actions, deterministic results</strong> — Actions inside a feature are synchronous, ordered steps — one after another, never in parallel. This eliminates the most common source of AI hallucination: ambiguous sequencing.</li>
     <li><strong>Constrained output space</strong> — Types, required flags, defaults, validation rules, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip required steps. Fewer degrees of freedom means fewer surprises.</li>
-    <li><strong>One-shot prompting</strong> — Feed the compiled spec to an AI agent with a simple instruction: <em>"Implement this spec."</em> The agent produces code matching <strong>up to 100% of expected results</strong> in a single pass. No iterative back-and-forth, no wasted tokens.</li>
+    <li><strong>One-shot prompting</strong> — Feed the compiled spec to an AI agent with a simple instruction: <em>"Implement this spec."</em> The agent produces code matching <strong>near-100% of expected results</strong> in a single pass. No iterative back-and-forth, no wasted tokens.</li>
     <li><strong>Zero-dependency core</strong> — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, predictable compilation every time.</li>
   </ul>
 
@@ -180,7 +180,7 @@ feature Greet
     <li><strong>Write</strong> a <code>.butter</code> spec declaring features, parameters, constraints, and sequential actions.</li>
     <li><strong>Compile</strong> with <code>butter compile spec.butter</code> to produce <code>spec.json</code>.</li>
     <li><strong>Feed</strong> the JSON to an AI agent with the instruction: <em>"Implement every feature in this specification. Actions are sequential — run them one after another. Respect all conditions, types, and constraints."</em></li>
-    <li><strong>Get up to 100% alignment</strong> in one shot — less hallucination, less token waste, less back-and-forth.</li>
+    <li><strong>Get near-100% alignment</strong> in one shot — less hallucination, less token waste, less back-and-forth.</li>
   </ol>
   <p>The spec defines <em>what</em> to build. The AI figures out <em>how</em>. That's the division of labour.</p>
 </section>
@@ -332,7 +332,7 @@ app MyApp  # inline comment also works</code></pre>
 # execution steps — run them one after another in the listed order. Respect all
 # conditions (if/unless/when/while), types, constraints, and enforce rules.
 app TodoApp
-description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching up to 100% of expected behaviour in a single shot."
+description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application matching near-100% of expected behaviour in a single shot."
 version "1.0.0"
 
 feature CreateTask

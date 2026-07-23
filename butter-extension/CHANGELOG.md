@@ -25,7 +25,7 @@
 - **IntelliSense code completion** — Context-aware autocomplete for Butter keywords, types, parameter fields, and conditionals. The completion provider analyses indentation and parent block context to suggest only the valid keywords for the current cursor position. Includes snippets for `app`, `product`, `feature`, `param`, `action`, and `enum[...]`.
 - **Hover documentation** — Hover over any Butter keyword, type, or conditional to see a markdown description with syntax examples.
 - **Trigger characters** — Completion triggers on `|` (pipe for conditionals), `[` (enum), and space (after keywords like `type`, `required`).
-- **Updated documentation philosophy** — All README, DOCUMENTATION, docs HTML, and .butter spec files now reflect Butter's core purpose: a specification language that communicates intent to AI agents for up to 100% one-shot results.
+- **Updated documentation philosophy** — All README, DOCUMENTATION, docs HTML, and .butter spec files now reflect Butter's core purpose: a specification language that communicates intent to AI agents for near-100% one-shot results.
 
 ## [1.8.0] - 2026-07-01
 
