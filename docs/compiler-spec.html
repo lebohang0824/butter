@@ -47,12 +47,12 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>compiler.butter</h1>
-    <p class="subtitle">Butter is a specification language for AI intent — and the compiler itself is described in its own language. This page breaks down every line, showing you how to write specs that guide AI agents toward deterministic, one-shot results.</p>
+    <p class="subtitle">Butter is a specification language for AI intent — and the compiler itself is described in its own language. This page breaks down every line, showing you how to write specs that guide AI agents toward deterministic results with higher first-pass accuracy.</p>
   </div>
 
   <p>The <code>compiler.butter</code> file at the project root is a self-describing specification. It declares the Butter compiler using the same DSL it compiles — every <code>param</code>, <code>action</code>, and <code>condition</code> maps directly to a real stage in the compiler pipeline. This is Butter's philosophy in action: a structured spec that an AI agent could follow to rebuild the compiler from scratch.</p>
 
-  <p>By studying this file you learn how to write your own <code>.butter</code> specifications for AI agents: the same <code>product</code>/<code>app</code> header, <code>feature</code> blocks, <code>params</code> with typed fields and constraints, and <code>actions</code> with <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> conditions apply to any project you describe. When compiled to JSON and fed to an AI agent, the agent produces implementations that match <strong>near-100% of expected results</strong> in a single shot.</p>
+  <p>By studying this file you learn how to write your own <code>.butter</code> specifications for AI agents: the same <code>product</code>/<code>app</code> header, <code>feature</code> blocks, <code>params</code> with typed fields and constraints, and <code>actions</code> with <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> conditions apply to any project you describe. When compiled to JSON and fed to an AI agent, the agent produces implementations with higher first-pass accuracy.</p>
 </section>
 
 <section id="raw-file">
