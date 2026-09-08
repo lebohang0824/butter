@@ -21,12 +21,17 @@ feature ReleaseFlow
     # AI agents: Compile and validate all .butter specs to prevent broken configurations.
     "Test all butter spec files"
 
-    # Step 3: Versioning & Changelog updates
-    # AI agents: Automatically manage project versioning and update human-readable logs.
+    # Step 3: Versioning & Changelog updates (compiler changes only)
+    # AI agents: The following steps apply only when the changes involve compiler
+    # changes. Skip them when only spec files or documentation changed.
     "Update version"
+      enforce "Only when the changes involve compiler changes"
     "Update changelog to reflect new changes"
+      enforce "Only when the changes involve compiler changes"
     "Update all documents (.md and docs/index.html)"
+      enforce "Only when the changes involve compiler changes"
     "Update docs/extension.html"
+      enforce "Only when the changes involve compiler changes"
 
     # Step 4: Finalizing & Publishing
     # AI agents: Grouped git operations to stage, verify, commit, and push changes to main.
