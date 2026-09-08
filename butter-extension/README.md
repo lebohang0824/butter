@@ -2,7 +2,7 @@
 
 ![Butter Logo](https://raw.githubusercontent.com/lebohang0824/butter/main/butter-extension/butter.png)
 
-A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to JSON, and feed to AI agents who produce higher first-pass accuracy.
+A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to a Markdown prompt, and feed it to AI agents who produce higher first-pass accuracy.
 
 ## Features
 
@@ -69,7 +69,7 @@ endpoint SaveOrder "/orders"
 
 ## Compiler
 
-The Butter compiler is a standalone Go CLI tool. See the [Butter repository](https://github.com/butter-io/butter) for instructions on building and using the compiler.
+The Butter compiler is a standalone Go CLI tool. See the [Butter repository](https://github.com/lebohang0824/butter) for instructions on building and using the compiler.
 
 ## Release Notes
 
