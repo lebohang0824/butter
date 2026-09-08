@@ -300,7 +300,7 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax and
 
 ### Output Extensions
 
-Butter's output layer is fully pluggable. The built-in JSON, YAML, prompt, HTML tree, and simulator serializers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
+Butter's output layer is fully pluggable. The built-in JSON, YAML, and prompt serializers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
 
 To write an extension, implement the `output.Extension` interface and call `output.Register()`:
 
@@ -371,7 +371,7 @@ The spec defines *what* to build. The AI figures out *how*. That's the division 
        ▼
   ┌──────────────┐
   │ Output       │ <--- Pluggable Extension Registry
-  │ Extension    │       (json, yaml, prompt, htmltree, sim, + custom)
+  │ Extension    │       (json, yaml, prompt, + custom)
   │  Registry    │
   └──────┬───────┘
          │
