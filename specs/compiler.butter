@@ -1,7 +1,7 @@
 # Butter Project Documentation
 
 app ButterCompiler
-  description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to JSON/YAML, and feed the output to AI agents who produce higher first-pass accuracy."
+  description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to a Markdown prompt, and feed the output to AI agents who produce higher first-pass accuracy."
 
 feature CompilationPipeline
   description "The strictly sequential end-to-end execution flow of the Butter compiler — from lexing and parsing to semantic validation and output generation."
@@ -9,7 +9,7 @@ feature CompilationPipeline
 
   params
     input_file string
-    output_format enum["json", "yaml"]
+    output_format enum["prompt", "json", "yaml"]
     output_path string
     check_only boolean
 

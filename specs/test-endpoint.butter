@@ -13,11 +13,6 @@ endpoint ProcessOrder "/api/checkout/orders"
     dry_run boolean
 
   responses
-    InvoiceLineItem
-      sku string
-      description string
-      unit_price double
-      quantity integer
     OrderSuccessPayload
       order_id string
       total_amount double
@@ -32,7 +27,6 @@ endpoint ProcessOrder "/api/checkout/orders"
 
   returns
     201 OrderSuccessPayload
-    200 OrderSuccessPayload
     400 "Invalid or expired checkout token"
     402 "Payment authorization failed"
     500 "External payment provider connection times out"

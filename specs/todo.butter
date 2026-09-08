@@ -4,7 +4,7 @@
 # types and constraints.
 
 app TodoApp
-  description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application with higher first-pass accuracy."
+  description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled prompt and produces a complete working application with higher first-pass accuracy."
   version "1.0.0"
 
 feature CreateTask
