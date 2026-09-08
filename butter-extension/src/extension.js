@@ -121,7 +121,7 @@ function activate(context) {
         vscode.commands.executeCommand('editor.action.formatDocument');
       }
     }),
-    vscode.languages.registerCompletionItemProvider('butter', new ButterCompletionProvider(), '|', ' ', '['),
+    vscode.languages.registerCompletionItemProvider('butter', new ButterCompletionProvider(), ' ', '['),
     vscode.languages.registerHoverProvider('butter', new ButterHoverProvider()),
     vscode.languages.registerDefinitionProvider('butter', new ButterDefinitionProvider())
   );

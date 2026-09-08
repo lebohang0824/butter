@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CLI Reference — Butter Specification Language</title>
-<meta name="description" content="Complete CLI reference for the Butter compiler — compile, fmt, flags, exit codes, and error messages.">
+<title>CLI Reference — Butter</title>
+<meta name="description" content="CLI reference for the Butter compiler — compile, fmt, flags, and error messages.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,211 +18,91 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.15.0</div>
+    <div class="version">v2.0.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
     <a href="#compile">butter compile</a>
     <a href="#fmt">butter fmt</a>
-    <a href="#version">butter --version</a>
-    <a href="#exit-codes">Exit Codes</a>
-    <a href="#error-format">Error Output Format</a>
-    <a href="#errors">Error Reference</a>
-    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
-    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
-    <a href="listener.html" class="external" target="_blank" rel="noopener">Listener</a>
-    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
-    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
-    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
-    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
-    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
-    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+    <a href="#errors">Errors</a>
+    <a href="language.html">Language Guide</a>
+    <a href="extension.html">VS Code Extension</a>
+    <a href="changelog.html">Changelog</a>
   </nav>
 </aside>
 
 <main class="main">
 
 <section id="compile">
-  <h2>CLI Reference</h2>
+  <h1>CLI Reference</h1>
 
-  <h3><code>butter compile</code></h3>
-  <p>Compiles a <code>.butter</code> file to pretty-printed JSON.</p>
+  <h2><code>butter compile</code></h2>
+  <p>Compiles a <code>.butter</code> file to a Markdown prompt (default) or other formats like JSON and YAML.</p>
   <pre><code class="language-bash">butter compile [input file] [flags]</code></pre>
-
-  <h4>Flags</h4>
-  <table class="flag-table">
-    <thead>
-      <tr><th>Flag</th><th>Shorthand</th><th>Description</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>--output</td><td>-o</td><td>Custom output path (defaults to <code>&lt;input&gt;.json</code>)</td></tr>
-      <tr><td>--format</td><td>-f</td><td>Output format (default: <code>json</code>). Supported: <code>json</code>, <code>yaml</code>, <code>prompt</code>, <code>htmltree</code>, <code>sim</code></td></tr>
-      <tr><td>--check</td><td></td><td>Validate syntax without generating output</td></tr>
-      <tr><td>--only</td><td></td><td>Compile only specific blocks (e.g. <code>endpoint:ProcessOrder</code>, <code>feature:ApplyCoupon</code>, <code>listener:ProcessOrderEvent</code>). Comma-separated for multiple targets. Fails if a target does not exist in the spec.</td></tr>
-      <tr><td>--exclude</td><td></td><td>Exclude specific blocks from compilation (e.g. <code>endpoint:HealthCheck</code>, <code>listener:DebugListener</code>). Comma-separated. Fails if a target does not exist in the spec.</td></tr>
-    </tbody>
-  </table>
-
-  <h4>Examples</h4>
-  <pre><code class="language-bash"># Full compile
-butter compile demo.butter
-butter compile demo.butter --output result.json
-butter compile demo.butter -o result.json
-
-# Validate without output
-butter compile --check demo.butter
-
-# Selective compilation — extract a single endpoint
-butter compile api.butter --only endpoint:ProcessOrder -f json
-
-# Selective compilation — extract multiple blocks
-butter compile api.butter --only endpoint:ProcessOrder,feature:ApplyCoupon -f json
-
-# Selective compilation — exclude a block
-butter compile api.butter --exclude endpoint:HealthCheck -f json
-
-# Extract to a specific output file
-butter compile api.butter --only endpoint:ProcessOrder -f json -o prompt_slice.json</code></pre>
-
-  <h4>Selective Compilation</h4>
-  <p>The <code>--only</code> and <code>--exclude</code> flags enable targeted extraction of specific <a href="feature.html">features</a> and <a href="endpoint.html">endpoints</a> from a spec. The filter syntax is <code>block_type:name</code> where <code>block_type</code> is <code>endpoint</code> or <code>feature</code>.</p>
-
-  <p>When <code>--only</code> is used, only the named blocks are included in the output. The global context (app name, description, version) is always preserved. When <code>--exclude</code> is used, the named blocks are removed and everything else is kept. The two flags cannot be used together.</p>
-
-  <p>Both flags fail with an error if a referenced block does not exist in the spec — typos are caught at compile time, never silently ignored.</p>
-
-  <blockquote><strong>Use case:</strong> Selective compilation is designed for the human-to-AI handoff workflow. Extract a single endpoint as a clean JSON payload, paste it into an AI chat with implementation instructions, and get a single-shot generation that matches the contract exactly. See the <a href="feature.html#selective-compilation">Feature</a> and <a href="endpoint.html#selective-compilation">Endpoint</a> docs for detailed workflows.</blockquote>
-</section>
-
-<section id="fmt">
-  <h2><code>butter fmt</code></h2>
-  <p>Formats a <code>.butter</code> file according to standard conventions — removes blank lines after parameter keywords and adds blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</p>
-  <pre><code class="language-bash">butter fmt [input file] [flags]</code></pre>
 
   <h3>Flags</h3>
   <table class="flag-table">
-    <thead>
-      <tr><th>Flag</th><th>Description</th></tr>
-    </thead>
+    <thead><tr><th>Flag</th><th>Short</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td>--check</td><td>Check formatting without modifying</td></tr>
+      <tr><td><code>--format</code></td><td><code>-f</code></td><td>Output format (default: <code>prompt</code>). Supported: <code>prompt</code>, <code>json</code>, <code>yaml</code>, <code>htmltree</code>, <code>sim</code></td></tr>
+      <tr><td><code>--output</code></td><td><code>-o</code></td><td>Output path (default: <code>&lt;input&gt;.prompt.md</code>)</td></tr>
+      <tr><td><code>--check</code></td><td></td><td>Validate without generating output</td></tr>
+      <tr><td><code>--only</code></td><td></td><td>Compile specific blocks only (e.g. <code>endpoint:ProcessOrder</code>)</td></tr>
+      <tr><td><code>--exclude</code></td><td></td><td>Exclude specific blocks (e.g. <code>endpoint:HealthCheck</code>)</td></tr>
     </tbody>
   </table>
 
   <h3>Examples</h3>
+  <pre><code class="language-bash"># Basic compile — produces demo.prompt.md
+butter compile demo.butter
+
+# JSON output
+butter compile demo.butter -f json
+
+# YAML output
+butter compile demo.butter -f yaml
+
+# Custom output path
+butter compile demo.butter -f json -o result.json
+
+# Validate only (no output)
+butter compile --check demo.butter
+
+# Extract a single endpoint
+butter compile api.butter --only endpoint:ProcessOrder -f json
+
+# Exclude a block
+butter compile api.butter --exclude endpoint:HealthCheck -f json</code></pre>
+
+  <h3>Selective Compilation</h3>
+  <p>The <code>--only</code> and <code>--exclude</code> flags extract or remove specific features and endpoints. The filter syntax is <code>block_type:name</code> — e.g. <code>endpoint:ProcessOrder</code> or <code>feature:CreateTask</code>. Comma-separated for multiple targets.</p>
+  <p>The global context (app name, description, version) is always preserved. Both flags fail if a referenced block doesn't exist — typos are caught at compile time.</p>
+</section>
+
+<section id="fmt">
+  <h2><code>butter fmt</code></h2>
+  <p>Formats a <code>.butter</code> file — normalizes indentation and spacing.</p>
   <pre><code class="language-bash">butter fmt demo.butter
-butter fmt --check demo.butter</code></pre>
-</section>
-
-<section id="version">
-  <h2><code>butter --version</code></h2>
-  <p>Prints the compiler version:</p>
-  <pre><code class="language-bash">butter --version
-# butter v1.3.0</code></pre>
-</section>
-
-<section id="exit-codes">
-  <h2>Exit Codes</h2>
-  <table>
-    <thead>
-      <tr><th>Code</th><th>Meaning</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>0</td><td>Success (compilation or validation passed)</td></tr>
-      <tr><td>1</td><td>Error (syntax error, file not found, etc.)</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<section id="error-format">
-  <h2>Error Output Format</h2>
-  <p>When compilation fails, the error includes the line number and a descriptive message:</p>
-  <pre><code>Error: compilation syntax compilation error:
-line 5: expected an application name after 'app'</code></pre>
-  <p>The VS Code extension parses this format to show red squiggly underlines at the reported line.</p>
+butter fmt --check demo.butter   # check without modifying</code></pre>
 </section>
 
 <section id="errors">
-  <h2>Error Reference</h2>
-  <p>The compiler produces line-precise error messages. Here are the most common ones and what they mean:</p>
+  <h2>Error Messages</h2>
+  <p>Errors include the line number and a clear description:</p>
+  <pre><code>Error: compilation syntax compilation error:
+line 5: expected an application name after 'app'</code></pre>
 
   <table>
-    <thead>
-      <tr><th>Error Message</th><th>Likely Cause</th></tr>
-    </thead>
+    <thead><tr><th>Error</th><th>What went wrong</th></tr></thead>
     <tbody>
-      <tr>
-        <td><code>input file must have a .butter extension</code></td>
-        <td>You tried to compile a file that doesn't end in <code>.butter</code>.</td>
-      </tr>
-      <tr>
-        <td><code>expected an application name after 'app'</code></td>
-        <td>The <code>app</code> keyword must be followed by a name (e.g. <code>app MyApp</code>).</td>
-      </tr>
-      <tr>
-        <td><code>expected a quoted string for description</code></td>
-        <td><code>description</code> must be followed by a double-quoted string.</td>
-      </tr>
-      <tr>
-        <td><code>expected a feature name after 'feature'</code></td>
-        <td><code>feature</code> must be followed by a name (e.g. <code>feature MyFeature</code>).</td>
-      </tr>
-      <tr>
-        <td><code>expected an indented block under this feature</code></td>
-        <td>The content after a <code>feature</code> declaration must be indented.</td>
-      </tr>
-      <tr>
-        <td><code>expected a newline after 'params'</code></td>
-        <td><code>params</code> must be on its own line, followed by an indented block.</td>
-      </tr>
-      <tr>
-        <td><code>expected 'param' inside this block, got '...'</code></td>
-        <td>Only <code>param</code> declarations are allowed inside a <code>params</code> block.</td>
-      </tr>
-      <tr>
-        <td><code>expected a parameter name after 'param'</code></td>
-        <td><code>param</code> must be followed by a name (e.g. <code>param MyParam</code>).</td>
-      </tr>
-      <tr>
-        <td><code>unexpected '%s' for this parameter — expected 'type', 'required', 'default', 'validate', or 'length'</code></td>
-        <td>Only <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, and <code>length</code> are valid parameter fields.</td>
-      </tr>
-      <tr>
-        <td><code>invalid validate rule "..." — must be a numeric comparison like ">0", ">=1", "=<100", "!=5"</code></td>
-        <td>The <code>validate</code> string must be a comparison operator followed by a number (e.g. <code>&gt;=1</code>, <code>!=0</code>).</td>
-      </tr>
-      <tr>
-        <td><code>validate rules require numeric type (int or float), got "..."</code></td>
-        <td><code>validate</code> is only allowed on parameters with <code>type int</code> or <code>type float</code>.</td>
-      </tr>
-      <tr>
-        <td><code>length and validate cannot be used together on the same parameter</code></td>
-        <td>A parameter can have <code>length</code> or <code>validate</code>, but not both.</td>
-      </tr>
-      <tr>
-        <td><code>action statement must be a quoted string</code></td>
-        <td>The action description must be wrapped in double quotes.</td>
-      </tr>
-      <tr>
-        <td><code>unsupported condition ... after '|' — expected if, unless, when, or while</code></td>
-        <td>The word after <code>|</code> must be one of the four conditionals.</td>
-      </tr>
-      <tr>
-        <td><code>unexpected '...' at the top level — expected 'app', 'description', 'version', or 'feature'</code></td>
-        <td>Only <code>app</code>, <code>description</code>, <code>version</code>, and <code>feature</code> are valid at the root level.</td>
-      </tr>
-      <tr>
-        <td><code>unexpected '...' inside feature — expected 'description', 'version', 'params', or 'actions'</code></td>
-        <td>Only <code>description</code>, <code>version</code>, <code>params</code>, and <code>actions</code> are valid inside a feature.</td>
-      </tr>
-      <tr>
-        <td><code>Indentation mismatch</code></td>
-        <td>The indentation level does not match any parent block level. Check that you're using consistent spacing.</td>
-      </tr>
-      <tr>
-        <td><code>unexpected character '...'</code></td>
-        <td>The character is not valid Butter syntax. Only letters, digits, underscores, pipes, quotes, and whitespace are allowed.</td>
-      </tr>
+      <tr><td><code>input file must have a .butter extension</code></td><td>File doesn't end in <code>.butter</code>.</td></tr>
+      <tr><td><code>expected an application name after 'app'</code></td><td><code>app</code> needs a name after it.</td></tr>
+      <tr><td><code>expected a quoted string for description</code></td><td><code>description</code> must be followed by a quoted string.</td></tr>
+      <tr><td><code>expected a feature name after 'feature'</code></td><td><code>feature</code> needs a name after it.</td></tr>
+      <tr><td><code>expected an indented block under this feature</code></td><td>Content after a feature must be indented.</td></tr>
+      <tr><td><code>action statement must be a quoted string</code></td><td>Actions must be in double quotes.</td></tr>
+      <tr><td><code>unexpected '...' at the top level</code></td><td>Only <code>app</code>, <code>feature</code>, <code>endpoint</code>, and <code>rules</code> are valid at the root.</td></tr>
+      <tr><td><code>Indentation mismatch</code></td><td>Inconsistent spacing. Use the same indent throughout.</td></tr>
     </tbody>
   </table>
 </section>

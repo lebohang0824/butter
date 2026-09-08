@@ -36,11 +36,19 @@
       "settings": { "foreground": "#D29A6A" }
     },
     {
+      "scope": "support.constant.http-method.butter",
+      "settings": { "foreground": "#7ABA7A" }
+    },
+    {
       "scope": "entity.name.type.butter",
       "settings": { "foreground": "#5A9ABA" }
     },
     {
       "scope": "comment.line.number-sign.butter",
+      "settings": { "foreground": "#64748B", "fontStyle": "italic" }
+    },
+    {
+      "scope": "comment.line.double-slash.butter",
       "settings": { "foreground": "#64748B", "fontStyle": "italic" }
     }
   ]

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Butter — Specification Language for AI Agents</title>
-<meta name="description" content="Butter is a specification language that communicates intent to AI agents. Write .butter specs, compile to JSON, and feed to AI agents who produce higher first-pass accuracy.">
+<meta name="description" content="Butter is a specification language that communicates intent to AI agents. Write .butter specs, compile to a prompt, and feed it to an AI agent.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,26 +18,19 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.15.0</div>
+    <div class="version">v2.0.0</div>
   </div>
   <nav>
     <a href="#home" class="active">Home</a>
-    <a href="#philosophy">Design Philosophy</a>
-    <a href="#installation">Installation</a>
-    <a href="#getting-started">Getting Started</a>
+    <a href="#why">Why Butter</a>
+    <a href="#install">Installation</a>
+    <a href="#quickstart">Quick Start</a>
     <a href="#ai-workflow">AI Workflow</a>
-    <a href="#language-guide">Language Guide</a>
-    <a href="#examples">Examples</a>
-    <a href="cli-reference.html" class="external" target="_blank" rel="noopener">CLI Reference</a>
-    <a href="feature.html" class="external" target="_blank" rel="noopener">Feature</a>
-    <a href="endpoint.html" class="external" target="_blank" rel="noopener">Endpoint</a>
-    <a href="listener.html" class="external" target="_blank" rel="noopener">Listener</a>
-    <a href="extension.html" class="external" target="_blank" rel="noopener">VS Code Extension</a>
-    <a href="compiler-spec.html" class="external" target="_blank" rel="noopener">compiler.butter Spec</a>
-    <a href="extensions.html" class="external" target="_blank" rel="noopener">Output Extensions</a>
-    <a href="extension-dev.html" class="external" target="_blank" rel="noopener">Writing Extensions</a>
-    <a href="keywords-map.html" class="external" target="_blank" rel="noopener">Keywords Map</a>
-    <a href="changelog.html" class="external" target="_blank" rel="noopener">Changelog</a>
+    <a href="#syntax">Syntax Overview</a>
+    <a href="language.html">Language Guide</a>
+    <a href="cli-reference.html">CLI Reference</a>
+    <a href="extension.html">VS Code Extension</a>
+    <a href="changelog.html">Changelog</a>
   </nav>
 </aside>
 
@@ -47,425 +40,173 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>Butter</h1>
-    <p class="subtitle">A specification language that communicates intent to AI agents. Write <code>.butter</code> specs, compile to JSON, and feed to AI agents who produce implementations with higher first-pass accuracy.</p>
+    <p class="subtitle">A specification language for AI agents. Write <code>.butter</code> files, compile to a prompt, and hand it to an AI. The AI builds what you described — with fewer mistakes and less back-and-forth.</p>
   </div>
-  <p>AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and JSON/YAML describe data, not intent. Butter is a <strong>specification language for AI intent</strong>: you write a <code>.butter</code> spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.</p>
-  <pre><code class="language-butter"># Quick taste of Butter
-app OrderProcessor
-description "Handles high-throughput retail checkout workflows"
-
-feature ProcessPayment
-  description "Processes financial transactions"
-
-  params
-    param OrderID
-      type string
-      required true
-    param Amount
-      type float
-      required true
-
-  actions
-    action "Validate routing balance metrics"
-    action "Flag for review" | if "Amount > 10000"</code></pre>
+  <p>AI coding agents are useful, but they drift. They invent parameters that don't exist, skip steps, reorder actions, or waste time guessing what you meant. Butter fixes that. You write a structured <code>.butter</code> spec that declares exactly what your system should do — parameters, constraints, execution order — then compile it to a prompt and give it to the AI. The AI follows the spec instead of improvising.</p>
 </section>
 
-<section id="philosophy">
-  <h2>Design Philosophy</h2>
-
-  <h3>Core Principles</h3>
+<section id="why">
+  <h2>Why Butter</h2>
+  <p>Natural language prompts are vague. Data files describe data, not intent. Butter sits in between: compact enough to write by hand, structured enough to remove ambiguity.</p>
   <ul>
-    <li><strong>Intent over data</strong> — JSON/YAML describe <em>what data looks like</em>. Butter describes <em>what to do</em>: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps, and conditions decide which actions run. The AI gets a complete execution model, not a data schema.</li>
-    <li><strong>Sequential actions, deterministic results</strong> — Actions inside a feature are synchronous, ordered steps — one after another, never in parallel. This eliminates the most common source of AI hallucination: ambiguous sequencing.</li>
-    <li><strong>Constrained output space</strong> — Types, required flags, defaults, validation rules, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip required steps. Fewer degrees of freedom means fewer surprises.</li>
-    <li><strong>One-shot prompting</strong> — Feed the compiled spec to an AI agent with a simple instruction: <em>"Implement this spec."</em> The agent produces code with higher first-pass accuracy. No iterative back-and-forth, no wasted tokens.</li>
-    <li><strong>Zero-dependency core</strong> — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, predictable compilation every time.</li>
+    <li><strong>Actions run in order.</strong> Steps inside a feature execute one after another. No parallelism, no reordering. The AI doesn't guess the sequence.</li>
+    <li><strong>Parameters are typed.</strong> Every input has a type — <code>string</code>, <code>integer</code>, <code>boolean</code>, <code>enum</code>, etc. The AI can't invent inputs you didn't declare.</li>
+    <li><strong>Constraints are explicit.</strong> <code>enforce</code> rules sit right under the actions they apply to. The AI knows what must be true before proceeding.</li>
+    <li><strong>One spec, one shot.</strong> Compile the spec, paste the prompt into your AI chat, and get a working implementation. No iterative Q&A, no wasted tokens.</li>
+    <li><strong>Zero dependencies.</strong> The compiler is a single Go binary with no third-party packages.</li>
   </ul>
-
-  <h3>Why not just use JSON / YAML?</h3>
-  <p>JSON's syntactic overhead makes manual authoring tedious. YAML's implicit typing can produce surprising results. More importantly, neither format captures <em>intent</em> — they describe structure, not behaviour. Butter sits in the middle: explicit enough to be unambiguous, minimal enough to be pleasant to write, and structured enough to guide an AI agent toward a deterministic outcome.</p>
-
 </section>
 
-<section id="installation">
+<section id="install">
   <h2>Installation</h2>
 
-  <h3>Prerequisites</h3>
-  <ul>
-    <li><a href="https://go.dev/dl/">Go</a> 1.21+ (for building from source)</li>
-    <li><a href="https://code.visualstudio.com/">VS Code</a> (for the extension)</li>
-  </ul>
-
   <h3>From Source</h3>
+  <p>Requires <a href="https://go.dev/dl/">Go</a> 1.21+.</p>
   <pre><code class="language-bash">git clone &lt;repository-url&gt; butter
 cd butter
 go build -o butter main.go
 sudo cp butter /usr/local/bin/</code></pre>
 
-  <h3>Install Script (Linux / macOS)</h3>
-  <p>The <code>install.sh</code> script handles both the compiler binary and the VS Code extension:</p>
-  <pre><code class="language-bash">chmod +x install.sh
-./install.sh            # install compiler + VS Code extension
-./install.sh update     # rebuild and reinstall both
+  <h3>Install Script</h3>
+  <pre><code class="language-bash"># Linux / macOS
+chmod +x install.sh
+./install.sh            # compiler + VS Code extension
 ./install.sh binary     # compiler only
-./install.sh extension  # VS Code extension only</code></pre>
-  <p>The binary is installed to <code>/usr/local/bin/butter</code> (falls back to <code>~/.local/bin/butter</code>). The script automatically checks if the install directory is in your <code>PATH</code>.</p>
+./install.sh extension  # extension only
 
-  <h3>Install Script (Windows PowerShell)</h3>
-  <pre><code class="language-bash">.\install.ps1                     # install compiler + VS Code extension
-.\install.ps1 -Command update      # rebuild and reinstall both
-.\install.ps1 -Command binary      # compiler only
-.\install.ps1 -Command extension   # VS Code extension only</code></pre>
+# Windows PowerShell
+.\install.ps1
+.\install.ps1 -Command binary
+.\install.ps1 -Command extension</code></pre>
 
-  <h3>VS Code Extension (Manual)</h3>
-  <pre><code class="language-bash">code --install-extension butter-extension.vsix</code></pre>
-  <p>Or open the <code>butter-extension/</code> directory in VS Code and press <kbd>F5</kbd>.</p>
-
-  <h3>Verify Installation</h3>
+  <h3>Verify</h3>
   <pre><code class="language-bash">butter --version
-# butter v1.3.0</code></pre>
+# butter v2.0.0</code></pre>
 </section>
 
-<section id="getting-started">
-  <h2>Getting Started</h2>
+<section id="quickstart">
+  <h2>Quick Start</h2>
 
-  <h3>Your first <code>.butter</code> file</h3>
   <p>Create a file called <code>hello.butter</code>:</p>
-  <pre><code class="language-butter"># My first Butter spec
-app HelloWorld
-description "A simple demonstration"
-version "1.0.0"
+  <pre><code class="language-butter">app HelloWorld
+  description "A simple demonstration"
+  version "1.0.0"
 
 feature Greet
   params
-    param Name
-      type string
-      required true
-      default "World"
-
+    name string
   actions
-    action "Say hello to the user"</code></pre>
+    "Say hello to the user"</code></pre>
 
-  <h3>Compile it</h3>
+  <p>Compile it:</p>
   <pre><code class="language-bash">butter compile hello.butter</code></pre>
-  <p>This produces <code>hello.json</code>:</p>
-  <pre><code>{
-  "app": "HelloWorld",
-  "description": "A simple demonstration",
-  "version": "1.0.0",
-  "features": [
-    {
-      "name": "Greet",
-      "params": [
-        {
-          "name": "Name",
-          "type": "string",
-          "required": true,
-          "default": "World"
-        }
-      ],
-      "actions": [
-        { "statement": "Say hello to the user" }
-      ]
-    }
-  ]
-}</code></pre>
 
+  <p>This produces <code>hello.prompt.md</code> — a Markdown prompt ready to paste into an AI chat:</p>
+  <pre><code># [SYSTEM SPEC] HelloWorld
+> **Version:** 1.0.0
+> **Description:** A simple demonstration
+
+## Feature: Greet
+
+### Params
+* `name` (string)
+
+### Execution Sequence
+**CRITICAL:** Execute the following steps strictly in order. Do not
+proceed to the next step until the current one is complete.
+
+1. **Say hello to the user**</code></pre>
+
+  <p>Need the specs in another format? Use the <code>-f</code> flag:</p>
+  <pre><code class="language-bash">butter compile hello.butter -f json   # produces hello.json
+butter compile hello.butter -f yaml   # produces hello.yaml</code></pre>
 </section>
 
 <section id="ai-workflow">
   <h2>AI Workflow</h2>
-  <p>Butter's true value emerges when you feed the compiled output to an AI agent. Here's the workflow:</p>
+  <p>This is where Butter pays off.</p>
   <ol>
-    <li><strong>Write</strong> a <code>.butter</code> spec declaring features, parameters, constraints, and sequential actions.</li>
-    <li><strong>Compile</strong> with <code>butter compile spec.butter</code> to produce <code>spec.json</code>.</li>
-    <li><strong>Feed</strong> the JSON to an AI agent with the instruction: <em>"Implement every feature in this specification. Actions are sequential — run them one after another. Respect all conditions, types, and constraints."</em></li>
-    <li><strong>Get higher first-pass accuracy</strong> — less hallucination, less token waste, less back-and-forth.</li>
+    <li>Write a <code>.butter</code> spec — declare features, parameters, and sequential actions.</li>
+    <li>Compile with <code>butter compile spec.butter</code> — this produces <code>spec.prompt.md</code>.</li>
+    <li>Paste the prompt into your AI chat with a short instruction:
+      <pre><code class="language-text">Implement every feature in this specification. Each feature's
+actions are sequential — run them in listed order. Respect
+all types and constraints.</code></pre>
+    </li>
+    <li>The AI builds it. First time, accurately. Less hallucination, less token waste.</li>
   </ol>
-  <p>The spec defines <em>what</em> to build. The AI figures out <em>how</em>. That's the division of labour.</p>
+  <p>The spec defines <em>what</em> to build. The AI figures out <em>how</em>.</p>
 </section>
 
-<section id="language-guide">
-  <h2>Language Guide</h2>
+<section id="syntax">
+  <h2>Syntax Overview</h2>
+
+  <h3>File Structure</h3>
+  <p>Every <code>.butter</code> file starts with an <code>app</code> declaration, followed by one or more <code>feature</code> or <code>endpoint</code> blocks. Blocks are defined by indentation — 2 or 4 spaces.</p>
+
+  <pre><code class="language-butter">app MyApp
+  description "What the app does"
+  version "1.0.0"
+  rules
+    "Use Node on the backend"
+    "Use React on the frontend"
+
+feature FeatureName
+  description "What this feature does"
+  version "1.0.0"
+  params
+    name type
+  actions
+    "Do something"
+
+endpoint EndpointName "route/path"
+  description "What this endpoint does"
+  method POST
+  params
+    name type
+  actions
+    "Do something"
+  returns
+    200 "OK"</code></pre>
 
   <h3>Keywords</h3>
   <table>
-    <thead>
-      <tr><th>Keyword</th><th>Context</th><th>Purpose</th></tr>
-    </thead>
+    <thead><tr><th>Keyword</th><th>Where</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><code>app</code> / <code>product</code></td><td>Top-level</td><td>Defines the namespace or structural root of the configuration</td></tr>
-      <tr><td><code>description</code></td><td>Top / Block</td><td>Provides context or documentation string metadata</td></tr>
-      <tr><td><code>version</code></td><td>Top / Block</td><td>Declares the version identifier for the application, feature, endpoint, or listener</td></tr>
-      <tr><td><code>feature</code></td><td>Block-level</td><td>Declares a sub-system module or discrete capability</td></tr>
-      <tr><td><code>endpoint</code></td><td>Block-level</td><td>Declares a synchronous HTTP transport endpoint with route, method, params, responses, actions, and returns</td></tr>
-      <tr><td><code>listener</code></td><td>Block-level</td><td>Declares an asynchronous message consumer with topic, params, actions, and message-state returns</td></tr>
-      <tr><td><code>topic</code></td><td>Block-level</td><td>Declares the message topic or queue consumed by a listener</td></tr>
-      <tr><td><code>params</code></td><td>Block-level</td><td>A container block specifying input parameter definitions</td></tr>
-      <tr><td><code>param</code></td><td>Item-level</td><td>Declares a discrete parameter variable name</td></tr>
-      <tr><td><code>actions</code></td><td>Block-level</td><td>A container block specifying execution routines</td></tr>
-      <tr><td><code>action</code></td><td>Item-level</td><td>Declares a logical execution string or mutation step</td></tr>
-      <tr><td><code>enforce</code></td><td>Item-level</td><td>Declares a condition that must hold for the action to succeed</td></tr>
-      <tr><td><code>responses</code></td><td>Block-level</td><td>A container block for response schema definitions inside an endpoint</td></tr>
-      <tr><td><code>response</code></td><td>Item-level</td><td>Declares a named response schema with typed fields</td></tr>
-      <tr><td><code>field</code></td><td>Item-level</td><td>Declares a typed field inside a response schema. Defaults to <code>string</code> if no <code>type</code> specified</td></tr>
-      <tr><td><code>returns</code></td><td>Block-level</td><td>A container block for return mapping definitions inside an endpoint</td></tr>
-      <tr><td><code>return</code></td><td>Item-level</td><td>Maps a status code to a response reference or string payload with optional condition</td></tr>
+      <tr><td><code>app</code></td><td>Top level</td><td>Root of the spec. Every file starts with this.</td></tr>
+      <tr><td><code>feature</code></td><td>Under app</td><td>A discrete capability — a module or sub-system.</td></tr>
+      <tr><td><code>endpoint</code></td><td>Under app</td><td>An HTTP API contract — route, method, params, responses, actions, returns.</td></tr>
+      <tr><td><code>description</code></td><td>Anywhere</td><td>A quoted context string.</td></tr>
+      <tr><td><code>version</code></td><td>Anywhere</td><td>A version identifier.</td></tr>
+      <tr><td><code>rules</code></td><td>Under app</td><td>App-wide constraints the AI must follow.</td></tr>
+      <tr><td><code>params</code></td><td>Under feature/endpoint</td><td>Typed input parameters.</td></tr>
+      <tr><td><code>actions</code></td><td>Under feature/endpoint</td><td>Sequential execution steps (quoted strings).</td></tr>
+      <tr><td><code>enforce</code></td><td>Under action</td><td>A constraint that must hold for the action to succeed.</td></tr>
+      <tr><td><code>responses</code></td><td>Under endpoint</td><td>Named response schemas with typed fields.</td></tr>
+      <tr><td><code>returns</code></td><td>Under endpoint</td><td>Maps HTTP status codes to responses or strings.</td></tr>
     </tbody>
   </table>
-
-  <h3>Parameter Fields</h3>
-  <table>
-    <thead>
-      <tr><th>Field</th><th>Purpose</th></tr>
-    </thead>
-    <tbody>
-      <tr><td><code>type</code></td><td>Dictates data constraints (<code>string</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>enum[...]</code>)</td></tr>
-      <tr><td><code>required</code></td><td>Boolean validation rule (<code>true</code> or <code>false</code>)</td></tr>
-      <tr><td><code>default</code></td><td>Explicit fallback value if the parameter is omitted</td></tr>
-      <tr><td><code>validate</code></td><td>Validation rule for numeric parameters (<code>int</code>, <code>float</code>). E.g. <code>&gt;10</code>, <code>!=5</code>, <code>=&lt;12</code>. Multiple lines allowed. Mutually exclusive with <code>length</code>.</td></tr>
-      <tr><td><code>length</code></td><td>Exact digit/numeric length constraint (e.g. <code>length 13</code>). Only on <code>int</code>/<code>float</code>. Mutually exclusive with <code>validate</code>.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Structure</h3>
-  <p>A Butter file has a single <code>app</code> declaration at the top level, which contains one or more <code>feature</code>, <code>endpoint</code>, and/or <code>listener</code> blocks. Each block can define parameters (<code>params</code> → <code>param</code>) and actions (<code>actions</code> → <code>action</code>). Endpoints additionally support HTTP <code>responses</code> and status-code <code>returns</code>; listeners declare a required <code>topic</code> and message-state returns (<code>ack</code>, <code>nack</code>, <code>retry</code>, or <code>dlq</code>).</p>
-
-  <pre><code class="language-butter">app MyApp
-description "..."
-version "..."
-
-feature FeatureA
-  description "..."
-  version "..."
-
-  params
-    param ParamName
-      type string
-      required true
-      default "value"
-
-  actions
-    action "Do something"
-    action "Do something else" | if "condition"
-      enforce "Precondition must be verified before proceeding"
-      enforce "Fallback mechanism must be available on failure"</code></pre>
-
-  <h3>Block Nesting &amp; Indentation</h3>
-  <p>Blocks are defined by indentation. The first level after <code>app</code> has no indent. Each nested block (<code>feature</code>, <code>params</code>, <code>param</code>, <code>actions</code>) increases the indent level. Use 2 or 4 spaces (or tabs — tabs are normalized to 4 spaces).</p>
-
-  <blockquote>
-    <p><strong>Important:</strong> Indentation must be consistent within a file. Mixing tabs and spaces will produce an error.</p>
-  </blockquote>
-
-  <h3>Conditionals</h3>
-  <p>Actions can have optional conditions attached via the pipe (<code>|</code>) character:</p>
-
-  <table>
-    <thead>
-      <tr><th>Keyword</th><th>Meaning</th></tr>
-    </thead>
-    <tbody>
-      <tr><td><code>if</code></td><td>Executes <strong>only if</strong> the predicate evaluates to <code>true</code>.</td></tr>
-      <tr><td><code>unless</code></td><td>Executes <strong>except when</strong> the predicate evaluates to <code>true</code> (inversion of <code>if not</code>).</td></tr>
-      <tr><td><code>when</code></td><td>Reactive or event-driven hook; triggers upon an external event or state shift.</td></tr>
-      <tr><td><code>while</code></td><td>Active polling or operational state persistence; the state condition must remain continuously active.</td></tr>
-    </tbody>
-  </table>
-
-  <pre><code class="language-butter">action "Process payment" | if "Amount > 0"
-action "Skip validation" | unless "TrustedSource == true"
-action "Notify admin" | when "ThresholdExceeded"
-action "Keep alive" | while "ConnectionActive"</code></pre>
 
   <h3>Types</h3>
   <table>
-    <thead>
-      <tr><th>Type</th><th>Example</th><th>Notes</th></tr>
-    </thead>
+    <thead><tr><th>Type</th><th>Example</th></tr></thead>
     <tbody>
-      <tr><td><code>string</code></td><td><code>type string</code></td><td>Default type if omitted.</td></tr>
-      <tr><td><code>bool</code></td><td><code>type bool</code></td><td>Boolean values (<code>true</code> or <code>false</code>).</td></tr>
-      <tr><td><code>int</code></td><td><code>type int</code></td><td>Integer values.</td></tr>
-      <tr><td><code>float</code></td><td><code>type float</code></td><td>Floating-point values.</td></tr>
-      <tr><td><code>enum["A", "B"]</code></td><td><code>type enum["CreditCard", "Crypto"]</code></td><td>Restricted set of string values.</td></tr>
+      <tr><td><code>string</code></td><td><code>name string</code></td></tr>
+      <tr><td><code>integer</code></td><td><code>count integer</code></td></tr>
+      <tr><td><code>double</code></td><td><code>amount double</code></td></tr>
+      <tr><td><code>boolean</code></td><td><code>active boolean</code></td></tr>
+      <tr><td><code>enum[...]</code></td><td><code>priority enum["low", "high"]</code></td></tr>
+      <tr><td><code>array[...]</code></td><td><code>tags array[string]</code></td></tr>
     </tbody>
   </table>
 
-  <h3>Implicit Defaults</h3>
-  <ul>
-    <li>A <code>param</code> without an explicit <code>type</code> defaults to <code>string</code>.</li>
-    <li>A <code>param</code> without an explicit <code>required</code> defaults to <code>false</code>.</li>
-  </ul>
-
   <h3>Comments</h3>
-  <p>Line comments start with <code>#</code>. They can appear at the start of a line or inline after a statement:</p>
   <pre><code class="language-butter"># This is a comment
-app MyApp  # inline comment also works</code></pre>
+app MyApp  # inline comments work too</code></pre>
+
+  <h3>Full Example</h3>
+  <p>See a complete todo app in the <a href="language.html">Language Guide</a>, or browse the spec files in the <code>specs/</code> directory.</p>
 </section>
-
-
-
-
-
-
-
-
-
-<section id="examples">
-  <h2>Examples</h2>
-
-  <h3>Minimal</h3>
-  <p>The simplest valid Butter file:</p>
-  <pre><code class="language-butter">app Minimal</code></pre>
-  <p>This compiles to:</p>
-  <pre><code>{
-  "app": "Minimal",
-  "features": []
-}</code></pre>
-
-  <h3>Todo App</h3>
-  <p>A complete todo application example:</p>
-
-  <pre><code class="language-butter"># TodoApp — A complete task management application
-# AI agents: implement every feature below. Each feature's actions are sequential
-# execution steps — run them one after another in the listed order. Respect all
-# conditions (if/unless/when/while), types, constraints, and enforce rules.
-app TodoApp
-description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled JSON and produces a complete working application with higher first-pass accuracy."
-version "1.0.0"
-
-feature CreateTask
-  description "Allows creation of new tasks with title, priority, and due date. AI agents: this feature's actions are sequential — validate, then assign ID, then timestamp, then notify/schedule based on conditions."
-  version "1.0.0"
-
-  params
-    param Title
-      type string
-      required true
-    param Description
-      type string
-      default ""
-    param Completed
-      type bool
-      default false
-    param Priority
-      type enum["low", "medium", "high", "urgent"]
-      default "medium"
-    param DueDate
-      type string
-
-  actions
-    action "Validate title is not empty"
-    action "Assign unique identifier to the new task"
-    action "Set creation timestamp to current time"
-    action "Set completed status to false"
-    action "Send notification to assigned user" | if "Priority == urgent"
-    action "Schedule reminder for due date" | when "DueDate is not empty"
-
-feature ListTasks
-  description "Retrieves and filters tasks based on various criteria; each task provides an Edit button that opens a modal for update and delete operations. AI agents: query first, then sort, then validate limits, then limit, then paginate — sequential, never parallel."
-  version "1.0.0"
-
-  params
-    param StatusFilter
-      type enum["all", "pending", "completed", "archived"]
-      default "all"
-    param SortBy
-      type enum["created", "priority", "due_date", "title"]
-      default "created"
-    param Limit
-      type int
-      default 50
-      validate ">=1"
-      validate "<=200"
-
-  actions
-    action "Query task repository with specified filters"
-    action "Sort results according to SortBy parameter"
-    action "Limit results to specified count"
-    action "Apply pagination metadata to response"
-
-feature UpdateTask
-  description "Modifies existing task attributes via a modal form opened from the task list. AI agents: look up, pre-fill form, merge changes, timestamp, reject-archived check — each step is one discrete operation."
-  version "1.0.0"
-  # When rendering the update form, pre-fill each field with the task's current
-  # values so the user can see what they are changing before modifying them.
-
-  params
-    param TaskID
-      type string
-      required true
-    param Title
-      type string
-    param Status
-      type enum["pending", "completed", "archived"]
-    param Priority
-      type enum["low", "medium", "high", "urgent"]
-
-  actions
-    action "Look up task by TaskID"
-    action "Populate form fields with current task values for reference"
-    action "Merge provided fields into existing task record"
-    action "Set last-modified timestamp to current time"
-    action "Reject update if task is archived" | unless "Status != archived"
-
-feature DeleteTask
-  description "Removes a task from the system permanently via a confirmation modal. AI agents: verify existence, verify confirmation matches title, remove, broadcast — strictly sequential."
-  version "1.0.0"
-
-  params
-    param TaskID
-      type string
-      required true
-    param Confirmation
-      type string
-      required true
-
-  actions
-    action "Verify TaskID exists in repository"
-    action "Verify Confirmation matches task title"
-    action "Remove task record from persistent storage"
-    action "Broadcast deletion event to connected clients"</code></pre>
-
-  <p>Compile: <code>butter compile todo.butter</code></p>
-  <p>See the working app: <a href="todo.html"><code>todo.html</code></a> — a complete single-page application built from this spec, with each feature's actions running as sequential steps. Update and Delete are accessed via a modal form by clicking <strong>Edit</strong> on any task in the list.</p>
-  <p>Visual hierarchy: <a href="todo-viz.html"><code>todo-viz.html</code></a> — an interactive tree diagram of the TodoApp spec generated by the <code>htmltree</code> output extension. The tree shows the app root, its four features, all params, and numbered action statements with conditions, connected by SVG bezier curves. Zoom and pan to explore.</p>
-
-  <h3>Using the JSON output with AI</h3>
-  <p>This is the heart of Butter's philosophy. Feed the compiled JSON to an AI agent with the instruction to implement every feature. The actions within each feature are sequential execution steps — they must run in order, one after another, not in parallel. The conditions (<code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code>) decide which actions are relevant, so the AI never wastes tokens on irrelevant paths.</p>
-
-  <pre><code class="language-text">Using this JSON specification, build the complete application. Each feature's
-actions are sequential execution steps — they must be implemented strictly one
-after the other in the listed order, never in parallel or reordered.
-
-```json
-{
-  "app": "TodoApp",
-  "description": "A full-featured todo application with task management capabilities",
-  "features": [
-    {
-      "name": "CreateTask",
-      "actions": [
-        { "statement": "Validate title is not empty" },
-        { "statement": "Assign unique identifier to the new task" },
-        { "statement": "Set creation timestamp to current time" },
-        {
-          "statement": "Send notification to assigned user",
-          "condition": { "type": "if", "expression": "Priority == urgent" }
-        },
-        {
-          "statement": "Schedule reminder for due date",
-          "condition": { "type": "when", "expression": "DueDate is not empty" }
-        }
-      ]
-    }
-  ]
-}
-```</code></pre>
-</section>
-
-
 
 <footer class="footer">
   <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>

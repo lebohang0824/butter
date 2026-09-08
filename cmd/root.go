@@ -25,7 +25,7 @@ func formatList() string {
 	return strings.Join(output.Names(), ", ")
 }
 
-const Version = "1.15.0"
+const Version = "2.0.0"
 
 var outputFile string
 var outputFormat string
@@ -38,7 +38,7 @@ var excludeFilter string
 var rootCmd = &cobra.Command{
 	Use:   "butter",
 	Short: "Butter is a high-performance, indentation-aware specification compiler.",
-	Long:  `A clean compiler framework that turns minimalist indentation-based .butter specifications into beautifully formatted JSON or YAML structures.`,
+	Long:  `A clean compiler framework that turns minimalist indentation-based .butter specifications into structured prompts and data files.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if showVersion {
 			fmt.Printf("butter v%s\n", Version)
@@ -50,8 +50,8 @@ var rootCmd = &cobra.Command{
 
 var compileCmd = &cobra.Command{
 	Use:   "compile [input file]",
-	Short: "Compile a .butter specification file to JSON (default) or YAML",
-	Long:  `Compile a .butter file to JSON or YAML. Use --check to validate syntax without generating output.`,
+	Short: "Compile a .butter specification file to a prompt (default) or other formats",
+	Long:  `Compile a .butter file to a Markdown prompt (default) or other formats such as JSON or YAML. Use --check to validate syntax without generating output.`,
 	Args:  cobra.ExactArgs(1),
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -174,8 +174,8 @@ var fmtCmd = &cobra.Command{
 
 func init() {
 	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Print the version number")
-	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + .json for json, .yaml for yaml)")
-	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "json", fmt.Sprintf("Output format (default: json). Supported: %s", formatList()))
+	compileCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Specify custom path for output file destination (defaults to input name + format extension)")
+	compileCmd.Flags().StringVarP(&outputFormat, "format", "f", "prompt", fmt.Sprintf("Output format (default: prompt). Supported: %s", formatList()))
 	compileCmd.Flags().BoolVar(&checkMode, "check", false, "Check syntax without generating output")
 	compileCmd.Flags().StringVar(&onlyFilter, "only", "", "Compile only specific blocks (e.g. endpoint:ProcessOrder,feature:ApplyCoupon)")
 	compileCmd.Flags().StringVar(&excludeFilter, "exclude", "", "Exclude specific blocks from compilation (e.g. endpoint:HealthCheck)")

@@ -86,7 +86,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="app-header">
   <h1>TodoApp</h1>
   <p>A full-featured todo application with task management capabilities</p>
-  <div class="version">v1.0.0 &mdash; An AI agent built this entire application from the <code>todo.butter</code> spec in a single shot — higher first-pass accuracy, zero back-and-forth</div>
+  <div class="version">v2.0.0 &mdash; An AI agent built this entire application from the <code>todo.butter</code> spec in a single shot — higher first-pass accuracy, zero back-and-forth</div>
 </div>
 
 <div class="container">
@@ -378,8 +378,8 @@ async function executeCreateTask(params) {
     {
       label: 'Validate title is not empty',
       action: (p) => {
-        if (!p.Title || !p.Title.trim()) throw new Error('Title is required');
-        return { msg: `Title "${p.Title}" is valid` };
+        if (!p.title || !p.title.trim()) throw new Error('Title is required');
+        return { msg: `Title "${p.title}" is valid` };
       }
     },
     {
@@ -400,17 +400,17 @@ async function executeCreateTask(params) {
     },
     {
       label: 'Send notification to assigned user',
-      condition: { type: 'if', expr: 'Priority == urgent', display: 'if "Priority == urgent"' },
+      condition: { type: 'if', expr: 'priority == urgent', display: 'if "priority == urgent"' },
       action: (p) => {
-        showToast('URGENT: Notification sent for task "' + p.Title + '"');
+        showToast('URGENT: Notification sent for task "' + p.title + '"');
         return { msg: 'Urgent notification dispatched' };
       }
     },
     {
       label: 'Schedule reminder for due date',
-      condition: { type: 'when', expr: 'DueDate is not empty', display: 'when "DueDate is not empty"' },
+      condition: { type: 'when', expr: 'due_date is not empty', display: 'when "due_date is not empty"' },
       action: (p) => {
-        return { msg: `Reminder scheduled for ${p.DueDate}` };
+        return { msg: `Reminder scheduled for ${p.due_date}` };
       }
     }
   ];
@@ -422,16 +422,16 @@ async function executeCreateTask(params) {
     const tasks = loadTasks();
     tasks.push({
       id: params._id,
-      title: params.Title,
-      description: params.Description || '',
-      priority: params.Priority || 'medium',
-      dueDate: params.DueDate || '',
+      title: params.title,
+      description: params.description || '',
+      priority: params.priority || 'medium',
+      dueDate: params.due_date || '',
       status: 'pending',
       createdAt: params._createdAt,
       updatedAt: params._createdAt
     });
     saveTasks(tasks);
-    showToast(`Task "${params.Title}" created`);
+    showToast(`Task "${params.title}" created`);
     document.getElementById('createTitle').value = '';
     document.getElementById('createDesc').value = '';
     document.getElementById('createPriority').value = 'medium';
@@ -442,10 +442,10 @@ async function executeCreateTask(params) {
 document.getElementById('createBtn').addEventListener('click', async function () {
   this.disabled = true;
   await executeCreateTask({
-    Title: document.getElementById('createTitle').value.trim(),
-    Description: document.getElementById('createDesc').value.trim(),
-    Priority: document.getElementById('createPriority').value,
-    DueDate: document.getElementById('createDueDate').value
+    title: document.getElementById('createTitle').value.trim(),
+    description: document.getElementById('createDesc').value.trim(),
+    priority: document.getElementById('createPriority').value,
+    due_date: document.getElementById('createDueDate').value
   });
   this.disabled = false;
 });
@@ -459,17 +459,17 @@ async function executeListTasks(params) {
       label: 'Query task repository with specified filters',
       action: (p) => {
         let tasks = loadTasks();
-        if (p.StatusFilter && p.StatusFilter !== 'all') {
-          tasks = tasks.filter(t => t.status === p.StatusFilter);
+        if (p.status_filter && p.status_filter !== 'all') {
+          tasks = tasks.filter(t => t.status === p.status_filter);
         }
         p._filtered = tasks;
         return { msg: `Found ${tasks.length} task(s)`, data: tasks };
       }
     },
     {
-      label: 'Sort results according to SortBy parameter',
+      label: 'Sort results according to sort_by parameter',
       action: (p) => {
-        const sort = p.SortBy || 'created';
+        const sort = p.sort_by || 'created';
         const tasks = p._filtered;
         tasks.sort((a, b) => {
           switch (sort) {
@@ -486,22 +486,9 @@ async function executeListTasks(params) {
       }
     },
     {
-      label: 'Validate Limit parameter',
-      action: (p) => {
-        const val = parseInt(p.Limit);
-        if (isNaN(val)) throw new Error('Limit must be a number');
-        const rules = [">=1", "<=200"];
-        for (const rule of rules) {
-          const ok = validateNumber(val, rule);
-          if (!ok) throw new Error(`Limit ${val} fails validation: ${rule}`);
-        }
-        return { msg: `Limit ${val} passes all validation rules` };
-      }
-    },
-    {
       label: 'Limit results to specified count',
       action: (p) => {
-        const limit = Math.min(Math.max(parseInt(p.Limit) || 50, 1), 200);
+        const limit = Math.min(Math.max(parseInt(p.limit) || 50, 1), 200);
         p._filtered = p._filtered.slice(0, limit);
         return { msg: `Limited to ${limit} result(s)` };
       }
@@ -565,9 +552,9 @@ function renderTaskList(tasks) {
 document.getElementById('listBtn').addEventListener('click', async function () {
   this.disabled = true;
   await executeListTasks({
-    StatusFilter: document.getElementById('listFilter').value,
-    SortBy: document.getElementById('listSort').value,
-    Limit: document.getElementById('listLimit').value
+    status_filter: document.getElementById('listFilter').value,
+    sort_by: document.getElementById('listSort').value,
+    limit: document.getElementById('listLimit').value
   });
   this.disabled = false;
 });
@@ -611,10 +598,10 @@ document.addEventListener('keydown', function (e) {
 async function executeUpdateTask(params) {
   const steps = [
     {
-      label: 'Look up task by TaskID',
+      label: 'Look up task by task_id',
       action: (p) => {
         const tasks = loadTasks();
-        const task = tasks.find(t => t.id === p.TaskID);
+        const task = tasks.find(t => t.id === p.task_id);
         if (!task) throw new Error(`Task not found`);
         p._task = task;
         return { msg: `Found "${task.title}"` };
@@ -630,10 +617,10 @@ async function executeUpdateTask(params) {
       label: 'Merge provided fields into existing task record',
       action: (p) => {
         const task = p._task;
-        if (p.Title && p.Title.trim()) task.title = p.Title.trim();
-        if (p.Status) task.status = p.Status;
-        if (p.Priority) task.priority = p.Priority;
-        return { msg: `Merged ${[p.Title && 'title', p.Status && 'status', p.Priority && 'priority'].filter(Boolean).join(', ')}` };
+        if (p.title && p.title.trim()) task.title = p.title.trim();
+        if (p.status) task.status = p.status;
+        if (p.priority) task.priority = p.priority;
+        return { msg: `Merged ${[p.title && 'title', p.status && 'status', p.priority && 'priority'].filter(Boolean).join(', ')}` };
       }
     },
     {
@@ -646,7 +633,7 @@ async function executeUpdateTask(params) {
     },
     {
       label: 'Reject update if task is archived',
-      condition: { type: 'unless', expr: 'Status != archived', display: 'unless "Status != archived"' },
+      condition: { type: 'unless', expr: 'status != archived', display: 'unless "status != archived"' },
       action: (p) => {
         if (p._task.status === 'archived') throw new Error('Cannot modify an archived task');
         return { msg: 'Task is not archived — update allowed' };
@@ -657,7 +644,7 @@ async function executeUpdateTask(params) {
   const results = await runActions(steps, 'updateLog', params);
   if (results.every(r => r.status === 'done' || r.status === 'skipped')) {
     const tasks = loadTasks();
-    const idx = tasks.findIndex(t => t.id === params.TaskID);
+    const idx = tasks.findIndex(t => t.id === params.task_id);
     if (idx !== -1) {
       tasks[idx] = params._task;
       saveTasks(tasks);
@@ -674,10 +661,10 @@ document.getElementById('updateBtn').addEventListener('click', async function ()
   if (!editingTaskId) return;
   this.disabled = true;
   await executeUpdateTask({
-    TaskID: editingTaskId,
-    Title: document.getElementById('updateTitle').value.trim(),
-    Status: document.getElementById('updateStatus').value,
-    Priority: document.getElementById('updatePriority').value
+    task_id: editingTaskId,
+    title: document.getElementById('updateTitle').value.trim(),
+    status: document.getElementById('updateStatus').value,
+    priority: document.getElementById('updatePriority').value
   });
   this.disabled = false;
 });
@@ -686,29 +673,29 @@ document.getElementById('updateBtn').addEventListener('click', async function ()
 async function executeDeleteTask(params) {
   const steps = [
     {
-      label: 'Verify TaskID exists in repository',
+      label: 'Verify task_id exists in repository',
       action: (p) => {
         const tasks = loadTasks();
-        const task = tasks.find(t => t.id === p.TaskID);
+        const task = tasks.find(t => t.id === p.task_id);
         if (!task) throw new Error(`Task not found`);
         p._task = task;
         return { msg: `Found "${task.title}"` };
       }
     },
     {
-      label: 'Verify Confirmation matches task title',
+      label: 'Verify confirmation matches task title',
       action: (p) => {
-        if (p.Confirmation.trim() !== p._task.title) {
-          throw new Error(`Confirmation does not match title "${p._task.title}"`);
+        if (p.confirmation.trim() !== p._task.title) {
+          throw new Error(`confirmation does not match title "${p._task.title}"`);
         }
-        return { msg: 'Confirmation matches' };
+        return { msg: 'confirmation matches' };
       }
     },
     {
       label: 'Remove task record from persistent storage',
       action: (p) => {
         const tasks = loadTasks();
-        const filtered = tasks.filter(t => t.id !== p.TaskID);
+        const filtered = tasks.filter(t => t.id !== p.task_id);
         if (filtered.length === tasks.length) throw new Error('Failed to remove task');
         saveTasks(filtered);
         return { msg: `Removed "${p._task.title}"` };
@@ -734,8 +721,8 @@ document.getElementById('deleteBtn').addEventListener('click', async function ()
   if (!editingTaskId) return;
   this.disabled = true;
   await executeDeleteTask({
-    TaskID: editingTaskId,
-    Confirmation: document.getElementById('deleteConfirm').value.trim()
+    task_id: editingTaskId,
+    confirmation: document.getElementById('deleteConfirm').value.trim()
   });
   this.disabled = false;
 });
@@ -755,24 +742,6 @@ function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
-}
-
-function validateNumber(value, rule) {
-  const m = rule.match(/^([><]=?|!=|={1,2})\s*([0-9.]+)$/);
-  if (!m) return true;
-  const op = m[1];
-  const expected = parseFloat(m[2]);
-  switch (op) {
-    case '>':  return value > expected;
-    case '<':  return value < expected;
-    case '>=': return value >= expected;
-    case '<=': return value <= expected;
-    case '=<': return value <= expected;
-    case '==': return value === expected;
-    case '=':  return value === expected;
-    case '!=': return value !== expected;
-    default:   return true;
-  }
 }
 
 function showToast(msg, type) {

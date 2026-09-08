@@ -5,37 +5,31 @@ import (
 	"strings"
 )
 
-var keywordValueRe = regexp.MustCompile(`^\s*(app|product|description|version|feature|endpoint|listener|param|type|required|default|validate|length|route|method|topic|response|field|return)\s+\S`)
+var keywordValueRe = regexp.MustCompile(`^\s*(app|description|version|feature|endpoint|method)\s+\S`)
 
-var validateSpaceRe = regexp.MustCompile(`^(\s*validate\s+")([><=!]+)\s+(\d+(?:\.\d+)?)"`)
+var blockKeywordRe = regexp.MustCompile(`^\s*(actions|params|responses|returns|rules)\s*$`)
 
-var lengthQuoteRe = regexp.MustCompile(`^(\s*length\s+)"(\d+)"`)
+var commentRe = regexp.MustCompile(`^\s*(#|//)`)
 
-var blockKeywordRe = regexp.MustCompile(`^\s*(actions|params|responses|returns)\s*$`)
-
-var commentRe = regexp.MustCompile(`^\s*#`)
+var rootBlockRe = regexp.MustCompile(`^\s*(app|feature|endpoint)\s+\S`)
 
 func Format(content []byte) ([]byte, error) {
 	lines := strings.Split(string(content), "\n")
+	lines = normalizeIndentation(lines)
 	lines = pass1(lines)
 	lines = pass2(lines)
-	lines = normalizeValidateSpaces(lines)
-	lines = normalizeLengthQuotes(lines)
 	return []byte(strings.Join(lines, "\n")), nil
 }
 
-func normalizeValidateSpaces(lines []string) []string {
+func normalizeIndentation(lines []string) []string {
 	result := make([]string, len(lines))
 	for i, line := range lines {
-		result[i] = validateSpaceRe.ReplaceAllString(line, `${1}${2}${3}"`)
-	}
-	return result
-}
-
-func normalizeLengthQuotes(lines []string) []string {
-	result := make([]string, len(lines))
-	for i, line := range lines {
-		result[i] = lengthQuoteRe.ReplaceAllString(line, `${1}${2}`)
+		indent := 0
+		for indent < len(line) && (line[indent] == ' ' || line[indent] == '\t') {
+			indent++
+		}
+		prefix := strings.Repeat(" ", strings.Count(line[:indent], " ")+2*strings.Count(line[:indent], "\t"))
+		result[i] = prefix + line[indent:]
 	}
 	return result
 }
@@ -52,8 +46,8 @@ func startsWithEndpoint(s string) bool {
 	return strings.HasPrefix(strings.TrimSpace(s), "endpoint ")
 }
 
-func startsWithListener(s string) bool {
-	return strings.HasPrefix(strings.TrimSpace(s), "listener ")
+func startsWithApp(s string) bool {
+	return strings.HasPrefix(strings.TrimSpace(s), "app ")
 }
 
 func pass1(lines []string) []string {
@@ -79,7 +73,7 @@ func pass2(lines []string) []string {
 				if isEmpty(prev) || commentRe.MatchString(prev) {
 					continue
 				}
-				if startsWithFeature(prev) || startsWithEndpoint(prev) || startsWithListener(prev) {
+				if startsWithFeature(prev) || startsWithEndpoint(prev) {
 					rightBelowFeature = true
 				}
 				break
@@ -90,7 +84,11 @@ func pass2(lines []string) []string {
 					result = append(result, "")
 				}
 			}
-		} else if startsWithFeature(line) || startsWithEndpoint(line) || startsWithListener(line) {
+		} else if startsWithFeature(line) || startsWithEndpoint(line) {
+			if len(result) > 0 && !isEmpty(result[len(result)-1]) {
+				result = append(result, "")
+			}
+		} else if startsWithApp(line) {
 			if len(result) > 0 && !isEmpty(result[len(result)-1]) {
 				result = append(result, "")
 			}

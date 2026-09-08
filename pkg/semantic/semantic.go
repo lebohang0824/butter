@@ -3,13 +3,29 @@ package semantic
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"butter/pkg/ast"
 )
 
 var enumTypeRe = regexp.MustCompile(`^enum\[(.+)\]$`)
+
+var validTypes = map[string]bool{
+	"string":  true,
+	"integer": true,
+	"double":  true,
+	"boolean": true,
+	"enum":    true,
+	"array":   true,
+}
+
+var validMethods = map[string]bool{
+	"POST":   true,
+	"GET":    true,
+	"PUT":    true,
+	"DELETE": true,
+	"PATCH":  true,
+}
 
 type Analyzer struct {
 	app   *ast.AppSpec
@@ -20,21 +36,18 @@ func Analyze(app *ast.AppSpec) []Diagnostic {
 	a := &Analyzer{app: app}
 	a.checkDuplicateFeatures()
 	a.checkDuplicateParams()
-	a.checkDefaultTypes()
-	a.checkEnumDefaults()
-	a.checkRequiredDefault()
+	a.checkParamTypes()
+	a.checkEnumValues()
 	a.checkDuplicateEndpoints()
 	a.checkDuplicateEndpointParams()
 	a.checkEndpointResponseRefs()
-	a.checkEndpointRequiredDefault()
 	a.checkEndpointMissingRoute()
 	a.checkEndpointMissingMethod()
-	a.checkEndpointDefaultTypes()
-	a.checkEndpointEnumDefaults()
-	a.checkDuplicateListeners()
-	a.checkDuplicateListenerParams()
-	a.checkListenerMissingTopic()
-	a.checkListenerReturnStates()
+	a.checkEndpointMethod()
+	a.checkEndpointStatusCodes()
+	a.checkEndpointParamTypes()
+	a.checkEndpointEnumValues()
+	a.checkEndpointResponseFieldTypes()
 	return a.diags
 }
 
@@ -78,74 +91,32 @@ func (a *Analyzer) checkDuplicateParams() {
 	}
 }
 
-func (a *Analyzer) checkDefaultTypes() {
+func (a *Analyzer) checkParamTypes() {
 	for _, f := range a.app.Features {
 		for _, p := range f.Params {
-			if p.Default == nil {
-				continue
+			base := p.Type
+			if idx := strings.Index(base, "["); idx >= 0 {
+				base = base[:idx]
 			}
-			defaultStr := fmt.Sprintf("%v", p.Default)
-
-			switch p.Type {
-			case "int":
-				if _, err := strconv.Atoi(defaultStr); err != nil {
-					a.addError(p.Line, "parameter %q in feature %q has type int but default value %q is not an integer", p.Name, f.Name, defaultStr)
-				}
-			case "float":
-				if _, err := strconv.ParseFloat(defaultStr, 64); err != nil {
-					a.addError(p.Line, "parameter %q in feature %q has type float but default value %q is not a number", p.Name, f.Name, defaultStr)
-				}
-			case "bool":
-				if defaultStr != "true" && defaultStr != "false" {
-					a.addError(p.Line, "parameter %q in feature %q has type bool but default value %q is not true or false", p.Name, f.Name, defaultStr)
-				}
+			if !validTypes[base] {
+				a.addError(p.Line, "parameter %q in feature %q has unknown type %q — expected string, integer, double, boolean, enum[...], or array[...]", p.Name, f.Name, p.Type)
 			}
 		}
 	}
 }
 
-func extractEnumValues(typeStr string) []string {
-	matches := enumTypeRe.FindStringSubmatch(typeStr)
-	if matches == nil {
-		return nil
-	}
-	parts := strings.Split(matches[1], ",")
-	values := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		p = strings.Trim(p, `"`)
-		values = append(values, p)
-	}
-	return values
-}
-
-func (a *Analyzer) checkEnumDefaults() {
+func (a *Analyzer) checkEnumValues() {
 	for _, f := range a.app.Features {
 		for _, p := range f.Params {
-			values := extractEnumValues(p.Type)
-			if values == nil || p.Default == nil {
-				continue
-			}
-			defaultStr := fmt.Sprintf("%v", p.Default)
-			found := false
-			for _, v := range values {
-				if v == defaultStr {
-					found = true
-					break
+			if values := extractEnumValues(p.Type); values != nil {
+				seen := make(map[string]int)
+				for i, v := range values {
+					if prev, ok := seen[v]; ok {
+						a.addError(p.Line, "enum value %q in parameter %q of feature %q duplicates index %d", v, p.Name, f.Name, prev)
+					} else {
+						seen[v] = i
+					}
 				}
-			}
-			if !found {
-				a.addError(p.Line, "default value %q for parameter %q in feature %q is not in the enum list %v", defaultStr, p.Name, f.Name, values)
-			}
-		}
-	}
-}
-
-func (a *Analyzer) checkRequiredDefault() {
-	for _, f := range a.app.Features {
-		for _, p := range f.Params {
-			if p.Required && p.Default != nil {
-				a.addWarning(p.Line, "parameter %q in feature %q is required and has a default value — the default is redundant", p.Name, f.Name)
 			}
 		}
 	}
@@ -186,17 +157,7 @@ func (a *Analyzer) checkEndpointResponseRefs() {
 				continue
 			}
 			if !responseNames[ret.Payload] {
-				a.addError(ret.Line, "undefined response %q referenced in return statement of endpoint %q", ret.Payload, ep.Name)
-			}
-		}
-	}
-}
-
-func (a *Analyzer) checkEndpointRequiredDefault() {
-	for _, ep := range a.app.Endpoints {
-		for _, p := range ep.Params {
-			if p.Required && p.Default != nil {
-				a.addWarning(p.Line, "parameter %q in endpoint %q is required and has a default value — the default is redundant", p.Name, ep.Name)
+				a.addError(ret.Line, "undefined response %q referenced in returns of endpoint %q", ret.Payload, ep.Name)
 			}
 		}
 	}
@@ -218,97 +179,81 @@ func (a *Analyzer) checkEndpointMissingMethod() {
 	}
 }
 
-func (a *Analyzer) checkEndpointDefaultTypes() {
+func (a *Analyzer) checkEndpointMethod() {
+	for _, ep := range a.app.Endpoints {
+		if ep.Method != "" && !validMethods[ep.Method] {
+			a.addError(ep.Line, "endpoint %q has invalid method %q — expected POST, GET, PUT, DELETE, or PATCH", ep.Name, ep.Method)
+		}
+	}
+}
+
+func (a *Analyzer) checkEndpointStatusCodes() {
+	for _, ep := range a.app.Endpoints {
+		for _, ret := range ep.Returns {
+			if ret.StatusCode < 100 || ret.StatusCode > 599 {
+				a.addError(ret.Line, "endpoint %q has invalid HTTP status code %d — must be in the range 100-599", ep.Name, ret.StatusCode)
+			}
+		}
+	}
+}
+
+func (a *Analyzer) checkEndpointParamTypes() {
 	for _, ep := range a.app.Endpoints {
 		for _, p := range ep.Params {
-			if p.Default == nil {
-				continue
+			base := p.Type
+			if idx := strings.Index(base, "["); idx >= 0 {
+				base = base[:idx]
 			}
-			defaultStr := fmt.Sprintf("%v", p.Default)
-
-			switch p.Type {
-			case "int":
-				if _, err := strconv.Atoi(defaultStr); err != nil {
-					a.addError(p.Line, "parameter %q in endpoint %q has type int but default value %q is not an integer", p.Name, ep.Name, defaultStr)
-				}
-			case "float":
-				if _, err := strconv.ParseFloat(defaultStr, 64); err != nil {
-					a.addError(p.Line, "parameter %q in endpoint %q has type float but default value %q is not a number", p.Name, ep.Name, defaultStr)
-				}
-			case "bool":
-				if defaultStr != "true" && defaultStr != "false" {
-					a.addError(p.Line, "parameter %q in endpoint %q has type bool but default value %q is not true or false", p.Name, ep.Name, defaultStr)
-				}
+			if !validTypes[base] {
+				a.addError(p.Line, "parameter %q in endpoint %q has unknown type %q — expected string, integer, double, boolean, enum[...], or array[...]", p.Name, ep.Name, p.Type)
 			}
 		}
 	}
 }
 
-func (a *Analyzer) checkEndpointEnumDefaults() {
+func (a *Analyzer) checkEndpointEnumValues() {
 	for _, ep := range a.app.Endpoints {
 		for _, p := range ep.Params {
-			values := extractEnumValues(p.Type)
-			if values == nil || p.Default == nil {
-				continue
-			}
-			defaultStr := fmt.Sprintf("%v", p.Default)
-			found := false
-			for _, v := range values {
-				if v == defaultStr {
-					found = true
-					break
+			if values := extractEnumValues(p.Type); values != nil {
+				seen := make(map[string]int)
+				for i, v := range values {
+					if prev, ok := seen[v]; ok {
+						a.addError(p.Line, "enum value %q in parameter %q of endpoint %q duplicates index %d", v, p.Name, ep.Name, prev)
+					} else {
+						seen[v] = i
+					}
 				}
 			}
-			if !found {
-				a.addError(p.Line, "default value %q for parameter %q in endpoint %q is not in the enum list %v", defaultStr, p.Name, ep.Name, values)
-			}
 		}
 	}
 }
 
-func (a *Analyzer) checkDuplicateListeners() {
-	seen := make(map[string]int)
-	for _, l := range a.app.Listeners {
-		if prevLine, ok := seen[l.Name]; ok {
-			a.addError(l.Line, "duplicate listener %q (first defined at line %d)", l.Name, prevLine)
-		} else {
-			seen[l.Name] = l.Line
-		}
+func extractEnumValues(typeStr string) []string {
+	matches := enumTypeRe.FindStringSubmatch(typeStr)
+	if matches == nil {
+		return nil
 	}
+	parts := strings.Split(matches[1], ",")
+	values := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		p = strings.Trim(p, `"`)
+		values = append(values, p)
+	}
+	return values
 }
 
-func (a *Analyzer) checkDuplicateListenerParams() {
-	for _, l := range a.app.Listeners {
-		seen := make(map[string]int)
-		for _, p := range l.Params {
-			if prevLine, ok := seen[p.Name]; ok {
-				a.addError(p.Line, "duplicate parameter %q in listener %q (first defined at line %d)", p.Name, l.Name, prevLine)
-			} else {
-				seen[p.Name] = p.Line
-			}
-		}
-	}
-}
-
-func (a *Analyzer) checkListenerMissingTopic() {
-	for _, l := range a.app.Listeners {
-		if l.Topic == "" {
-			a.addError(l.Line, "listener %q is missing required 'topic'", l.Name)
-		}
-	}
-}
-
-func (a *Analyzer) checkListenerReturnStates() {
-	validStates := map[string]bool{
-		"ack":   true,
-		"nack":  true,
-		"retry": true,
-		"dlq":   true,
-	}
-	for _, l := range a.app.Listeners {
-		for _, ret := range l.Returns {
-			if !validStates[ret.State] {
-				a.addError(ret.Line, "invalid message state %q in listener %q — expected 'ack', 'nack', 'retry', or 'dlq'", ret.State, l.Name)
+func (a *Analyzer) checkEndpointResponseFieldTypes() {
+	for _, ep := range a.app.Endpoints {
+		for _, r := range ep.Responses {
+			for _, f := range r.Fields {
+				base := f.Type
+				if idx := strings.Index(base, "["); idx >= 0 {
+					base = base[:idx]
+				}
+				if !validTypes[base] {
+					a.addError(f.Line, "field %q in response %q of endpoint %q has unknown type %q", f.Name, r.Name, ep.Name, f.Type)
+				}
 			}
 		}
 	}

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Guide — Butter</title>
+<meta name="description" content="Complete language reference for Butter — features, endpoints, parameters, actions, enforce rules, and response schemas.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
+    <div class="version">v2.0.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#features">Features</a>
+    <a href="#params">Params</a>
+    <a href="#actions">Actions</a>
+    <a href="#enforce">Enforce</a>
+    <a href="#endpoints">Endpoints</a>
+    <a href="#responses">Responses</a>
+    <a href="#returns">Returns</a>
+    <a href="#examples">Examples</a>
+    <a href="cli-reference.html">CLI Reference</a>
+    <a href="extension.html">VS Code Extension</a>
+    <a href="changelog.html">Changelog</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<section id="features">
+  <div class="hero">
+    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+    <h1>Language Guide</h1>
+    <p class="subtitle">Everything you need to write <code>.butter</code> specs — from basic features to HTTP endpoints.</p>
+  </div>
+
+  <h2>Features</h2>
+  <p>A <code>feature</code> declares something your system should do. It describes a capability — what inputs it takes and what steps to follow.</p>
+  <pre><code class="language-butter">feature ProcessPayment
+  description "Handles payment transactions"
+  version "1.0.0"
+  params
+    order_id string
+    amount double
+    payment_method enum["credit_card", "crypto", "bank_transfer"]
+  actions
+    "Validate routing balance metrics"
+    "Apply cryptocurrency transaction surcharge"
+    "Flag transaction for manual risk review"</code></pre>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Each feature name must be unique within the spec.</li>
+    <li>Valid names: letters, digits, underscores, hyphens.</li>
+    <li>Everything under a feature must be indented.</li>
+    <li>Valid keywords inside a feature: <code>description</code>, <code>version</code>, <code>params</code>, <code>actions</code>.</li>
+    <li>A feature can be empty — zero params and zero actions is valid.</li>
+  </ul>
+</section>
+
+<section id="params">
+  <h2>Parameters</h2>
+  <p>Params declare the inputs a feature or endpoint accepts. Each parameter is a name followed by a type, on its own line.</p>
+  <pre><code class="language-butter">params
+  title string
+  priority enum["low", "medium", "high"]
+  limit integer</code></pre>
+
+  <h3>Types</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Example</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>string</code></td><td><code>name string</code></td><td>Default when type is omitted.</td></tr>
+      <tr><td><code>integer</code></td><td><code>count integer</code></td><td>Whole numbers.</td></tr>
+      <tr><td><code>double</code></td><td><code>amount double</code></td><td>Floating-point values.</td></tr>
+      <tr><td><code>boolean</code></td><td><code>active boolean</code></td><td><code>true</code> or <code>false</code>.</td></tr>
+      <tr><td><code>enum[...]</code></td><td><code>mode enum["a", "b"]</code></td><td>One of a fixed set of values.</td></tr>
+      <tr><td><code>array[...]</code></td><td><code>tags array[string]</code></td><td>A list of a single element type.</td></tr>
+    </tbody>
+  </table>
+  <p>Parameter names must be unique within a feature or endpoint.</p>
+</section>
+
+<section id="actions">
+  <h2>Actions</h2>
+  <p>Actions are the steps the AI must execute — in order, one after another. Each action is a quoted string describing what to do.</p>
+  <pre><code class="language-butter">actions
+  "Validate title is not empty"
+  "Assign unique identifier to the new task"
+  "Set creation timestamp to current time"
+  "Send notification to assigned user"
+  "Schedule reminder for due date"</code></pre>
+
+  <h3>How they work</h3>
+  <ul>
+    <li><strong>Sequential.</strong> Steps run in declaration order. Never in parallel.</li>
+    <li><strong>Deterministic.</strong> Same inputs produce the same execution path.</li>
+    <li><strong>Atomic.</strong> Each action is one step. Break complex work into multiple actions.</li>
+  </ul>
+  <p>Write actions like you're giving instructions to a developer. Be specific about what to validate, calculate, or create.</p>
+</section>
+
+<section id="enforce">
+  <h2>Enforce Rules</h2>
+  <p>Actions can have <code>enforce</code> rules as indented children. These are constraints that must hold for the action to succeed.</p>
+  <pre><code class="language-butter">"Validate routing balance metrics"
+  enforce "The payment gateway must have sufficient routing capacity"
+  enforce "Failed validations must log the routing error before halting"
+
+"Charge customer payment method"
+  enforce "The charge amount must not exceed the order total"
+  enforce "The payment method must be verified before charging"</code></pre>
+  <p>An action always runs. The enforce rule is an invariant — something that must be true for the step to succeed.</p>
+</section>
+
+<section id="endpoints">
+  <h2>Endpoints</h2>
+  <p>An <code>endpoint</code> describes an HTTP API contract: the route, method, parameters, response schemas, execution steps, and return mappings. Everything the AI needs to implement the endpoint is in one block.</p>
+  <pre><code class="language-butter">app MyApp
+  description "Task management API"
+  version "1.0.0"
+
+endpoint ProcessOrder "/api/checkout/orders"
+  description "Validates checkout and processes payment"
+  version "1.0.0"
+  method POST
+  params
+    checkout_token string
+    coupon_code string
+    dry_run boolean
+  responses
+    OrderSuccessPayload
+      order_id integer
+      total_amount double
+      currency string
+  actions
+    "Verify checkout token is valid and active"
+    "Calculate final prices using coupon_code"
+    "Authorize payment transaction"
+  returns
+    201 OrderSuccessPayload
+    200 "Dry run completed"
+    400 "Invalid checkout token"
+    500 "Payment provider timeout"</code></pre>
+
+  <h3>Rules</h3>
+  <ul>
+    <li>Route goes in the header: <code>endpoint Name "/path"</code>.</li>
+    <li><code>method</code> is required — one of <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>PATCH</code>.</li>
+    <li>Valid keywords inside an endpoint: <code>description</code>, <code>version</code>, <code>method</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, <code>returns</code>.</li>
+    <li>Each endpoint must have a unique name.</li>
+  </ul>
+
+  <blockquote><strong>Feature vs Endpoint:</strong> Use <code>feature</code> for business logic. Use <code>endpoint</code> for HTTP API contracts. They live side by side under <code>app</code>.</blockquote>
+</section>
+
+<section id="responses">
+  <h2>Responses</h2>
+  <p>The <code>responses</code> block defines named response schemas. Each response has a PascalCase name and typed fields.</p>
+  <pre><code class="language-butter">responses
+  OrderSuccessPayload
+    order_id integer
+    total_amount double
+    currency string
+    line_items array[string]
+
+  ValidationError
+    error string
+    details string</code></pre>
+  <p>Response names must be unique within an endpoint. Any name referenced in <code>returns</code> must be defined here.</p>
+</section>
+
+<section id="returns">
+  <h2>Returns</h2>
+  <p>The <code>returns</code> block maps HTTP status codes to response schemas or string payloads.</p>
+  <pre><code class="language-butter">returns
+  201 OrderSuccessPayload
+  200 "Dry run completed"
+  400 "Invalid checkout token"
+  404
+  500 "Payment provider timeout"</code></pre>
+
+  <h3>Format</h3>
+  <table>
+    <thead><tr><th>Syntax</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>201 OrderSuccess</code></td><td>Status 201, body matches the <code>OrderSuccess</code> response schema.</td></tr>
+      <tr><td><code>400 "Invalid token"</code></td><td>Status 400, body is this string.</td></tr>
+      <tr><td><code>204</code></td><td>Status 204, no body.</td></tr>
+    </tbody>
+  </table>
+  <p>Response names referenced here must exist in the <code>responses</code> block.</p>
+</section>
+
+<section id="examples">
+  <h2>Full Example — Todo App</h2>
+  <pre><code class="language-butter">app TodoApp
+  description "A full-featured todo application"
+  version "1.0.0"
+
+  rules
+    "Use Node on the backend"
+    "Use React on the frontend"
+
+feature CreateTask
+  description "Creates new tasks with title, priority, and due date"
+  version "1.0.0"
+  params
+    title string
+    description string
+    completed boolean
+    priority enum["low", "medium", "high", "urgent"]
+    due_date string
+  actions
+    "Validate title is not empty"
+    "Assign unique identifier to the new task"
+    "Set creation timestamp to current time"
+    "Set completed status to false"
+    "Send notification to assigned user"
+    "Schedule reminder for due date"
+
+feature ListTasks
+  description "Retrieves and filters tasks based on criteria"
+  version "1.0.0"
+  params
+    status_filter enum["all", "pending", "completed", "archived"]
+    sort_by enum["created", "priority", "due_date", "title"]
+    limit integer
+  actions
+    "Query task repository with specified filters"
+    "Sort results according to sort_by parameter"
+    "Limit results to specified count"
+    "Apply pagination metadata to response"
+
+feature UpdateTask
+  description "Modifies existing task attributes"
+  version "1.0.0"
+  params
+    task_id string
+    title string
+    status enum["pending", "completed", "archived"]
+    priority enum["low", "medium", "high", "urgent"]
+  actions
+    "Look up task by task_id"
+    "Populate form fields with current task values"
+    "Merge provided fields into existing task record"
+    "Set last-modified timestamp to current time"
+    "Reject update if task is archived"
+
+feature DeleteTask
+  description "Removes a task permanently"
+  version "1.0.0"
+  params
+    task_id string
+    confirmation string
+  actions
+    "Verify task_id exists in repository"
+    "Verify confirmation matches task title"
+    "Remove task record from persistent storage"
+    "Broadcast deletion event to connected clients"</code></pre>
+
+  <p>Compile: <code>butter compile todo.butter</code> — produces <code>todo.prompt.md</code>. Use <code>-f json</code> or <code>-f yaml</code> for other formats.</p>
+  <p>See a working single-page app: <a href="todo.html">todo.html</a>. Visual tree: <a href="todo-viz.html">todo-viz.html</a>.</p>
+
+  <h3>Using the output with AI</h3>
+  <pre><code class="language-text">Using this specification, build the complete application. Each feature's
+actions are sequential execution steps — they must be implemented strictly one
+after the other in the listed order, never in parallel or reordered.
+
+[paste compiled .prompt.md here]</code></pre>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+</body>
+</html>

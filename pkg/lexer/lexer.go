@@ -16,7 +16,7 @@ const (
 	TokenIndent     TokenType = "INDENT"
 	TokenDedent     TokenType = "DEDENT"
 	TokenNewline    TokenType = "NEWLINE"
-	TokenPipe       TokenType = "PIPE"
+	TokenComment    TokenType = "COMMENT"
 )
 
 type Token struct {
@@ -57,7 +57,7 @@ func (l *Lexer) NextToken() Token {
 		blankLine := false
 		for i := l.pos; i < len(l.input); i++ {
 			c := l.input[i]
-			if c == '\n' || c == '#' {
+			if c == '\n' || c == '#' || (c == '/' && i+1 < len(l.input) && l.input[i+1] == '/') {
 				blankLine = true
 				break
 			}
@@ -81,6 +81,9 @@ func (l *Lexer) NextToken() Token {
 		currentIndent := l.indentStack[len(l.indentStack)-1]
 
 		if indent > currentIndent {
+			if (indent-currentIndent)%2 != 0 {
+				return Token{Type: TokenError, Value: fmt.Sprintf("indentation must be in multiples of 2 spaces, got %d spaces at level %d", indent-currentIndent, currentIndent), Line: l.line}
+			}
 			l.indentStack = append(l.indentStack, indent)
 			return Token{Type: TokenIndent, Line: l.line}
 		}
@@ -91,7 +94,7 @@ func (l *Lexer) NextToken() Token {
 				l.pendingToks = append(l.pendingToks, Token{Type: TokenDedent, Line: l.line})
 			}
 			if l.indentStack[len(l.indentStack)-1] != indent {
-				return Token{Type: TokenError, Value: "Indentation compilation alignment tracking error", Line: l.line}
+				return Token{Type: TokenError, Value: "indentation compilation alignment tracking error", Line: l.line}
 			}
 			if len(l.pendingToks) > 0 {
 				tok := l.pendingToks[0]
@@ -101,7 +104,7 @@ func (l *Lexer) NextToken() Token {
 		}
 	}
 
-	l.skipWhitespaceAndComments()
+	l.skipWhitespace()
 
 	if l.pos >= len(l.input) {
 		if len(l.indentStack) > 1 {
@@ -120,9 +123,8 @@ func (l *Lexer) NextToken() Token {
 		return Token{Type: TokenNewline, Line: l.line - 1}
 	}
 
-	if ch == '|' {
-		l.pos++
-		return Token{Type: TokenPipe, Value: "|", Line: l.line}
+	if ch == '#' || (ch == '/' && l.pos+1 < len(l.input) && l.input[l.pos+1] == '/') {
+		return l.readComment()
 	}
 
 	if ch == '"' {
@@ -134,7 +136,7 @@ func (l *Lexer) NextToken() Token {
 	}
 
 	l.pos++
-		return Token{Type: TokenError, Value: fmt.Sprintf("unexpected character '%c'", ch), Line: l.line}
+	return Token{Type: TokenError, Value: fmt.Sprintf("unexpected character '%c'", ch), Line: l.line}
 }
 
 func (l *Lexer) consumeIndentation() int {
@@ -145,7 +147,7 @@ func (l *Lexer) consumeIndentation() int {
 			count++
 			l.pos++
 		} else if ch == '\t' {
-			count += 4
+			count += 2
 			l.pos++
 		} else {
 			break
@@ -154,19 +156,23 @@ func (l *Lexer) consumeIndentation() int {
 	return count
 }
 
-func (l *Lexer) skipWhitespaceAndComments() {
+func (l *Lexer) skipWhitespace() {
 	for l.pos < len(l.input) {
 		ch := l.input[l.pos]
 		if ch == ' ' || ch == '\r' || ch == '\t' {
 			l.pos++
-		} else if ch == '#' {
-			for l.pos < len(l.input) && l.input[l.pos] != '\n' {
-				l.pos++
-			}
 		} else {
 			break
 		}
 	}
+}
+
+func (l *Lexer) readComment() Token {
+	start := l.pos
+	for l.pos < len(l.input) && l.input[l.pos] != '\n' {
+		l.pos++
+	}
+	return Token{Type: TokenComment, Value: l.input[start:l.pos], Line: l.line}
 }
 
 func (l *Lexer) readString() Token {

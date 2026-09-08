@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Butter — Changelog</title>
-<meta name="description" content="Complete version history for the Butter specification language compiler.">
+<title>Changelog — Butter</title>
+<meta name="description" content="Version history for the Butter specification language compiler.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,224 +18,132 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v1.15.0</div>
+    <div class="version">v2.0.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v2-0-0">v2.0.0</a>
     <a href="#v1-15-0">v1.15.0</a>
     <a href="#v1-14-0">v1.14.0</a>
     <a href="#v1-13-0">v1.13.0</a>
-    <a href="#v1-12-0">v1.12.0</a>
-    <a href="#v1-11-2">v1.11.2</a>
-    <a href="#v1-11-1">v1.11.1</a>
     <a href="#v1-11-0">v1.11.0</a>
-    <a href="#v1-10-1">v1.10.1</a>
     <a href="#v1-10-0">v1.10.0</a>
     <a href="#v1-9-0">v1.9.0</a>
     <a href="#v1-8-0">v1.8.0</a>
     <a href="#v1-7-0">v1.7.0</a>
     <a href="#v1-6-0">v1.6.0</a>
     <a href="#v1-5-0">v1.5.0</a>
-    <a href="#v1-4-0">v1.4.0</a>
-    <a href="#v1-3-0">v1.3.0</a>
     <a href="#v1-2-0">v1.2.0</a>
-    <a href="#v1-1-0">v1.1.0</a>
     <a href="#v1-0-0">v1.0.0</a>
+    <a href="language.html">Language Guide</a>
+    <a href="cli-reference.html">CLI Reference</a>
+    <a href="extension.html">VS Code Extension</a>
   </nav>
 </aside>
 
 <main class="main">
 
+<h1>Changelog</h1>
+
+<section id="v2-0-0">
+  <h2>v2.0.0 — 2026-09-04</h2>
+  <ul>
+    <li><strong>Canonical spec alignment</strong> — Butter targets the canonical specification language exclusively.</li>
+    <li><strong><code>rules</code> block</strong> — App-level rules use a <code>rules</code> block with bare quoted strings.</li>
+    <li><strong><code>returns</code> (plural)</strong> — Endpoint return mappings use <code>returns</code> (singular <code>return</code> removed).</li>
+    <li><strong><code>enforce</code> support</strong> — Enforce children under actions recognized with keyword + string scopes.</li>
+    <li><strong><code>product</code> removed</strong> — <code>app</code> is the only top-level root keyword.</li>
+    <li><strong>Canonical types</strong> — <code>string</code>, <code>integer</code>, <code>double</code>, <code>boolean</code>, <code>enum</code>, <code>array</code>. Aliases removed.</li>
+    <li><strong>IntelliSense</strong> — Completion, hover, and definitions updated.</li>
+  </ul>
+</section>
+
 <section id="v1-15-0">
   <h2>v1.15.0 — 2026-07-13</h2>
   <ul>
-    <li><strong>Listener Primitive</strong> — New <code>listener</code> block type for asynchronous message processing. Mirrors the <code>endpoint</code> structure but uses <code>topic</code> instead of <code>route</code>/<code>method</code>, and message states (<code>ack</code>, <code>nack</code>, <code>retry</code>, <code>dlq</code>) instead of HTTP status codes. Designed for Kafka, RabbitMQ, SQS, and other message broker systems.</li>
-    <li><strong>Topic Field</strong> — Listeners declare a <code>topic</code> field that specifies the message queue or topic to consume from. Required — a listener without a topic produces a semantic error.</li>
-    <li><strong>Message States</strong> — Listener returns use four message states: <code>ack</code> (acknowledge success), <code>nack</code> (reject message), <code>retry</code> (request reprocessing), <code>dlq</code> (move to dead letter queue). Each state can have optional <code>| if</code>/<code>| unless</code> conditions.</li>
-    <li><strong>Selective Compilation Support</strong> — Listeners participate in <code>--only</code> and <code>--exclude</code> filtering. Use <code>listener:ProcessOrderEvent</code> to extract or exclude specific listeners.</li>
-    <li><strong>VS Code Extension Updates</strong> — Syntax highlighting for <code>listener</code> keyword, <code>topic</code> field, and message state constants. Autocomplete support for listener blocks, topic field, and return states.</li>
-    <li><strong>Formatter Support</strong> — The formatter correctly handles blank line insertion for listener blocks, matching the behavior of features and endpoints.</li>
-    <li><strong>Prompt Output</strong> — Listener blocks render to prompt markdown format with topic, params, actions, and return mappings.</li>
-    <li><strong>Visual Outputs</strong> — The HTML tree and AI simulator render listeners with their topics, params, actions, and message-state return mappings.</li>
+    <li><strong>Minimal grammar</strong> — Bare <code>&lt;name&gt; &lt;type&gt;</code> params, bare quoted action strings, PascalCase response headers, bare <code>method</code> keyword.</li>
+    <li><strong>Removed verbosity</strong> — <code>param</code>, <code>type</code>, <code>required</code>, <code>default</code>, <code>validate</code>, <code>length</code>, <code>action</code>, <code>route</code>, <code>response</code>, <code>field</code>, <code>listener</code> all removed.</li>
+    <li><strong>Endpoint route in header</strong> — <code>endpoint Name "/path"</code>.</li>
   </ul>
 </section>
 
 <section id="v1-14-0">
   <h2>v1.14.0 — 2026-07-13</h2>
   <ul>
-    <li><strong>Selective Compilation</strong> — New <code>--only</code> and <code>--exclude</code> flags on <code>butter compile</code> for targeted extraction of specific features and endpoints. Supports comma-separated multiple targets (e.g. <code>--only endpoint:ProcessOrder,feature:ApplyCoupon</code>).</li>
-    <li><strong><code>--only</code> flag</strong> — Compile only specific blocks by type and name. The compiler prunes un-matched AST branches and preserves global context (app name, description, version). Fails with an error if a referenced block does not exist in the spec.</li>
-    <li><strong><code>--exclude</code> flag</strong> — Exclude specific blocks from compilation. Fails with an error if a referenced block does not exist in the spec. Cannot be combined with <code>--only</code>.</li>
+    <li><strong>Selective compilation</strong> — <code>--only</code> and <code>--exclude</code> flags for targeted extraction of features and endpoints.</li>
   </ul>
 </section>
 
 <section id="v1-13-0">
   <h2>v1.13.0 — 2026-07-13</h2>
   <ul>
-    <li><strong><code>endpoint</code> enhancement</strong> — New top-level block for defining synchronous HTTP transport network architecture alongside features. Supports <code>version</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, and <code>returns</code> sub-blocks with strict scope separation from features.</li>
-    <li><strong><code>response</code> blocks</strong> — Define reusable response schemas with typed fields inside endpoints. Fields support recursive nested sub-fields.</li>
-    <li><strong><code>return</code> mapping</strong> — Map status codes to response references or string payloads with optional <code>if</code>/<code>unless</code> conditions.</li>
-    <li><strong><code>field</code> keyword</strong> — Typed fields inside responses with optional nested sub-fields; defaults to <code>string</code> when no <code>type</code> is specified.</li>
-    <li><strong>Return statement coloring</strong> — Status codes, response references, and string payloads in <code>return</code> statements are syntax-highlighted with dedicated TextMate patterns.</li>
-    <li><strong>Type value coloring</strong> — Values after <code>type</code> keywords now receive <code>support.type.butter</code> scope.</li>
-    <li><strong>Response ref hover</strong> — Hovering over a response reference in a <code>return</code> statement shows the response schema declaration.</li>
-    <li><strong>Response ref navigation</strong> — Ctrl+click on a response reference in a <code>return</code> statement navigates to its <code>response</code> declaration.</li>
-    <li><strong>HTML tree visualization</strong> — Endpoints render as node cards with route/method badges, response schema cards, and return mapping cards with connection lines.</li>
-    <li><strong>AI simulator</strong> — Endpoints appear in the sidebar with route/method display, parameter forms, response schemas, and return mapping.</li>
-    <li><strong>Formatter</strong> — Handles endpoint, responses, returns, response, and field keywords with proper indentation rules.</li>
-  </ul>
-</section>
-
-<section id="v1-12-0">
-  <h2>v1.12.0 — 2026-07-11</h2>
-  <ul>
-    <li><strong>Prompt output extension</strong> — New <code>-f prompt</code> output format generates a token-efficient Markdown spec designed for LLM consumption. Features <code># [SYSTEM SPEC]</code> headers, <code>## Feature:</code> sections with versioned params (type, required/optional, defaults, validate constraints), and numbered <code>### Execution Sequence</code> steps with <strong>ENFORCE</strong>, <strong>WHEN</strong>, <strong>IF</strong>, <strong>UNLESS</strong>, and <strong>WHILE</strong> condition sub-bullets. Output defaults to <code>.prompt.md</code>.</li>
-  </ul>
-</section>
-
-<section id="v1-11-2">
-  <h2>v1.11.2 — 2026-07-09</h2>
-  <ul>
-    <li><strong>Fixed raw newlines and tabs in compiled output</strong> — String values (descriptions, defaults, action statements) no longer contain literal <code>\n</code> or <code>\t</code> characters in JSON, YAML, or other output formats. These were leaking into compiled output when descriptions were written across multiple lines for readability in <code>.butter</code> source files. The lexer now properly handles escape sequences (<code>\"</code>, <code>\\</code>, <code>\n</code>, <code>\t</code>) and strips control characters from string tokens.</li>
-  </ul>
-</section>
-
-<section id="v1-11-1">
-  <h2>v1.11.1 — 2026-07-08</h2>
-  <ul>
-    <li><strong>Fixed provider prompt UX</strong> — Instead of requiring the user to type <code>opencode</code> or paste an API key into a blank input, the sim extension now presents a numbered menu of all providers. Selecting by number works immediately; API keys are only requested for providers that need one (Anthropic, ChatGPT, Gemini, DeepSeek). Selecting <code>opencode</code> or <code>none</code> proceeds straight to code generation without any key prompt.</li>
-    <li><strong>Fixed param-driven action logic</strong> — The AI code generation prompt now explicitly instructs models to always evaluate conditions using the <code>params</code> object, ensuring actions behave correctly when params are defined in the spec.</li>
+    <li><strong><code>endpoint</code> blocks</strong> — HTTP transport contracts with method, params, responses, actions, and returns.</li>
+    <li><strong><code>response</code> blocks</strong> — Named schemas with typed fields, supporting nested sub-fields.</li>
+    <li><strong><code>return</code> mapping</strong> — Status codes to response references or string payloads.</li>
   </ul>
 </section>
 
 <section id="v1-11-0">
   <h2>v1.11.0 — 2026-07-06</h2>
   <ul>
-    <li><strong>Sim extension with AI-powered spec simulation</strong> — The new <code>sim</code> output format (<code>-f sim</code>) generates a self-contained HTML page for interactively testing spec logic. Features render as typed input controls; the <strong>Run Simulation</strong> button evaluates conditions and animates action results. AI-generated code executes directly in the browser via <code>AISim.run()</code> and drives the action flow with green/red/amber status cards. Built-in JS expression evaluator handles conditions without any AI.</li>
-    <li><strong>opencode provider</strong> — <code>BUTTER_AI_PROVIDER=opencode</code> uses the opencode CLI with free built-in models (default <code>opencode/deepseek-v4-flash-free</code>, override via <code>BUTTER_AI_MODEL</code>). No API key required — pass <code>opencode</code> at the key prompt or set <code>BUTTER_AI_API_KEY=opencode</code>. The opencode CLI must be installed separately.</li>
-    <li><strong>Provider prompt with "none" fallback</strong> — The interactive prompt now lists all provider options <code>(anthropic/chatgpt/gemini/deepseek/opencode/none)</code>. Selecting <code>none</code> skips AI code generation entirely and uses the built-in evaluator.</li>
-    <li><strong>AI output validation</strong> — Generated code is validated by <code>isValidAICode()</code> before embedding. Natural language responses (which don't contain <code>AISim.run</code> or <code>AISim =</code>) are rejected with a warning and fall back to the built-in evaluator.</li>
-    <li><strong>Disclosure triangle icon fix</strong> — The "AI Source Code" collapsible panel previously had a broken disclosure icon due to <code>html/template</code> CSS escaping. The icon is now rendered as an inline <code>&lt;span&gt;</code> inside <code>&lt;summary&gt;</code> with <code>list-style: none</code>.</li>
-    <li><strong>Shared stdin reader</strong> — Replaced multiple <code>bufio.Scanner</code> instances with a shared <code>bufio.NewReader</code> + <code>readLine()</code> to fix buffered data loss between the key and provider prompts.</li>
-    <li><strong>Rate limit retry</strong> — API calls retry up to 2 times with exponential backoff (2s, 4s) on 429 responses. Error messages now extract <code>error.message</code> from the API JSON response instead of dumping the full body.</li>
-  </ul>
-</section>
-
-<section id="v1-10-1">
-  <h2>v1.10.1 — 2026-07-04</h2>
-  <ul>
-    <li><strong>Mobile responsive htmltree</strong> — The <code>htmltree</code> output format now works on mobile devices with touch pan, pinch zoom, and double-tap zoom. The 3-column tree layout is preserved on all screen sizes. SVG bezier curves are no longer drawn when features are collapsed.</li>
+    <li><strong>Sim extension</strong> — Interactive spec simulation with AI-powered code generation.</li>
+    <li><strong>opencode provider</strong> — Free AI code generation via the opencode CLI.</li>
   </ul>
 </section>
 
 <section id="v1-10-0">
   <h2>v1.10.0 — 2026-07-03</h2>
   <ul>
-    <li><strong>Interactive HTML tree visualizer</strong> — The <code>htmltree</code> output format now produces a zoomable, interactive SVG tree with bezier-curve connections between app, features, params, and actions. Long text wraps within fixed-width cards. Initial view collapses features; click to expand.</li>
-    <li><strong>Stacked detail rows</strong> — Description, param, condition, and enforce fields render as keyword row + value row with distinct backgrounds, improving readability.</li>
-    <li><strong>Visual grouping</strong> — Conditions and enforce statements are visually linked to their parent action via a left border bracket.</li>
-    <li><strong>Action numbering</strong> — Actions prefixed with sequential numbers (<code>1.</code>, <code>2.</code>, ...).</li>
-    <li><strong>Conditional and enforce rows</strong> — <code>if</code>/<code>unless</code>/<code>when</code>/<code>while</code> and <code>enforce</code> statements now render on separate indented rows with distinct background colors.</li>
-    <li><strong>Defensive null guards</strong> — All <code>.forEach</code> iterations guarded with <code>||[]</code> to handle features without params or actions.</li>
+    <li><strong>HTML tree visualizer</strong> — Zoomable SVG tree with bezier-curve connections.</li>
   </ul>
 </section>
 
 <section id="v1-9-0">
   <h2>v1.9.0 — 2026-07-02</h2>
   <ul>
-    <li><strong>IntelliSense code completion</strong> — Context-aware autocomplete for Butter keywords, types, parameter fields, and conditionals. Completion analyses indentation and parent block context to suggest only valid keywords for the current position. Snippets for <code>app</code>, <code>product</code>, <code>feature</code>, <code>param</code>, <code>action</code>, <code>enum[...]</code>.</li>
-    <li><strong>Hover documentation</strong> — Hover over any Butter keyword, type, or conditional to see a markdown description with syntax examples.</li>
+    <li><strong>IntelliSense</strong> — Context-aware autocomplete and hover documentation.</li>
   </ul>
 </section>
 
 <section id="v1-8-0">
   <h2>v1.8.0 — 2026-07-01</h2>
   <ul>
-    <li><strong>Action <code>enforce</code> field</strong> — Actions now support zero or more <code>enforce</code> strings as indented children, specifying conditions that must hold for the action to succeed. Stored as <code>Enforce []string</code> in the AST.</li>
-    <li><strong>Updated syntax highlighting</strong> — <code>enforce</code> added to TextMate grammar (VS Code) and Prism (docs) keyword lists. Token color customizations match docs: amber keywords, green strings, blue functions, purple variables.</li>
-    <li><strong>Updated extension</strong> — <code>butter-extension</code> v1.8.0 with <code>enforce</code> highlighting and color customizations.</li>
+    <li><strong>Enforce rules</strong> — Actions support zero or more <code>enforce</code> constraint strings.</li>
   </ul>
 </section>
 
 <section id="v1-7-0">
   <h2>v1.7.0 — 2026-06-30</h2>
   <ul>
-    <li><strong>Pluggable output extensions</strong> — Output formats are now registered via a Go <code>Extension</code> interface. Writing a new format is a single-file, three-method implementation.</li>
-    <li><strong>Extension registry</strong> — <code>pkg/output.Extension</code> interface with <code>Register()</code>/<code>Get()</code>/<code>Names()</code>. Extensions auto-register via <code>init()</code>.</li>
-    <li><strong>JSON and YAML refactored as extensions</strong> — Moved from hardcoded functions in <code>parser.go</code> to standalone extension packages.</li>
-    <li><strong>Dynamic help text</strong> — <code>--format</code> flag description and error messages automatically list all registered extensions.</li>
-    <li><strong>Cleaner YAML output</strong> — Internal line numbers no longer leak into YAML output (<code>yaml:"-"</code> tags added).</li>
+    <li><strong>Pluggable output extensions</strong> — Output formats registered via a Go interface. New formats are single-file implementations.</li>
   </ul>
 </section>
 
 <section id="v1-6-0">
   <h2>v1.6.0 — 2026-06-29</h2>
   <ul>
-    <li><strong>Semantic analysis pass</strong> — Catches duplicate feature/param names, type-default mismatches, enum defaults, and redundant required+default combos.</li>
-    <li><strong>Enhanced <code>--check</code></strong> — <code>butter compile --check</code> now validates semantics in addition to syntax.</li>
-    <li><strong>Source location tracking</strong> — AST nodes carry precise line numbers for accurate error reporting.</li>
+    <li><strong>Semantic analysis</strong> — Catches duplicate names, type mismatches, invalid HTTP methods, and more.</li>
   </ul>
 </section>
 
 <section id="v1-5-0">
   <h2>v1.5.0 — 2026-06-28</h2>
   <ul>
-    <li><strong>YAML output</strong> — New <code>--format</code> / <code>-f</code> flag to generate YAML output (<code>butter compile demo.butter -f yaml</code>). JSON remains the default.</li>
-  </ul>
-</section>
-
-<section id="v1-4-0">
-  <h2>v1.4.0 — 2026-06-25</h2>
-  <ul>
-    <li><strong><code>bool</code> type</strong> — New <code>bool</code> parameter type for boolean values (<code>true</code> / <code>false</code>).</li>
-    <li><strong><code>length</code> field</strong> — New <code>length</code> parameter field for exact length constraints (e.g. <code>length 13</code>). Mutually exclusive with <code>validate</code>.</li>
-    <li><strong>Updated error messages</strong> — Param field error lists include <code>validate</code> and <code>length</code>; length/validate mutual exclusion enforced.</li>
-  </ul>
-</section>
-
-<section id="v1-3-0">
-  <h2>v1.3.0 — 2026-06-25</h2>
-  <ul>
-    <li><strong><code>product</code> keyword alias</strong> — <code>product</code> can now be used interchangeably with <code>app</code> at the top level, across parser, formatter, and syntax highlighting.</li>
-    <li><strong>Numeric literals in defaults</strong> — Values like <code>default 50</code> now parse correctly. The lexer now allows digits as identifier start characters.</li>
-    <li><strong>Parser robustness</strong> — <code>parseParam</code> loop now guards against infinite loops on unexpected token types.</li>
-    <li><strong><code>todo.butter</code> example</strong> — New complete todo application example using <code>product</code> with four features, enum types, and integer defaults.</li>
-    <li><strong>Validate rule format validation</strong> — <code>validate</code> rules are now rejected at parse time if they don't match a valid numeric comparison (operator + number). Supported operators: <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>=&lt;</code>, <code>==</code>, <code>=</code>, <code>!=</code>.</li>
-    <li><strong>Validate type restriction</strong> — <code>validate</code> rules are now rejected if the parameter type is not <code>int</code> or <code>float</code>.</li>
+    <li><strong>YAML output</strong> — <code>--format yaml</code> flag.</li>
   </ul>
 </section>
 
 <section id="v1-2-0">
   <h2>v1.2.0 — 2026-06-24</h2>
   <ul>
-    <li><strong>Butter Format (<code>butter fmt</code>)</strong> — New subcommand to automatically format <code>.butter</code> files. Uses a two-pass algorithm: removes blank lines after parameter keywords, then inserts blank lines before <code>params</code>, <code>actions</code>, and between top-level <code>feature</code> blocks.</li>
-    <li><strong>Format on save</strong> — The VS Code extension now automatically runs <code>butter fmt</code> on every save, no configuration needed.</li>
-    <li><strong><code>Butter: Format current file</code> command</strong> — Available in the VS Code command palette.</li>
-  </ul>
-</section>
-
-<section id="v1-1-0">
-  <h2>v1.1.0 — 2026-06-23</h2>
-  <ul>
-    <li><strong><code>--check</code> flag</strong> — <code>butter compile --check</code> validates syntax without writing a <code>.json</code> file. Returns exit code 0 on success, 1 on error.</li>
-    <li><strong>On-save linting</strong> — The VS Code extension runs <code>butter compile --check</code> on every save, surfacing errors with red squiggly underlines.</li>
-    <li><strong><code>Butter: Lint current file</code> command</strong> — Available in the VS Code command palette.</li>
-    <li><strong>Configurable compiler path</strong> — <code>butter.compilerPath</code> setting lets you specify a custom path to the <code>butter</code> binary.</li>
-    <li><strong><code>butter --version</code></strong> — Prints the compiler version.</li>
-    <li><strong>Named capture highlighting</strong> — TextMate grammar now highlights <code>app</code>, <code>feature</code>, and <code>param</code> identifiers distinctly.</li>
-    <li><strong><code>version</code> keyword</strong> — Added to syntax highlighting.</li>
-    <li><strong>Document icon</strong> — Custom SVG icon for <code>.butter</code> files.</li>
+    <li><strong>Formatter</strong> — <code>butter fmt</code> with auto-format on save.</li>
   </ul>
 </section>
 
 <section id="v1-0-0">
   <h2>v1.0.0 — 2026-06-22</h2>
   <ul>
-    <li>Initial release of the Butter DSL compiler.</li>
-    <li><code>butter compile</code> command compiles <code>.butter</code> files to pretty-printed JSON.</li>
-    <li>Lexer with Python-style indentation tracking (INDENT/DEDENT tokens).</li>
-    <li>Recursive descent parser supporting <code>app</code>, <code>description</code>, <code>version</code>, <code>feature</code>, <code>params</code>, <code>param</code> (with <code>type</code>, <code>required</code>, <code>default</code>), <code>actions</code>, <code>action</code>, and pipe-delimited conditionals (<code>if</code>, <code>unless</code>, <code>when</code>, <code>while</code>).</li>
-    <li>VS Code extension with syntax highlighting, indentation rules, and comment toggling.</li>
+    <li>Initial release. Lexer, parser, JSON output, VS Code extension.</li>
   </ul>
 </section>
 

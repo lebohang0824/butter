@@ -1,13 +1,20 @@
 # Test Specification
+
 app TestApp
-description "A test specification for Butter Cloud"
-version "1.0.0"
+  description "A test specification for Butter Cloud"
+
+  rules
+    "Use TypeScript on the frontend"
 
 feature BasicFeature
   description "Basic feature for testing the visual editor"
   version "1.0.0"
 
+  params
+    input string
+    count integer
+
   actions
-    action "Validate input"
-    action "Process data"
-    action "Return result"
+    "Validate input"
+    "Process data"
+    "Return result"

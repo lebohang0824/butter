@@ -10,7 +10,6 @@ type FilterBlockType string
 const (
 	FilterEndpoint FilterBlockType = "endpoint"
 	FilterFeature  FilterBlockType = "feature"
-	FilterListener FilterBlockType = "listener"
 )
 
 type Filter struct {
@@ -44,9 +43,9 @@ func ParseFilters(raw string) ([]Filter, error) {
 		}
 
 		switch blockType {
-		case FilterEndpoint, FilterFeature, FilterListener:
+		case FilterEndpoint, FilterFeature:
 		default:
-			return nil, fmt.Errorf("invalid block type %q in filter — supported types: endpoint, feature, listener", blockType)
+			return nil, fmt.Errorf("invalid block type %q in filter — supported types: endpoint, feature", blockType)
 		}
 
 		filters = append(filters, Filter{BlockType: blockType, Name: name})
@@ -88,13 +87,6 @@ func FilterAppSpec(spec *AppSpec, onlyFilters, excludeFilters []Filter) (*AppSpe
 						matched = true
 					}
 				}
-			case FilterListener:
-				for _, l := range spec.Listeners {
-					if l.Name == f.Name {
-						filtered.Listeners = append(filtered.Listeners, l)
-						matched = true
-					}
-				}
 			}
 			if !matched {
 				return nil, fmt.Errorf("--only target not found: %s:%s does not exist in spec", f.BlockType, f.Name)
@@ -103,7 +95,6 @@ func FilterAppSpec(spec *AppSpec, onlyFilters, excludeFilters []Filter) (*AppSpe
 	} else {
 		filtered.Features = append(filtered.Features, spec.Features...)
 		filtered.Endpoints = append(filtered.Endpoints, spec.Endpoints...)
-		filtered.Listeners = append(filtered.Listeners, spec.Listeners...)
 	}
 
 	if len(excludeFilters) > 0 {
@@ -124,13 +115,6 @@ func FilterAppSpec(spec *AppSpec, onlyFilters, excludeFilters []Filter) (*AppSpe
 						break
 					}
 				}
-			case FilterListener:
-				for _, l := range spec.Listeners {
-					if l.Name == f.Name {
-						matched = true
-						break
-					}
-				}
 			}
 			if !matched {
 				return nil, fmt.Errorf("--exclude target not found: %s:%s does not exist in spec", f.BlockType, f.Name)
@@ -138,7 +122,6 @@ func FilterAppSpec(spec *AppSpec, onlyFilters, excludeFilters []Filter) (*AppSpe
 		}
 		filtered.Features = filterFeatures(filtered.Features, excludeIndex)
 		filtered.Endpoints = filterEndpoints(filtered.Endpoints, excludeIndex)
-		filtered.Listeners = filterListeners(filtered.Listeners, excludeIndex)
 	}
 
 	return filtered, nil
@@ -147,14 +130,12 @@ func FilterAppSpec(spec *AppSpec, onlyFilters, excludeFilters []Filter) (*AppSpe
 type filterIndex struct {
 	features  map[string]bool
 	endpoints map[string]bool
-	listeners map[string]bool
 }
 
 func buildFilterIndex(filters []Filter) filterIndex {
 	idx := filterIndex{
 		features:  make(map[string]bool),
 		endpoints: make(map[string]bool),
-		listeners: make(map[string]bool),
 	}
 	for _, f := range filters {
 		switch f.BlockType {
@@ -162,8 +143,6 @@ func buildFilterIndex(filters []Filter) filterIndex {
 			idx.features[f.Name] = true
 		case FilterEndpoint:
 			idx.endpoints[f.Name] = true
-		case FilterListener:
-			idx.listeners[f.Name] = true
 		}
 	}
 	return idx
@@ -184,16 +163,6 @@ func filterEndpoints(endpoints []EndpointSpec, exclude filterIndex) []EndpointSp
 	for _, ep := range endpoints {
 		if !exclude.endpoints[ep.Name] {
 			result = append(result, ep)
-		}
-	}
-	return result
-}
-
-func filterListeners(listeners []ListenerSpec, exclude filterIndex) []ListenerSpec {
-	var result []ListenerSpec
-	for _, l := range listeners {
-		if !exclude.listeners[l.Name] {
-			result = append(result, l)
 		}
 	}
 	return result

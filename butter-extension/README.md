@@ -6,15 +6,15 @@ A VS Code extension providing syntax highlighting, IntelliSense, formatting, lin
 
 ## Features
 
-- **IntelliSense** — Context-aware code completion and hover documentation for all Butter keywords, types, parameter fields, and conditionals. Suggests the right keyword based on indentation and parent block context (e.g., `type`/`required` inside a `param`, `action` inside `actions`, conditionals after `|`).
-- **Syntax Highlighting** — Full TextMate grammar with named capture highlighting for `app`, `feature`, `endpoint`, `listener`, and `param` identifiers, including listener topics and return states
+- **IntelliSense** — Context-aware code completion and hover documentation for all Butter keywords and types. Suggests the right keyword based on indentation and parent block context (e.g., `method` in an endpoint).
+- **Syntax Highlighting** — Full TextMate grammar with named capture highlighting for `app`, `feature`, `endpoint`, and `rules`/`returns` identifiers, including bare param types (`string`, `integer`, `double`, `boolean`, `enum[...]`)
 - **On-Save Formatting** — Automatically applies `butter fmt` on every save, no configuration needed
 - **On-Save Linting** — Validates `.butter` syntax on save using the bundled compiler and surfaces errors with red squiggly underlines
 - **Manual Lint Command** — `Butter: Lint current file` in the command palette
 - **Manual Format Command** — `Butter: Format current file` in the command palette
-- **Auto-Indentation** — Smart indent/dedent for `feature`, `endpoint`, `listener`, `params`, `actions`, and `param` blocks
+- **Auto-Indentation** — Smart indent/dedent for `feature`, `endpoint`, `params`, `actions`, `responses`, `returns`, and `rules` blocks
 - **Configurable Compiler Path** — Set the path to the `butter` binary via `butter.compilerPath`
-- **Comment Support** — `#` line comments with toggle support
+- **Comment Support** — `#` and `//` line comments with toggle support
 - **Auto-Closing Pairs** — Automatic `"` and `[]` pair completion
 - **Document File Icon** — Custom icon for `.butter` files
 
@@ -27,27 +27,44 @@ Install the extension and open any `.butter` file. The language mode is automati
 ```butter
 # Global application declaration
 app OrderProcessor
-description "Handles high-throughput retail checkout workflows safely"
-version "2.1.0"
+  description "Handles high-throughput retail checkout workflows safely"
+  version "2.1.0"
 
 feature ProcessPayment
   description "Processes financial transactions through multiple payment gateways"
   version "1.0.0"
+
   params
-    param OrderID
-      type string
-      required true
-    param Amount
-      type float
-      required true
-    param PaymentMethod
-      type enum["CreditCard", "Crypto", "BankTransfer"]
-      default "CreditCard"
+    order_id string
+    amount double
+    payment_method enum["credit_card", "crypto", "bank_transfer"]
 
   actions
-    action "Validate routing balance metrics"
-    action "Flag for review" | if "Amount > 10000"
-    action "Bypass fraud check" | unless "Amount > 50"
+    "Validate routing balance metrics"
+    "Flag for review"
+    "Apply cryptocurrency transaction surcharge"
+
+endpoint SaveOrder "/orders"
+  description "Stores an order in the database"
+  version "1.0.0"
+  method POST
+
+  params
+    order_id string
+    amount double
+
+  responses
+    OrderSuccess
+      id integer
+      amount double
+
+  actions
+    "Validate order payload"
+    "Store order in the database"
+
+  returns
+    201 OrderSuccess
+    500 "Internal server error"
 ```
 
 ## Compiler

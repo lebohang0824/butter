@@ -6,28 +6,27 @@
     { "include": "#comments" },
     { "include": "#app_name" },
     { "include": "#feature_name" },
+    { "include": "#endpoint_name_route" },
     { "include": "#endpoint_name" },
-    { "include": "#listener_name" },
-    { "include": "#param_name" },
-    { "include": "#response_name" },
-    { "include": "#field_name" },
-    { "include": "#type_value" },
-    { "include": "#return_ref" },
-    { "include": "#return_payload_string" },
+    { "include": "#method_line" },
+    { "include": "#bare_param" },
+    { "include": "#enum_type" },
+    { "include": "#array_type" },
+    { "include": "#response_header" },
+    { "include": "#enforce_line" },
+    { "include": "#returns_line" },
     { "include": "#status_codes" },
-    { "include": "#listener_return" },
     { "include": "#keywords" },
-    { "include": "#conditionals" },
     { "include": "#strings" },
     { "include": "#constants" }
   ],
   "repository": {
     "comments": {
-      "match": "#.*$",
+      "match": "(#|//).*$",
       "name": "comment.line.number-sign.butter"
     },
     "app_name": {
-      "match": "\\b(app|product)\\s+([A-Za-z_]\\w*)",
+      "match": "\\b(app)\\s+([A-Za-z_]\\w*)",
       "captures": {
         "1": { "name": "keyword.control.butter" },
         "2": { "name": "entity.name.type.butter" }
@@ -40,6 +39,14 @@
         "2": { "name": "entity.name.function.butter" }
       }
     },
+    "endpoint_name_route": {
+      "match": "\\b(endpoint)\\s+([A-Za-z_]\\w*)\\s+(\"[^\"]*\")",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "entity.name.function.butter" },
+        "3": { "name": "string.quoted.double.butter" }
+      }
+    },
     "endpoint_name": {
       "match": "\\b(endpoint)\\s+([A-Za-z_]\\w*)",
       "captures": {
@@ -47,56 +54,61 @@
         "2": { "name": "entity.name.function.butter" }
       }
     },
-    "listener_name": {
-      "match": "\\b(listener)\\s+([A-Za-z_]\\w*)",
+    "method_line": {
+      "match": "\\b(method)\\s+([A-Z]+)\\b",
       "captures": {
         "1": { "name": "keyword.control.butter" },
-        "2": { "name": "entity.name.function.butter" }
+        "2": { "name": "support.constant.http-method.butter" }
       }
     },
-    "param_name": {
-      "match": "\\b(param)\\s+([A-Za-z_]\\w*)",
+    "bare_param": {
+      "match": "^\\s+([A-Za-z_]\\w*)\\s+(string|integer|double|boolean|enum\\[.*?\\]|array\\[.*?\\]|\\w+)\\s*$",
       "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "variable.parameter.butter" }
-      }
-    },
-    "response_name": {
-      "match": "\\b(response)\\s+([A-Za-z_]\\w*)",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "entity.name.class.butter" }
-      }
-    },
-    "field_name": {
-      "match": "\\b(field)\\s+([A-Za-z_]\\w*)",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "variable.parameter.butter" }
-      }
-    },
-    "keywords": {
-      "match": "\\b(app|product|description|version|feature|endpoint|listener|params|param|type|required|default|validate|bool|boolean|length|enforce|actions|action|route|method|topic|responses|response|field|returns|return)\\b",
-      "name": "keyword.control.butter"
-    },
-    "type_value": {
-      "match": "\\b(type)\\s+(\\S+)",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
+        "1": { "name": "variable.parameter.butter" },
         "2": { "name": "support.type.butter" }
       }
     },
-    "return_ref": {
-      "match": "\\b(return)\\s+(\\d{3})\\s+([A-Za-z_]\\w*)",
+    "enum_type": {
+      "match": "\\b(enum)\\[([^\\]]+)\\]",
       "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "constant.numeric.integer.butter" },
-        "3": { "name": "entity.name.class.butter" }
+        "1": { "name": "support.type.butter" },
+        "2": { "name": "string.quoted.double.butter" }
       }
     },
-    "conditionals": {
-      "match": "\\b(if|unless|when|while)\\b",
-      "name": "keyword.control.conditional.butter"
+    "array_type": {
+      "match": "\\b(array)\\[(string|integer|double|boolean|\\w+)\\]",
+      "captures": {
+        "1": { "name": "support.type.butter" },
+        "2": { "name": "entity.name.class.butter" }
+      }
+    },
+    "response_header": {
+      "match": "^\\s+([A-Z][A-Za-z0-9_]*)\\s*$",
+      "captures": {
+        "1": { "name": "entity.name.class.butter" }
+      }
+    },
+    "enforce_line": {
+      "match": "^\\s+(enforce)\\s+(\"[^\"]*\")",
+      "captures": {
+        "1": { "name": "keyword.control.butter" },
+        "2": { "name": "string.quoted.double.butter" }
+      }
+    },
+    "returns_line": {
+      "match": "^\\s+(returns)\\s*$",
+      "name": "keyword.control.butter"
+    },
+    "status_codes": {
+      "match": "^\\s+(\\d{3})\\s+(?:([A-Za-z_]\\w*))?",
+      "captures": {
+        "1": { "name": "constant.numeric.integer.butter" },
+        "2": { "name": "entity.name.class.butter" }
+      }
+    },
+    "keywords": {
+      "match": "\\b(app|description|version|feature|endpoint|rules|params|actions|responses|method|returns|enforce)\\b",
+      "name": "keyword.control.butter"
     },
     "strings": {
       "name": "string.quoted.double.butter",
@@ -106,32 +118,6 @@
     "constants": {
       "match": "\\b(true|false)\\b",
       "name": "constant.language.boolean.butter"
-    },
-    "return_payload_string": {
-      "match": "\\b(return)\\s+(\\d{3})\\s+(\"[^\"]*\")",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "constant.numeric.integer.butter" },
-        "3": { "name": "string.quoted.double.butter" }
-      }
-    },
-    "status_codes": {
-      "match": "\\b(return)\\s+(\\d{3})\\b",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "constant.numeric.integer.butter" }
-      }
-    },
-    "listener_return": {
-      "match": "\\b(return)\\s+(ack|nack|retry|dlq)\\b",
-      "captures": {
-        "1": { "name": "keyword.control.butter" },
-        "2": { "name": "support.constant.message-state.butter" }
-      }
-    },
-    "message_states": {
-      "match": "\\b(ack|nack|retry|dlq)\\b",
-      "name": "support.constant.message-state.butter"
     }
   }
 }

@@ -1,5 +1,16 @@
 # Change Log
 
+## [2.0.0] - 2026-09-04
+
+- **Canonical spec alignment** — The extension now targets the canonical Butter specification language exclusively.
+- **`rules` block** — App-level `rules` is now a block of bare quoted strings (singular `rule` removed).
+- **`returns` (plural)** — Endpoint return mappings use the `returns` block (singular `return` removed).
+- **`enforce` highlighting** — `enforce "..."` children under action statements are recognized with keyword + string scopes.
+- **`product` removed** — `app` is the only top-level root keyword.
+- **Canonical types** — Param and response field types now use `string | integer | double | boolean | enum | array` (aliases `int`, `float`, `bool` removed).
+- **Indentation rules** — Auto-indent patterns updated for `rules`, `returns`, and `enforce`.
+- **Completion/hover/definition** — Providers updated for the new keyword and type set.
+
 ## [1.15.0] - 2026-07-13
 
 - **`listener` language support** — Syntax highlighting and IntelliSense recognize listener declarations, the required `topic` field, and `ack`, `nack`, `retry`, and `dlq` return states.

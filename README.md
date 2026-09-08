@@ -1,6 +1,6 @@
 ![Butter](butter.png)
 
-**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to JSON or YAML and feed it to an AI agent. The agent follows the spec and produces implementations with higher first-pass accuracy. Less hallucination, less token waste, less back-and-forth.
+**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to a Markdown prompt and feed it to an AI agent. The agent follows the spec and produces implementations with higher first-pass accuracy. Less hallucination, less token waste, less back-and-forth.
 
 ---
 
@@ -10,9 +10,10 @@
 - [AI Workflow](#ai-workflow)
 - [Language Specification](#language-specification)
   - [Keywords](#keywords)
-  - [Parameter Fields](#parameter-fields)
-  - [Action Fields](#action-fields)
-  - [Semantic Conditionals](#semantic-conditionals)
+  - [Parameter Syntax](#parameter-syntax)
+  - [Action Syntax](#action-syntax)
+  - [Response Syntax](#response-syntax)
+  - [Return Syntax](#return-syntax)
 - [Example](#example)
 - [Installation](#installation)
   - [From Source](#from-source)
@@ -27,15 +28,15 @@
 
 AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and configuration formats like JSON/YAML describe data, not intent.
 
-Butter is a **specification language for AI intent**. It sits between you and the AI: you write a structured `.butter` spec, compile it to JSON, and feed that JSON to an AI agent. The spec constrains the AI's output space with typed parameters, validation rules, enforcement conditions, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.
+Butter is a **specification language for AI intent**. It sits between you and the AI: you write a structured `.butter` spec, compile it to a prompt, and feed that prompt to an AI agent. The spec constrains the AI's output space with typed parameters, enforce constraints, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.
 
 ### Core Principles
 
-- **Intent over data** — JSON and YAML describe *what* data looks like. Butter describes *what to do*: features declare capabilities, parameters define inputs and constraints, actions are sequential execution steps that must run one after another, and conditions (`if`/`unless`/`when`/`while`) decide which actions run. The AI gets a complete execution model, not a data schema.
+- **Intent over data** — JSON and YAML describe *what* data looks like. Butter describes *what to do*: features declare capabilities, parameters define typed inputs, and actions are sequential execution steps that must run one after another. The AI gets a complete execution model, not a data schema.
 
 - **Sequential actions, deterministic results** — Actions inside a feature are synchronous, ordered steps. Each step performs one discrete operation. No parallel execution, no reordering, no guessing. This eliminates the most common source of AI hallucination: ambiguous sequencing.
 
-- **Constrained output space** — Types (`string`, `int`, `float`, `bool`, `enum[...]`), required flags, defaults, validate rules, length constraints, and enforce strings define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
+- **Constrained output space** — Types (`string`, `integer`, `double`, `boolean`, `enum[...]`, `array[...]`), `enforce` constraints, and app-level `rules` define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
 
 - **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: "Implement this spec." The agent produces code with higher first-pass accuracy. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
 
@@ -45,50 +46,107 @@ Butter is a **specification language for AI intent**. It sits between you and th
 
 ## Language Specification
 
+Butter uses strict 2-space indentation per nesting depth. Comments use `#` or `//`.
+
+```text
+# Root Application Specification
+app <name>
+├── description <string>
+├── rules
+│   └── <string>
+├── feature <name>
+└── endpoint <name> <route>
+
+# Subsystem Feature Block Specification
+feature <name>
+├── description <string>
+├── version <string>
+├── params
+│   └── <name> <type>
+└── actions
+    └── <string>
+        └── enforce <string>
+
+# Synchronous HTTP Endpoint Transport Block Specification
+endpoint <name> <route>
+├── description <string>
+├── version <string>
+├── method <string>
+├── params
+│   └── <name> <type>
+├── responses
+│   └── <name>
+│       └── <name> <type>
+├── actions
+│   └── <string>
+│       └── enforce <string>
+└── returns
+    └── <code> <ResponseName|string>
+```
+
 ### Keywords
 
 | Keyword       | Context       | Semantic Purpose |
 | :---          | :---          | :--- |
-| `app` / `product` | Top-level     | Defines the namespace or structural root of the configuration |
+| `app`         | Top-level     | Defines the namespace or structural root of the configuration |
 | `description` | Top/Block     | Provides context or documentation string metadata |
-| `version`     | Top/Block     | Declares the version identifier for the application, feature, endpoint, or listener |
-| `feature`     | Block-level   | Declares a sub-system module, API endpoint, or discrete capability |
-| `endpoint`    | Block-level   | Declares a synchronous HTTP transport contract |
-| `listener`    | Block-level   | Declares an asynchronous message consumer contract |
-| `topic`       | Block-level   | Declares the message topic or queue consumed by a listener |
-| `params`      | Block-level   | A dedicated container block specifying input definitions |
-| `param`       | Item-level    | Declares a discrete parameter variable name |
-| `actions`     | Block-level   | A dedicated container block specifying execution routines |
-| `action`      | Item-level    | Declares a logical execution string or mutation step |
-| `enforce`     | Item-level    | Declares a condition that must hold for the action to succeed |
-| `returns` / `return` | Block/Item-level | Maps endpoint responses or listener message states |
+| `version`     | Top/Block     | Declares the version identifier for the application, feature, or endpoint |
+| `feature`     | Block-level   | Declares a sub-system module or discrete capability |
+| `endpoint`    | Block-level   | Declares a synchronous HTTP transport contract with a route: `endpoint Name "route"` |
+| `rules`       | App block     | A container block of app-level rules: `rules` followed by quoted strings |
+| `method`      | Endpoint      | The HTTP verb: `method POST` (bare, no quotes) |
+| `params`      | Block-level   | A dedicated container block for parameter definitions |
+| `actions`     | Block-level   | A dedicated container block for execution steps |
+| `enforce`     | Action        | A constraint string directly below its parent action |
+| `responses`   | Block-level   | A dedicated container block for response schema definitions |
+| `returns`     | Endpoint      | Maps status codes to response payloads: `returns` followed by `200 ResponseName` or `500 "error"` |
 
-Listener returns use one of `ack`, `nack`, `retry`, or `dlq`; listeners declare their consumed message queue or topic with `topic`.
+### Parameter Syntax
 
-### Parameter Fields
+Parameters are defined as `<name> <type>` lines under a `params` block. `<name>` is a snake_case identifier and `<type>` is one of `string`, `integer`, `double`, `boolean`, `enum[...]`, or `array[...]`:
 
-| Field         | Purpose |
-| :---          | :--- |
-| `type`        | Dictates data constraints (`string`, `int`, `float`, `bool`, `enum[...]`) |
-| `required`    | Boolean validation rule (`true` or `false`) |
-| `default`     | Explicit fallback value if the parameter is omitted |
-| `validate`    | Validation rule for numeric parameters (`int`, `float`). E.g. `>10`, `!=5`, `=<12`. Multiple lines allowed. Mutually exclusive with `length`. |
-| `length`      | Exact digit/numeric length constraint (e.g. `length 13`). Only on `int`/`float`. Mutually exclusive with `validate`. |
+```butter
+params
+  name string
+  todo_id integer
+  completed boolean
+  priority enum["low", "medium", "high"]
+  members_id array[integer]
+```
 
-### Action Fields
+### Action Syntax
 
-| Field         | Purpose |
-| :---          | :--- |
-| `enforce` | Optional quoted string specifying what must be enforced for the action to be successful. Multiple `enforce` lines are allowed under a single action. |
+Actions are bare quoted strings under an `actions` block, with optional `enforce <string>` grandchildren:
 
-### Semantic Conditionals
+```butter
+actions
+  "Validate input is not empty"
+  "Sanitize input"
+    enforce "Reject empty strings"
+  "Process payment"
+```
 
-Butter expands standard evaluation logic beyond a simple `if` with four native semantic blocks:
+### Response Syntax
 
-- **`if`** — The action executes only if the predicate evaluates to `true`.
-- **`unless`** — The action executes except when the predicate evaluates to `true` (inversion of `if not`).
-- **`when`** — Reactive or event-driven hook. Indicates the action triggers asynchronously upon an external event or state shift.
-- **`while`** — Active polling or operational state persistence. The action requires this state condition to remain continuously active throughout execution.
+Responses define reusable payload schemas under a `responses` block. Each response has a PascalCase header and nested snake_case `<name> <type>` field lines:
+
+```butter
+responses
+  OrderSuccess
+    order_id string
+    total_amount double
+    line_items array[string]
+```
+
+### Return Syntax
+
+The `returns` block maps HTTP status codes (`100`–`599`) to either a referenced response name or a quoted string literal:
+
+```butter
+returns
+  201 OrderSuccess
+  500 "Internal server error"
+```
 
 ---
 
@@ -99,33 +157,27 @@ Save the following as `demo.butter`:
 ```butter
 # Global application declaration
 app OrderProcessor
-description "Handles high-throughput retail checkout workflows safely"
-version "2.1.0"
+  description "Handles high-throughput retail checkout workflows safely"
+  version "2.1.0"
+
+  rules
+    "Use Node on the backend"
+    "Use React on the frontend"
 
 feature ProcessPayment
   description "Processes financial transactions through multiple payment gateways"
   version "1.0.0"
+
   params
-    param OrderID
-      type string
-      required true
-    param Amount
-      type float
-      required true
-    param PaymentMethod
-      type enum["CreditCard", "Crypto", "BankTransfer"]
-      default "CreditCard"
-    param AccountNotes
-      default "Standard processing sequence"
+    order_id string
+    amount double
+    payment_method enum["credit_card", "crypto", "bank_transfer"]
 
   actions
-    action "Validate routing balance metrics"
-      enforce "The payment gateway must have sufficient routing capacity before processing"
-      enforce "Failed validations must log the routing error before halting"
-    action "Apply cryptocurrency transaction surcharge" | when "PaymentMethod is set to Crypto"
-    action "Flag transaction for manual risk mitigation review" | if "Amount > 10000"
-    action "Bypass fraud detection ledger verification" | unless "Amount > 50"
-    action "Maintain continuous transaction ledger heartbeat" | while "Gateway Connection is unstable"
+    "Validate routing balance metrics"
+    "Apply cryptocurrency transaction surcharge"
+    "Flag transaction for manual risk mitigation review"
+    "Maintain continuous transaction ledger heartbeat"
 ```
 
 Compile it:
@@ -134,56 +186,37 @@ Compile it:
 butter compile demo.butter
 ```
 
-A longer example using <code>product</code> with multiple features, integer defaults, and enum parameters is available in <a href="todo.butter"><code>todo.butter</code></a>. See the working single-page app built from this spec at <a href="docs/todo.html"><code>todo.html</code></a>. Each feature's actions run as sequential execution steps, one after another. Update and Delete operations are available via a modal form — click <strong>Edit</strong> on any task in the list.
+A longer working example with multiple features and an endpoint is available in [`todo.butter`](specs/todo.butter) and [`test-endpoint.butter`](specs/test-endpoint.butter). Each feature's actions run as sequential execution steps, one after another.
 
-Output (`demo.json`):
+Output (`demo.prompt.md`):
 
-```json
-{
-  "app": "OrderProcessor",
-  "description": "Handles high-throughput retail checkout workflows safely",
-  "version": "2.1.0",
-  "features": [
-    {
-      "name": "ProcessPayment",
-      "description": "Processes financial transactions through multiple payment gateways",
-      "version": "1.0.0",
-      "params": [
-        {
-          "name": "OrderID",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "Amount",
-          "type": "float",
-          "required": true
-        },
-        {
-          "name": "PaymentMethod",
-          "type": "enum[\"CreditCard\", \"Crypto\", \"BankTransfer\"]",
-          "default": "CreditCard"
-        },
-        {
-          "name": "AccountNotes",
-          "type": "string",
-          "default": "Standard processing sequence"
-        }
-      ],
-      "actions": [
-        { "statement": "Validate routing balance metrics" },
-        { "statement": "Apply cryptocurrency transaction surcharge",
-          "condition": { "type": "when", "expression": "PaymentMethod is set to Crypto" } },
-        { "statement": "Flag transaction for manual risk mitigation review",
-          "condition": { "type": "if", "expression": "Amount > 10000" } },
-        { "statement": "Bypass fraud detection ledger verification",
-          "condition": { "type": "unless", "expression": "Amount > 50" } },
-        { "statement": "Maintain continuous transaction ledger heartbeat",
-          "condition": { "type": "while", "expression": "Gateway Connection is unstable" } }
-      ]
-    }
-  ]
-}
+```markdown
+# [SYSTEM SPEC] OrderProcessor
+> **Version:** 2.1.0
+> **Description:** Handles high-throughput retail checkout workflows safely
+
+### Rules
+**CRITICAL:** The following rules MUST be respected throughout the entire implementation:
+
+* Use Node on the backend
+* Use React on the frontend
+
+## Feature: ProcessPayment
+**Version:** 1.0.0
+Processes financial transactions through multiple payment gateways
+
+### Params
+* `order_id` (string)
+* `amount` (double)
+* `payment_method` (enum["credit_card", "crypto", "bank_transfer"])
+
+### Execution Sequence
+**CRITICAL:** Execute the following steps strictly in order. Do not proceed to the next step until the current one is complete.
+
+1. **Validate routing balance metrics**
+2. **Apply cryptocurrency transaction surcharge**
+3. **Flag transaction for manual risk mitigation review**
+4. **Maintain continuous transaction ledger heartbeat**
 ```
 
 ---
@@ -235,23 +268,22 @@ butter fmt    [input file] [flags]
 
 | Flag | Shorthand | Description |
 | :--- | :--- | :--- |
-| `--output` | `-o` | Custom output path (defaults to `<input>.json` for json, `<input>.yaml` for yaml) |
-| `--format` | `-f` | Output format (default: `json`). Run `butter compile --help` to see all registered formats |
+| `--output` | `-o` | Custom output path (defaults to `<input>.prompt.md`) |
+| `--format` | `-f` | Output format (default: `prompt`). Run `butter compile --help` to see all registered formats |
 | `--check` | | Validate syntax and semantics without generating output |
 
 ```bash
 butter compile demo.butter
-butter compile demo.butter --output result.json
-butter compile demo.butter -o result.json
-butter compile demo.butter --format yaml
-butter compile demo.butter -f yaml -o result.yaml
+butter compile demo.butter -f json
+butter compile demo.butter -f yaml
+butter compile demo.butter -f json -o result.json
 butter compile --check demo.butter
 butter --version
 ```
 
 ### `butter fmt`
 
-Formats a `.butter` file according to standard conventions — removes blank lines after parameter keywords and adds blank lines before `params`, `actions`, and between top-level `feature` blocks.
+Formats a `.butter` file according to standard conventions — normalizes indentation, removes blank lines after section keywords, and adds blank lines before `params`, `actions`, `responses`, `returns`, `rules`, and between top-level `feature`/`endpoint` blocks.
 
 | Flag | Description |
 | :--- | :--- |
@@ -268,7 +300,7 @@ Only `.butter` files are accepted as input. Use `--check` to validate syntax and
 
 ### Output Extensions
 
-Butter's output layer is fully pluggable. The built-in JSON, YAML, and HTML tree serialisers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
+Butter's output layer is fully pluggable. The built-in JSON, YAML, prompt, HTML tree, and simulator serializers implement a simple three-method `Extension` interface. Anyone can write a new extension — for TOML, XML, Protobuf, Markdown, or anything else — and plug it in with a single import.
 
 To write an extension, implement the `output.Extension` interface and call `output.Register()`:
 
@@ -289,43 +321,28 @@ func (tomlExt) Serialize(spec *ast.AppSpec) ([]byte, error) {
 
 Then add a blank import in `cmd/root.go` and rebuild. The extension appears automatically in `--format` help text and error messages.
 
-Built-in extensions reference: [Output Extensions](docs/extensions.html)
-
-Full walkthrough: [Writing Extensions](docs/extension-dev.html)
+Built-in extensions are documented in the [VS Code Extension](docs/extension.html) page.
 
 ## AI Workflow
 
 Butter's true value emerges when you feed the compiled output to an AI agent. Here's the workflow:
 
-1. **Write a `.butter` spec** — Declare your features, their parameters (with types, defaults, validation), and the sequential actions that implement each feature.
+1. **Write a `.butter` spec** — Declare your features, their typed parameters, and the sequential actions that implement each feature.
 
-2. **Compile it** — `butter compile spec.butter` produces `spec.json` (or YAML).
+2. **Compile it** — `butter compile spec.butter` produces `spec.prompt.md`.
 
-3. **Feed the JSON to an AI agent** — Include the compiled JSON in your prompt with a simple instruction: *"Implement every feature in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all conditions, types, constraints, and enforce rules."*
+3. **Feed the prompt to an AI agent** — Include the compiled prompt with a simple instruction: *"Implement every feature in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all types, rules, and enforce constraints."*
 
-4. **Get higher first-pass accuracy** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and under what conditions. Hallucination drops, token waste drops, and you get working code on the first try.
+4. **Get higher first-pass accuracy** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and with what constraints. Hallucination drops, token waste drops, and you get working code on the first try.
 
 ### Example
 
 ```text
-Using this JSON specification, build the complete application. Each feature's
+Using this specification, build the complete application. Each feature's
 actions are sequential execution steps — they must be implemented strictly one
 after the other in the listed order, never in parallel or reordered.
 
-\`\`\`json
-{
-  "app": "TodoApp",
-  "features": [
-    {
-      "name": "CreateTask",
-      "actions": [
-        { "statement": "Validate title is not empty" },
-        { "statement": "Assign unique identifier to the new task" }
-      ]
-    }
-  ]
-}
-\`\`\`
+[paste compiled spec.prompt.md here]
 ```
 
 The spec defines *what* to build. The AI figures out *how*. That's the division of labour.
@@ -347,20 +364,19 @@ The spec defines *what* to build. The AI figures out *how*. That's the division 
        │ (Abstract Syntax Tree)
        ▼
  ┌───────────┐
- │ Semantic  │ <--- Checks: duplicate names, type-default
- │  Analysis │       mismatches, undefined condition refs,
- │           │       enum defaults, redundant fields
+ │ Semantic  │ <--- Checks: duplicate names, valid types, valid
+ │  Analysis │       HTTP methods/status codes, response refs, enums
  └─────┬─────┘
        │ (Validated AST)
        ▼
   ┌──────────────┐
   │ Output       │ <--- Pluggable Extension Registry
-  │ Extension    │       (json, yaml, + custom)
+  │ Extension    │       (json, yaml, prompt, htmltree, sim, + custom)
   │  Registry    │
   └──────┬───────┘
          │
          ▼
-  [ .json / .yaml / custom file ]
+  [ .prompt.md / .json / .yaml / custom file ]
 ```
 
 ### Semantic Analysis
@@ -371,12 +387,14 @@ After parsing, a dedicated semantic analysis pass validates the AST against the 
 | :--- | :--- | :--- |
 | Duplicate feature names | Error | Two features with the same name (includes first-definition line) |
 | Duplicate parameter names | Error | Two params with the same name within a feature |
-| Undefined condition references | Error | Condition expression references a param name that doesn't exist in the feature |
-| Default type mismatch | Error | Default value doesn't match the declared type (e.g. `type int` with `default "hello"`) |
-| Enum default not in list | Error | Default value isn't one of the declared `enum[...]` values |
-| Required param with default | Warning | `required: true` paired with `default` is redundant |
+| Unknown parameter/field type | Error | Type is not `string`, `integer`, `double`, `boolean`, `enum[...]`, or `array[...]` |
+| Duplicate enum value | Error | An `enum[...]` list contains the same value twice |
+| Invalid HTTP method | Error | `method` is not one of POST/GET/PUT/DELETE/PATCH |
+| Invalid status code | Error | `returns` code outside the range 100–599 |
+| Undefined response ref | Error | `returns` references a `responses` name that isn't declared |
+| Missing route/method | Error | Endpoint lacks a required `route` or `method` |
 
-Errors block output generation; warnings are reported but output is still produced.
+Errors block output generation.
 
 ### Lexical Analysis (The Off-side Rule)
 
@@ -390,11 +408,11 @@ Because Butter uses whitespace indentation to mark boundaries, the lexer reads f
 
 The parser constructs a typed AST graph mapped directly to Go structures:
 
-- **AppSpec** — Root node: app name, description, version, and features
+- **AppSpec** — Root node: app name, description, version, rules, and features/endpoints
 - **FeatureSpec** — Named feature with optional description, version, params, and actions
-- **ParamSpec** — Parameter with name, type, required flag, and default value
-- **ActionSpec** — Action statement with optional enforce(s) and optional condition (type + expression)
-- **ConditionSpec** — One of `if`, `unless`, `when`, `while` plus a predicate expression
+- **EndpointSpec** — Named endpoint with route, method, params, responses, actions, and returns
+- **ParamSpec** — Parameter with a name and type
+- **ActionSpec** — Action statement with optional enforce(s)
 
 ---
 
@@ -403,15 +421,15 @@ The parser constructs a typed AST graph mapped directly to Go structures:
 A VS Code extension providing syntax highlighting, indentation support, and language configuration is included in the `butter-extension/` directory.
 
 **Features:**
-- Full TextMate grammar with named capture highlighting for `app`, `feature`, and `param` identifiers
+- Full TextMate grammar with named capture highlighting for `app`, `feature`, `endpoint`, and parameter identifiers
 - **Butter Docs Colors** theme — a VS Code color theme that matches the docs color scheme (amber keywords, green strings, blue functions, purple params). Select "Butter Docs Colors" from the theme picker.
 - On-save formatting — automatically applies `butter fmt` every time a file is saved, no configuration needed
 - On-save linting — validates syntax via `butter compile --check` after formatting and surfaces errors with red squiggly underlines
 - `Butter: Lint current file` command in the command palette
 - `Butter: Format current file` command in the command palette
-- Auto-indentation for `feature`, `params`, `actions`, and `param` blocks
+- Auto-indentation for `feature`, `endpoint`, `params`, `actions`, `responses`, `returns`, and `rules` blocks
 - Configurable compiler path (`butter.compilerPath`)
-- Comment toggle with `#`
+- Comment toggle with `#` and `//`
 - Auto-closing pairs for `"` and `[]`
 - Document file icon for `.butter` files
 
