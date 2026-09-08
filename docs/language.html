@@ -108,6 +108,7 @@
     <li><strong>Deterministic.</strong> Same inputs produce the same execution path.</li>
     <li><strong>Atomic.</strong> Each action is one step. Break complex work into multiple actions.</li>
   </ul>
+  <p>Keep every action to a single step — one discrete operation, nothing more. If an action does several things, split it into separate actions so the AI executes them one at a time and in strict order.</p>
   <p>Write actions like you're giving instructions to a developer. Be specific about what to validate, calculate, or create.</p>
 </section>
 
@@ -128,7 +129,7 @@
   <h2>Endpoints</h2>
   <p>An <code>endpoint</code> describes an HTTP API contract: the route, method, parameters, response schemas, execution steps, and return mappings. Everything the AI needs to implement the endpoint is in one block.</p>
   <pre><code class="language-butter">app MyApp
-  description "Task management API"
+  description "Order checkout and payment API"
   version "1.0.0"
 
 endpoint ProcessOrder "/api/checkout/orders"
