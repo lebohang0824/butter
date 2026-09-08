@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Language Guide — Butter</title>
-<meta name="description" content="Complete language reference for Butter — features, endpoints, parameters, actions, enforce rules, and response schemas.">
+<meta name="description" content="Complete language reference for Butter — features, rules, endpoints, parameters, actions, enforce rules, and response schemas.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -23,6 +23,7 @@
   <nav>
     <a href="index.html">Home</a>
     <a href="#features">Features</a>
+    <a href="#rules">Rules</a>
     <a href="#params">Params</a>
     <a href="#actions">Actions</a>
     <a href="#enforce">Enforce</a>
@@ -66,6 +67,25 @@
     <li>Everything under a feature must be indented.</li>
     <li>Valid keywords inside a feature: <code>description</code>, <code>version</code>, <code>params</code>, <code>actions</code>.</li>
     <li>A feature can be empty — zero params and zero actions is valid.</li>
+  </ul>
+</section>
+
+<section id="rules">
+  <h2>Rules</h2>
+  <p>The <code>rules</code> block lives under <code>app</code> and declares app-wide constraints the AI must respect throughout the entire implementation.</p>
+  <pre><code class="language-butter">app MyApp
+  description "Order checkout and payment API"
+  version "1.0.0"
+  rules
+    "Use Node on the backend"
+    "Use React on the frontend"
+    "Never store plain-text credentials"</code></pre>
+
+  <h3>How they work</h3>
+  <ul>
+    <li>Place under <code>app</code>, alongside <code>description</code> and <code>version</code>.</li>
+    <li>Each rule is a quoted string on its own line.</li>
+    <li>Rules apply to every feature and endpoint in the spec — not to any single action.</li>
   </ul>
 </section>
 
@@ -272,7 +292,7 @@ feature DeleteTask
     "Broadcast deletion event to connected clients"</code></pre>
 
   <p>Compile: <code>butter compile todo.butter</code> — produces <code>todo.prompt.md</code>. Use <code>-f json</code> or <code>-f yaml</code> for other formats.</p>
-  <p>See a working single-page app: <a href="todo.html">todo.html</a>. Visual tree: <a href="todo-viz.html">todo-viz.html</a>.</p>
+  <p>See a working single-page app: <a href="todo.html">todo.html</a>.</p>
 
   <h3>Using the output with AI</h3>
   <pre><code class="language-text">Using this specification, build the complete application. Each feature's
