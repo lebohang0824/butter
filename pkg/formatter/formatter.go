@@ -93,18 +93,8 @@ func pass2(lines []string) []string {
 				result = append(result[:insertIdx], append([]string{""}, result[insertIdx:]...)...)
 			}
 		} else if startsWithApp(line) {
-			last := len(result) - 1
-			switch {
-			case last >= 0 && commentRe.MatchString(result[last]):
-				insertIdx := last
-				for insertIdx > 0 && commentRe.MatchString(result[insertIdx-1]) {
-					insertIdx--
-				}
-				if insertIdx == 0 || !isEmpty(result[insertIdx-1]) {
-					result = append(result[:insertIdx], append([]string{""}, result[insertIdx:]...)...)
-				}
-			case last >= 0 && !isEmpty(result[last]):
-				result = append(result, "")
+			for len(result) > 0 && isEmpty(result[len(result)-1]) {
+				result = result[:len(result)-1]
 			}
 		}
 		result = append(result, line)

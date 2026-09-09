@@ -2,7 +2,6 @@
 # AI agents: implement every feature below. Each feature's actions are sequential
 # execution steps — run them one after another in the listed order. Respect all
 # types and constraints.
-
 app TodoApp
   description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled prompt and produces a complete working application with higher first-pass accuracy."
   version "1.0.0"

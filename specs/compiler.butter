@@ -1,5 +1,4 @@
 # Butter Project Documentation
-
 app ButterCompiler
   description "A specification language that communicates intent to AI agents. Write clean .butter specs, compile to a Markdown prompt, and feed the output to AI agents who produce higher first-pass accuracy."
 

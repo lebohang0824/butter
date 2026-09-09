@@ -4,7 +4,6 @@
 # AI agents: read this spec to execute release tasks safely and deterministically.
 # Follow each action in sequence, ensuring that any constraints
 # are verified against the repository state before executing.
-
 app ButterProject
   description "Release workflow for the Butter project. AI agents: honor all instructions, follow only the defined execution steps sequentially, and strictly respect all constraints and enforcement rules."
 
