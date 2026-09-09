@@ -18,7 +18,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v2.0.0</div>
+    <div class="version">v2.1.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
@@ -70,6 +70,8 @@ code --install-extension butter-extension.vsix
     <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
     <tbody>
       <tr><td><code>butter.compilerPath</code></td><td><code>"butter"</code></td><td>Path to the <code>butter</code> binary. Change this if the binary isn't on your PATH.</td></tr>
+      <tr><td><code>butter.compileOnSave</code></td><td><code>false</code></td><td>Compile the spec on save and write generated outputs next to the source file.</td></tr>
+      <tr><td><code>butter.compileFormats</code></td><td><code>["prompt"]</code></td><td>Output formats generated on save when <code>butter.compileOnSave</code> is enabled. Supported: <code>prompt</code>, <code>json</code>, <code>yaml</code>.</td></tr>
     </tbody>
   </table>
 </section>

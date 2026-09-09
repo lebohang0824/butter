@@ -68,6 +68,29 @@ function activate(context) {
     });
   }
 
+  function compileOnSave(doc) {
+    const config = vscode.workspace.getConfiguration('butter');
+    if (!config.get('compileOnSave', false)) return;
+
+    const compilerPath = config.get('compilerPath', 'butter');
+    const formats = config.get('compileFormats', ['prompt']);
+
+    for (const format of formats) {
+      cp.execFile(compilerPath, ['compile', '--format', format, doc.fileName], { timeout: 10000 }, (err, stdout, stderr) => {
+        if (err) {
+          if (err.code === 'ENOENT') {
+            output.appendLine(`Butter compiler not found at '${compilerPath}'`);
+            return;
+          }
+          const detail = (stderr || '').trim() || err.message;
+          output.appendLine(`Compile (${format}) failed: ${detail}`);
+        } else {
+          output.appendLine((stdout || '').trim());
+        }
+      });
+    }
+  }
+
   async function formatOnSave(doc) {
     if (doc.languageId !== 'butter' || doc.uri.scheme !== 'file') return;
 
@@ -96,6 +119,8 @@ function activate(context) {
     if (needsLint) {
       lint(doc);
     }
+
+    compileOnSave(doc);
   }
 
   context.subscriptions.push(

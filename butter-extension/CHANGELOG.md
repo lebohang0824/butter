@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.1.0] - 2026-09-08
+
+- **Compile on save** — New `butter.compileOnSave` setting. When enabled, the extension compiles the spec on every save and writes generated outputs next to the source file.
+- **Selectable output formats** — New `butter.compileFormats` setting chooses which formats are generated on save (`prompt`, `json`, `yaml`; default `["prompt"]`).
+- Compile results and failures are reported in the Butter output channel.
+
 ## [2.0.0] - 2026-09-04
 
 - **Canonical spec alignment** — The extension now targets the canonical Butter specification language exclusively.

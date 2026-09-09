@@ -1,11 +1,11 @@
 # Butter VS Code Extension Documentation
 app ButterExtension
   description "VS Code extension providing syntax highlighting, IntelliSense (code completion and hover), formatting, linting, and language configuration for the Butter specification language — a language that communicates intent to AI agents by compiling structured specs into Markdown prompts that guide agents toward higher first-pass accuracy."
-  version "2.0.0"
+  version "2.1.0"
 
 feature SyntaxHighlighting
   description "TextMate grammar providing tokenization and named capture highlighting for .butter files."
-  version "2.0.0"
+  version "2.1.0"
 
   params
     scope_name string
@@ -26,7 +26,7 @@ feature SyntaxHighlighting
 
 feature LanguageConfiguration
   description "Editor configuration for indentation, bracket matching, auto-closing pairs, and comment toggling."
-  version "2.0.0"
+  version "2.1.0"
 
   params
     line_comment string
@@ -42,7 +42,7 @@ feature LanguageConfiguration
 
 feature LintingEngine
   description "On-save and on-open linting that runs butter compile --check and surfaces errors as diagnostics."
-  version "2.0.0"
+  version "2.1.0"
 
   params
     compiler_path string
@@ -60,7 +60,7 @@ feature LintingEngine
 
 feature FormattingEngine
   description "On-save formatting that runs butter fmt and applies edits to the document."
-  version "2.0.0"
+  version "2.1.0"
 
   params
     format_on_save boolean
@@ -75,3 +75,17 @@ feature FormattingEngine
     "Skip lint pass when formatting changes were applied to avoid redundant checks"
     "Provide Butter: Format current file command in the command palette"
     "Fall back to lint-only when formatting fails or produces no changes"
+
+feature CompileOnSave
+  description "Optional on-save compilation that writes selected output formats next to the source spec."
+  version "2.1.0"
+
+  params
+    compile_on_save boolean
+    compile_formats array[string]
+
+  actions
+    "Compile the document on save when butter.compileOnSave is enabled"
+    "Generate each output format selected in butter.compileFormats"
+    "Write generated files next to the source spec using the compiler's default output naming"
+    "Log compile results and failures in the Butter output channel"

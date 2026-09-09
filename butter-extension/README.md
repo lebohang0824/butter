@@ -10,6 +10,7 @@ A VS Code extension providing syntax highlighting, IntelliSense, formatting, lin
 - **Syntax Highlighting** — Full TextMate grammar with named capture highlighting for `app`, `feature`, `endpoint`, and `rules`/`returns` identifiers, including bare param types (`string`, `integer`, `double`, `boolean`, `enum[...]`)
 - **On-Save Formatting** — Automatically applies `butter fmt` on every save, no configuration needed
 - **On-Save Linting** — Validates `.butter` syntax on save using the bundled compiler and surfaces errors with red squiggly underlines
+- **On-Save Compile** — Optional. When `butter.compileOnSave` is enabled, compiles the spec on save and writes the outputs for your selected formats (`butter.compileFormats`) next to the source file
 - **Manual Lint Command** — `Butter: Lint current file` in the command palette
 - **Manual Format Command** — `Butter: Format current file` in the command palette
 - **Auto-Indentation** — Smart indent/dedent for `feature`, `endpoint`, `params`, `actions`, `responses`, `returns`, and `rules` blocks
@@ -70,6 +71,14 @@ endpoint SaveOrder "/orders"
 ## Compiler
 
 The Butter compiler is a standalone Go CLI tool. See the [Butter repository](https://github.com/lebohang0824/butter) for instructions on building and using the compiler.
+
+## Settings
+
+| Setting | Default | Description |
+| :--- | :--- | :--- |
+| `butter.compilerPath` | `"butter"` | Path to the `butter` compiler binary. Change this if the binary isn't on your PATH. |
+| `butter.compileOnSave` | `false` | When enabled, compiles the spec on save and writes generated outputs next to the source file. |
+| `butter.compileFormats` | `["prompt"]` | Output formats generated on save when `butter.compileOnSave` is enabled. Supported: `prompt` (→ `.prompt.md`), `json` (→ `.json`), `yaml` (→ `.yaml`). |
 
 ## Release Notes
 

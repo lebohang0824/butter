@@ -2,7 +2,7 @@
   "name": "butter-extension",
   "displayName": "Butter Configuration Language Support",
   "description": "Syntax structural highlighting and auto-indent configuration mapping engines designed natively for the Butter DSL file ecosystem.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publisher": "butter-io",
   "icon": "butter-logo.png",
   "engines": {
@@ -33,6 +33,26 @@
           "type": "string",
           "default": "butter",
           "description": "Path to the butter compiler binary"
+        },
+        "butter.compileOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Compile the spec on save and write generated outputs next to the source file"
+        },
+        "butter.compileFormats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "prompt",
+              "json",
+              "yaml"
+            ]
+          },
+          "default": [
+            "prompt"
+          ],
+          "description": "Output formats to generate on save when butter.compileOnSave is enabled"
         }
       }
     },
