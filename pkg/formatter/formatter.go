@@ -85,11 +85,25 @@ func pass2(lines []string) []string {
 				}
 			}
 		} else if startsWithFeature(line) || startsWithEndpoint(line) {
-			if len(result) > 0 && !isEmpty(result[len(result)-1]) {
-				result = append(result, "")
+			insertIdx := len(result)
+			for insertIdx > 0 && (isEmpty(result[insertIdx-1]) || commentRe.MatchString(result[insertIdx-1])) {
+				insertIdx--
+			}
+			if insertIdx > 0 && (insertIdx >= len(result) || !isEmpty(result[insertIdx])) {
+				result = append(result[:insertIdx], append([]string{""}, result[insertIdx:]...)...)
 			}
 		} else if startsWithApp(line) {
-			if len(result) > 0 && !isEmpty(result[len(result)-1]) {
+			last := len(result) - 1
+			switch {
+			case last >= 0 && commentRe.MatchString(result[last]):
+				insertIdx := last
+				for insertIdx > 0 && commentRe.MatchString(result[insertIdx-1]) {
+					insertIdx--
+				}
+				if insertIdx == 0 || !isEmpty(result[insertIdx-1]) {
+					result = append(result[:insertIdx], append([]string{""}, result[insertIdx:]...)...)
+				}
+			case last >= 0 && !isEmpty(result[last]):
 				result = append(result, "")
 			}
 		}
