@@ -94,7 +94,7 @@ endpoint <name> <route>
 | `feature`     | Block-level   | Declares a sub-system module or discrete capability |
 | `endpoint`    | Block-level   | Declares a synchronous HTTP transport contract with a route: `endpoint Name "route"` |
 | `rules`       | App block     | A container block of app-level rules: `rules` followed by quoted strings |
-| `method`      | Endpoint      | The HTTP verb: `method POST` (bare, no quotes) |
+| `method`      | Endpoint      | The HTTP verb, quoted: `method "POST"` |
 | `params`      | Block-level   | A dedicated container block for parameter definitions |
 | `actions`     | Block-level   | A dedicated container block for execution steps |
 | `enforce`     | Action        | A constraint string directly below its parent action |

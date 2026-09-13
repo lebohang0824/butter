@@ -5,13 +5,13 @@ const DOCS = {
   description: 'A human-readable description of the current block.\n\n```butter\ndescription "My application"\n```',
   version: 'Version identifier for the app, feature, or endpoint.\n\n```butter\nversion "1.0.0"\n```',
   feature: 'Define a logical feature group within the app.\n\n```butter\nfeature MyFeature\n  description "..."\n  params\n    name string\n```',
-  endpoint: 'Define a synchronous HTTP network gateway with route, method, params, responses, actions, and returns mappings.\n\n```butter\nendpoint ProcessOrder "/api/checkout/orders"\n  description "Process a checkout order"\n  method POST\n  params\n    checkout_token string\n```',
+  endpoint: 'Define a synchronous HTTP network gateway with route, method, params, responses, actions, and returns mappings.\n\n```butter\nendpoint ProcessOrder "/api/checkout/orders"\n  description "Process a checkout order"\n  method "POST"\n  params\n    checkout_token string\n```',
   rules: 'Begin an app-level rules block of quoted strings.\n\n```butter\nrules\n  "Use MVC pattern"\n```',
   params: 'Begin a parameter definition block.\n\n```butter\nparams\n  name string\n```',
   actions: 'Begin an action definition block.\n\n```butter\nactions\n  "Do something"\n```',
   enforce: 'Enforce a constraint directly below its parent action string.\n\n```butter\n  "Validate name"\n    enforce "Sanitize name before storing"\n```',
   responses: 'Begin a response schema definition block.\n\n```butter\nresponses\n  OrderSuccess\n    order_id string\n```',
-  method: 'The HTTP method for the endpoint (unquoted).\n\n```butter\nmethod POST\n```',
+  method: 'The HTTP method for the endpoint, as a quoted string.\n\n```butter\nmethod "POST"\n```',
   returns: 'Begin a returns block mapping HTTP status codes to response payloads.\n\n```butter\nreturns\n  201 OrderSuccess\n  500 "Server error"\n```',
   string: 'Text string data type.\n\n```butter\nname string\n```',
   integer: 'Integer number data type.\n\n```butter\ncount integer\n```',
@@ -104,11 +104,11 @@ const RETURNS_BODY = setDocs([
 ]);
 
 const METHODS = setDocs([
-  item('POST', vscode.CompletionItemKind.Keyword),
-  item('GET', vscode.CompletionItemKind.Keyword),
-  item('PUT', vscode.CompletionItemKind.Keyword),
-  item('DELETE', vscode.CompletionItemKind.Keyword),
-  item('PATCH', vscode.CompletionItemKind.Keyword),
+  snippet('"POST"', '"POST"'),
+  snippet('"GET"', '"GET"'),
+  snippet('"PUT"', '"PUT"'),
+  snippet('"DELETE"', '"DELETE"'),
+  snippet('"PATCH"', '"PATCH"'),
 ]);
 
 const TYPES = setDocs([

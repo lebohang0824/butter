@@ -5,7 +5,7 @@ app TestEndpoint
 endpoint ProcessOrder "/api/checkout/orders"
   description "Validates checkout items, processes the transaction, and generates an order summary invoice."
   version "1.0.0"
-  method POST
+  method "POST"
 
   params
     checkout_token string

@@ -55,7 +55,7 @@
       }
     },
     "method_line": {
-      "match": "\\b(method)\\s+([A-Z]+)\\b",
+      "match": "\\b(method)\\s+(\"[A-Z]+\")\\b",
       "captures": {
         "1": { "name": "keyword.control.butter" },
         "2": { "name": "support.constant.http-method.butter" }

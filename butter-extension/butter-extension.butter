@@ -20,7 +20,7 @@ feature SyntaxHighlighting
     "Highlight double-quoted string literals with string.quoted.double scope"
     "Highlight boolean constants: true, false"
     "Highlight endpoint name and route string with entity.name.function and string.quoted.double captures"
-    "Highlight method lines (method POST) with keyword and support.constant.http-method captures"
+    "Highlight method lines with a quoted HTTP verb (such as method POST) via keyword and support.constant.http-method captures"
     "Highlight response headers (PascalCase name) with entity.name.class captures"
     "Highlight returns lines (status code + payload) with constant.numeric.integer and entity.name.class captures"
 

@@ -31,7 +31,7 @@ feature CreateTodo
 endpoint SaveTodo "/todo"
   description "Save todo to the database"
   version "0.0.1"
-  method POST
+  method "POST"
 
   params
     name string
@@ -86,7 +86,7 @@ endpoint SaveTodo "/todo"
 		t.Errorf("expected route /todo, got %q", ep.Route)
 	}
 	if ep.Method != "POST" {
-		t.Errorf("expected method POST, got %q", ep.Method)
+		t.Errorf("expected method %q, got %q", "POST", ep.Method)
 	}
 	if len(ep.Returns) != 2 {
 		t.Fatalf("expected 2 returns, got %d", len(ep.Returns))
@@ -147,6 +147,44 @@ func TestParseRejectsProductAlias(t *testing.T) {
 	}
 }
 
+func TestParseRejectsUnquotedMethod(t *testing.T) {
+	src := `app A
+  description "demo"
+  version "1.0.0"
+
+endpoint E "/e"
+  description "demo"
+  version "1.0.0"
+  method GET
+`
+	l := lexer.NewLexer(src)
+	p := NewParser(l)
+	if _, err := p.Parse(); err == nil {
+		t.Fatal("expected error for unquoted method, got nil")
+	}
+}
+
+func TestParseAcceptsQuotedMethod(t *testing.T) {
+	src := `app A
+  description "demo"
+  version "1.0.0"
+
+endpoint E "/e"
+  description "demo"
+  version "1.0.0"
+  method "GET"
+`
+	l := lexer.NewLexer(src)
+	p := NewParser(l)
+	spec, err := p.Parse()
+	if err != nil {
+		t.Fatalf("unexpected error for quoted method: %v", err)
+	}
+	if spec.Endpoints[0].Method != "GET" {
+		t.Errorf("expected method GET, got %q", spec.Endpoints[0].Method)
+	}
+}
+
 func TestParseRejectsSingularRule(t *testing.T) {
 	src := `app Foo
   description "demo"
@@ -180,7 +218,7 @@ func TestParseRejectsSingularReturn(t *testing.T) {
 endpoint E "/e"
   description "demo"
   version "1.0.0"
-  method GET
+  method "GET"
 
   returns
     200 "ok"
@@ -198,7 +236,7 @@ endpoint E "/e"
 endpoint E "/e"
   description "demo"
   version "1.0.0"
-  method GET
+  method "GET"
 
   return
     200 "ok"

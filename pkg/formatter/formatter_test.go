@@ -24,7 +24,7 @@ feature CreateTodo
     "Create the todo record"
 
 endpoint SaveTodo "/todo"
-  method POST
+  method "POST"
   params
     title string
   responses
@@ -63,7 +63,7 @@ feature CreateTodo
     "Create the todo record"
 
 endpoint SaveTodo "/todo"
-  method POST
+  method "POST"
 
   params
     title string

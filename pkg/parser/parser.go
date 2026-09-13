@@ -235,8 +235,8 @@ func (p *Parser) parseEndpoint() (*ast.EndpointSpec, error) {
 			p.nextToken()
 		} else if p.curToken.Type == lexer.TokenIdentifier && p.curToken.Value == "method" {
 			p.nextToken()
-			if p.curToken.Type != lexer.TokenIdentifier {
-				return nil, fmt.Errorf("line %d: expected an HTTP method after 'method'", p.curToken.Line)
+			if p.curToken.Type != lexer.TokenString {
+				return nil, fmt.Errorf("line %d: expected a quoted HTTP method (e.g. %q) after 'method'", p.curToken.Line, "POST")
 			}
 			ep.Method = p.curToken.Value
 			p.nextToken()

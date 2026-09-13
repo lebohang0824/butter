@@ -48,7 +48,7 @@ feature ProcessPayment
 endpoint SaveOrder "/orders"
   description "Stores an order in the database"
   version "1.0.0"
-  method POST
+  method "POST"
 
   params
     order_id string
