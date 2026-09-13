@@ -95,6 +95,7 @@ chmod +x install.sh
 feature Greet
   params
     name string
+
   actions
     "Say hello to the user"</code></pre>
 
@@ -147,6 +148,7 @@ all types and constraints.</code></pre>
   <pre><code class="language-butter">app MyApp
   description "What the app does"
   version "1.0.0"
+
   rules
     "Use Node on the backend"
     "Use React on the frontend"
@@ -154,18 +156,23 @@ all types and constraints.</code></pre>
 feature FeatureName
   description "What this feature does"
   version "1.0.0"
+
   params
     name type
+
   actions
     "Do something"
 
 endpoint EndpointName "route/path"
   description "What this endpoint does"
   method POST
+
   params
     name type
+
   actions
     "Do something"
+
   returns
     200 "OK"</code></pre>
 

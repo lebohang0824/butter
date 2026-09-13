@@ -55,7 +55,7 @@ func pass1(lines []string) []string {
 	for i := 0; i < len(lines); i++ {
 		result = append(result, lines[i])
 		if keywordValueRe.MatchString(lines[i]) {
-			for i+1 < len(lines) && isEmpty(lines[i+1]) {
+			for i+1 < len(lines)-1 && isEmpty(lines[i+1]) {
 				i++
 			}
 		}

@@ -51,10 +51,12 @@
   <pre><code class="language-butter">feature ProcessPayment
   description "Handles payment transactions"
   version "1.0.0"
+
   params
     order_id string
     amount double
     payment_method enum["credit_card", "crypto", "bank_transfer"]
+
   actions
     "Validate routing balance metrics"
     "Apply cryptocurrency transaction surcharge"
@@ -76,6 +78,7 @@
   <pre><code class="language-butter">app MyApp
   description "Order checkout and payment API"
   version "1.0.0"
+
   rules
     "Use Node on the backend"
     "Use React on the frontend"
@@ -156,19 +159,23 @@ endpoint ProcessOrder "/api/checkout/orders"
   description "Validates checkout and processes payment"
   version "1.0.0"
   method POST
+
   params
     checkout_token string
     coupon_code string
     dry_run boolean
+
   responses
     OrderSuccessPayload
       order_id integer
       total_amount double
       currency string
+
   actions
     "Verify checkout token is valid and active"
     "Calculate final prices using coupon_code"
     "Authorize payment transaction"
+
   returns
     201 OrderSuccessPayload
     200 "Dry run completed"
@@ -237,12 +244,14 @@ endpoint ProcessOrder "/api/checkout/orders"
 feature CreateTask
   description "Creates new tasks with title, priority, and due date"
   version "1.0.0"
+
   params
     title string
     description string
     completed boolean
     priority enum["low", "medium", "high", "urgent"]
     due_date string
+
   actions
     "Validate title is not empty"
     "Assign unique identifier to the new task"
@@ -254,10 +263,12 @@ feature CreateTask
 feature ListTasks
   description "Retrieves and filters tasks based on criteria"
   version "1.0.0"
+
   params
     status_filter enum["all", "pending", "completed", "archived"]
     sort_by enum["created", "priority", "due_date", "title"]
     limit integer
+
   actions
     "Query task repository with specified filters"
     "Sort results according to sort_by parameter"
@@ -267,11 +278,13 @@ feature ListTasks
 feature UpdateTask
   description "Modifies existing task attributes"
   version "1.0.0"
+
   params
     task_id string
     title string
     status enum["pending", "completed", "archived"]
     priority enum["low", "medium", "high", "urgent"]
+
   actions
     "Look up task by task_id"
     "Populate form fields with current task values"
@@ -282,9 +295,11 @@ feature UpdateTask
 feature DeleteTask
   description "Removes a task permanently"
   version "1.0.0"
+
   params
     task_id string
     confirmation string
+
   actions
     "Verify task_id exists in repository"
     "Verify confirmation matches task title"
