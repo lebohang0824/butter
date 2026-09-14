@@ -46,14 +46,18 @@ function activate(context) {
         if (writeErr) { reject(writeErr); return; }
 
         cp.execFile(compilerPath, ['fmt', tmpFile], { timeout: 10000 }, fmtErr => {
+          fs.unlink(tmpFile, () => {});
           if (fmtErr) {
-            fs.unlink(tmpFile, () => {});
+            if (fmtErr.code === 'ENOENT') {
+              output.appendLine(`Butter compiler not found at '${compilerPath}'`);
+              resolve([]);
+              return;
+            }
             reject(fmtErr);
             return;
           }
 
           fs.readFile(tmpFile, 'utf8', (readErr, formatted) => {
-            fs.unlink(tmpFile, () => {});
             if (readErr) { reject(readErr); return; }
             if (text === formatted) { resolve([]); return; }
 

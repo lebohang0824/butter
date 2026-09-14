@@ -61,7 +61,7 @@ func (l *Lexer) NextToken() Token {
 				blankLine = true
 				break
 			}
-			if c != ' ' && c != '\t' {
+			if c != ' ' && c != '\t' && c != '\r' {
 				break
 			}
 		}
@@ -148,6 +148,8 @@ func (l *Lexer) consumeIndentation() int {
 			l.pos++
 		} else if ch == '\t' {
 			count += 2
+			l.pos++
+		} else if ch == '\r' {
 			l.pos++
 		} else {
 			break

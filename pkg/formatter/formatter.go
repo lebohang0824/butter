@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 )
@@ -14,11 +15,17 @@ var commentRe = regexp.MustCompile(`^\s*(#|//)`)
 var rootBlockRe = regexp.MustCompile(`^\s*(app|feature|endpoint)\s+\S`)
 
 func Format(content []byte) ([]byte, error) {
-	lines := strings.Split(string(content), "\n")
+	crlf := bytes.Contains(content, []byte("\r\n"))
+	text := strings.ReplaceAll(string(content), "\r\n", "\n")
+	lines := strings.Split(text, "\n")
 	lines = normalizeIndentation(lines)
 	lines = pass1(lines)
 	lines = pass2(lines)
-	return []byte(strings.Join(lines, "\n")), nil
+	joined := strings.Join(lines, "\n")
+	if crlf {
+		joined = strings.ReplaceAll(joined, "\n", "\r\n")
+	}
+	return []byte(joined), nil
 }
 
 func normalizeIndentation(lines []string) []string {
