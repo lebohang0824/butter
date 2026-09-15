@@ -18,10 +18,11 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <img src="icon.svg" alt="" style="height: 1.1rem; vertical-align: middle; margin-right: 0.3rem;"> Butter
-    <div class="version">v2.0.0</div>
+    <div class="version">v2.1.0</div>
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#v2-1-0">v2.1.0</a>
     <a href="#v2-0-0">v2.0.0</a>
     <a href="#v1-15-0">v1.15.0</a>
     <a href="#v1-14-0">v1.14.0</a>
@@ -44,6 +45,17 @@
 <main class="main">
 
 <h1>Changelog</h1>
+
+<section id="v2-1-0">
+  <h2>v2.1.0 — 2026-09-15</h2>
+  <ul>
+    <li><strong>Prompt generation</strong> — <code>butter compile</code> writes a Markdown system-prompt document (<code>.prompt.md</code>) by default.</li>
+    <li><strong>Format cleanup</strong> — <code>htmltree</code> and <code>simulator</code> output formats removed.</li>
+    <li><strong>Quoted HTTP methods</strong> — Endpoint <code>method</code> values must be quoted strings (e.g. <code>method "POST"</code>); bare verbs are rejected.</li>
+    <li><strong>Formatter fixes</strong> — Consistent blank-line placement above comment and app/feature/endpoint blocks, with trailing blank lines preserved.</li>
+    <li><strong>Windows support</strong> — Lexer handles CRLF line endings.</li>
+  </ul>
+</section>
 
 <section id="v2-0-0">
   <h2>v2.0.0 — 2026-09-04</h2>
