@@ -231,8 +231,9 @@ Requires [Go](https://go.dev/dl/) 1.21+.
 git clone https://github.com/lebohang0824/butter.git butter
 cd butter
 go build -o butter main.go
-sudo cp butter /usr/local/bin/
 ```
+
+Then install it with the install script (see below).
 
 ### Install Script
 
