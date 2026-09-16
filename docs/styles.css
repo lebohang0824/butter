@@ -324,6 +324,20 @@ pre.code-block > .code-gutter > span {
   margin: 0.5rem auto 0;
 }
 
+.hero .hero-note {
+  max-width: 600px;
+  margin: 1.5rem auto 0;
+  padding: 0.85rem 1.1rem;
+  background: var(--bg-alt);
+  border: 1px solid var(--accent);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: var(--fg);
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

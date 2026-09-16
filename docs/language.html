@@ -22,6 +22,7 @@
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#syntax">Syntax</a>
     <a href="#features">Features</a>
     <a href="#rules">Rules</a>
     <a href="#params">Params</a>
@@ -30,6 +31,7 @@
     <a href="#endpoints">Endpoints</a>
     <a href="#responses">Responses</a>
     <a href="#returns">Returns</a>
+    <a href="#scope">Scope Rules</a>
     <a href="#examples">Examples</a>
     <a href="cli-reference.html">CLI Reference</a>
     <a href="extension.html">VS Code Extension</a>
@@ -39,13 +41,56 @@
 
 <main class="main">
 
-<section id="features">
-  <div class="hero">
-    <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
-    <h1>Language Guide</h1>
-    <p class="subtitle">Everything you need to write <code>.butter</code> specs — from basic features to HTTP endpoints.</p>
-  </div>
+<div class="hero">
+  <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
+  <h1>Language Guide</h1>
+  <p class="subtitle">Everything you need to write <code>.butter</code> specs — from basic features to HTTP endpoints.</p>
+  <p class="hero-note"><strong>AI integration tip:</strong> include a link to this guide in your prompt alongside the compiled output so your AI can work seamlessly with your spec.</p>
+</div>
 
+<section id="syntax">
+  <h2>Syntax</h2>
+  <p>Butter uses strict 2-space indentation per nesting depth: depth 0 = 0 spaces, depth 1 = 2 spaces, depth 2 = 4 spaces, depth 3 = 6 spaces. Comments use <code>#</code> or <code>//</code>.</p>
+
+  <pre><code class="language-text"># Root Application Specification
+app MyApp
+├── description &lt;string&gt;
+├── version &lt;string&gt;
+├── rules
+│   └── &lt;string&gt;
+├── feature &lt;name&gt;
+└── endpoint &lt;name&gt; &lt;route&gt;
+
+# Subsystem Feature Block Specification
+feature CreateTask
+├── description &lt;string&gt;
+├── version &lt;string&gt;
+├── params
+│   └── &lt;name&gt; &lt;type&gt;
+└── actions
+    └── &lt;string&gt;
+        └── enforce &lt;string&gt;
+
+# Synchronous HTTP Endpoint Transport Block Specification
+endpoint StoreTodo "/todo"
+├── description &lt;string&gt;
+├── version &lt;string&gt;
+├── method &lt;string&gt;
+├── params
+│   └── &lt;name&gt; &lt;type&gt;
+├── responses
+│   └── &lt;name&gt;
+│       └── &lt;name&gt; &lt;type&gt;
+├── actions
+│   └── &lt;string&gt;
+│       └── enforce &lt;string&gt;
+└── returns
+    └── &lt;code&gt; &lt;ResponseName|string&gt;</code></pre>
+
+  <p><strong>Endpoint header note:</strong> <code>&lt;name&gt;</code> is an unquoted, CamelCase, unique identifier. <code>&lt;route&gt;</code> is a quoted string. Two endpoints may not share a <code>&lt;name&gt;</code> even if their routes differ. Endpoint uniqueness is on the name, not the route.</p>
+</section>
+
+<section id="features">
   <h2>Features</h2>
   <p>A <code>feature</code> declares something your system should do. It describes a capability — what inputs it takes and what steps to follow.</p>
   <pre><code class="language-butter">feature ProcessPayment
@@ -64,10 +109,11 @@
 
   <h3>Rules</h3>
   <ul>
-    <li>Each feature name must be unique within the spec.</li>
+    <li>Feature names are CamelCase; each name must be unique within the spec.</li>
     <li>Valid names: letters, digits, underscores, hyphens.</li>
     <li>Everything under a feature must be indented.</li>
     <li>Valid keywords inside a feature: <code>description</code>, <code>version</code>, <code>params</code>, <code>actions</code>.</li>
+    <li>A blank line is required above a feature, except when it is the first top-level block in the file. If comments appear directly above, the blank line sits above the comment(s).</li>
     <li>A feature can be empty — zero params and zero actions is valid.</li>
   </ul>
 </section>
@@ -87,7 +133,8 @@
   <h3>How they work</h3>
   <ul>
     <li>Place under <code>app</code>, alongside <code>description</code> and <code>version</code>.</li>
-    <li>Each rule is a quoted string on its own line.</li>
+    <li>A blank line is required above the <code>rules</code> block.</li>
+    <li>Each rule is a quoted string on its own line, indented 4 spaces.</li>
     <li>Rules apply to every feature and endpoint in the spec — not to any single action.</li>
   </ul>
 </section>
@@ -112,7 +159,9 @@
       <tr><td><code>array[...]</code></td><td><code>tags array[string]</code></td><td>A list of a single element type.</td></tr>
     </tbody>
   </table>
-  <p>Parameter names must be unique within a feature or endpoint.</p>
+  <p>Parameter names are snake_case and must be unique within a feature or endpoint.
+  Inside <code>enum[...]</code>, values are quoted strings and each must be unique within the list.
+  <code>array[&lt;type&gt;]</code> accepts one of <code>string | integer | double | boolean</code> as its element type.</p>
 </section>
 
 <section id="actions">
@@ -184,10 +233,12 @@ endpoint ProcessOrder "/api/checkout/orders"
 
   <h3>Rules</h3>
   <ul>
-    <li>Route goes in the header: <code>endpoint Name "/path"</code>.</li>
-    <li><code>method</code> is required — one of <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>PATCH</code>.</li>
+    <li>Route goes in the header: <code>endpoint Name "/path"</code>. The parser rejects an unquoted or missing route.</li>
+    <li><code>method</code> is required and enforced — one of <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>PATCH</code>.</li>
     <li>Valid keywords inside an endpoint: <code>description</code>, <code>version</code>, <code>method</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, <code>returns</code>.</li>
-    <li>Each endpoint must have a unique name.</li>
+    <li>Each endpoint must have a unique name (unique on <code>&lt;name&gt;</code>, not the route).</li>
+    <li>A blank line is required above each endpoint, except when it is the first top-level block. If comments appear directly above, the blank line sits above the comment(s).</li>
+    <li><code>returns</code> status codes must be integers in the range <code>100</code>–<code>599</code>.</li>
   </ul>
 
   <blockquote><strong>Feature vs Endpoint:</strong> Use <code>feature</code> for business logic. Use <code>endpoint</code> for HTTP API contracts. They live side by side under <code>app</code>.</blockquote>
@@ -206,7 +257,7 @@ endpoint ProcessOrder "/api/checkout/orders"
   ValidationError
     error string
     details string</code></pre>
-  <p>Response names must be unique within an endpoint. Any name referenced in <code>returns</code> must be defined here.</p>
+  <p>Response names are CamelCase and must be unique within an endpoint. Field names are snake_case. Any name referenced in <code>returns</code> must be defined here.</p>
 </section>
 
 <section id="returns">
@@ -228,7 +279,42 @@ endpoint ProcessOrder "/api/checkout/orders"
       <tr><td><code>204</code></td><td>Status 204, no body.</td></tr>
     </tbody>
   </table>
+  <p>Status codes must be integers in the range <code>100</code>–<code>599</code> (inclusive); codes outside this range are rejected. The compiler validates the range only — use codes that match the standard HTTP status code registry (e.g. <code>200</code>, <code>201</code>, <code>400</code>, <code>404</code>, <code>500</code>) for meaningful mappings.</p>
   <p>Response names referenced here must exist in the <code>responses</code> block.</p>
+</section>
+
+<section id="scope">
+  <h2>Scope Rules</h2>
+  <p>The compiler enforces structural rules: exactly one <code>app</code>; unique feature, endpoint, param, and <code>enum</code> values; valid types and HTTP methods; status codes in <code>100</code>–<code>599</code>; response references defined in the same <code>endpoint</code>. Field presence below is a matter of convention and intent — the compiler does not require the "recommended" items.</p>
+
+  <h3>app</h3>
+  <ul>
+    <li><code>description</code> (Recommended)</li>
+    <li><code>version</code> (Optional)</li>
+    <li><code>rules</code> (Optional)</li>
+    <li><code>feature</code> (Optional, zero or more)</li>
+    <li><code>endpoint</code> (Optional, zero or more)</li>
+  </ul>
+
+  <h3>feature</h3>
+  <ul>
+    <li><code>description</code> (Recommended)</li>
+    <li><code>version</code> (Optional)</li>
+    <li><code>params</code> (Optional)</li>
+    <li><code>actions</code> (Recommended — at least 1, run in strict order)</li>
+  </ul>
+
+  <h3>endpoint</h3>
+  <ul>
+    <li>Route in the header, e.g. <code>endpoint &lt;name&gt; "/route"</code> (Required — the parser rejects an unquoted or missing route)</li>
+    <li><code>method</code> (Required — one of <code>POST | GET | PUT | DELETE | PATCH</code>; enforced)</li>
+    <li><code>description</code> (Recommended)</li>
+    <li><code>version</code> (Optional)</li>
+    <li><code>params</code> (Optional)</li>
+    <li><code>responses</code> (Optional)</li>
+    <li><code>actions</code> (Recommended — at least 1, run in strict order)</li>
+    <li><code>returns</code> (Recommended — at least 1)</li>
+  </ul>
 </section>
 
 <section id="examples">
@@ -304,7 +390,33 @@ feature DeleteTask
     "Verify task_id exists in repository"
     "Verify confirmation matches task title"
     "Remove task record from persistent storage"
-    "Broadcast deletion event to connected clients"</code></pre>
+    "Broadcast deletion event to connected clients"
+
+endpoint SaveTask "/api/tasks"
+  description "Persists a task to the todo API"
+  version "1.0.0"
+  method "POST"
+
+  params
+    title string
+    description string
+    completed boolean
+
+  responses
+    TaskResponse
+      id integer
+      title string
+      description string
+      completed boolean
+
+  actions
+    "Validate title is not empty"
+    "Set completed to false by default"
+    "Store task in the database"
+
+  returns
+    201 TaskResponse
+    500 "Internal server error"</code></pre>
 
   <p>Compile: <code>butter compile todo.butter</code> — produces <code>todo.prompt.md</code>. Use <code>-f json</code> or <code>-f yaml</code> for other formats.</p>
   <p>See a working single-page app: <a href="todo.html">todo.html</a>.</p>
