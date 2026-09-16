@@ -228,7 +228,7 @@ Processes financial transactions through multiple payment gateways
 Requires [Go](https://go.dev/dl/) 1.21+.
 
 ```bash
-git clone <repository-url> butter
+git clone https://github.com/lebohang0824/butter.git butter
 cd butter
 go build -o butter main.go
 sudo cp butter /usr/local/bin/
