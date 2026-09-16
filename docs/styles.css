@@ -277,6 +277,32 @@ pre code {
   color: inherit;
 }
 
+pre.code-block {
+  position: relative;
+  padding-left: 3.75rem;
+}
+
+pre.code-block > .code-gutter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3.25rem;
+  padding: 1rem 0.5rem 1rem 0;
+  border-right: 1px solid var(--border);
+  background: var(--code-bg);
+  text-align: right;
+  color: var(--fg-muted);
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+}
+
+pre.code-block > .code-gutter > span {
+  display: block;
+  line-height: 1.5;
+}
+
 .hero {
   text-align: center;
   padding: 3rem 0 2rem;
