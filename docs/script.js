@@ -87,4 +87,46 @@
 
   window.addEventListener('scroll', updateActiveLink);
   updateActiveLink();
+
+  function setupCopyButtons() {
+    document.querySelectorAll('pre code').forEach(function (code) {
+      var pre = code.parentElement;
+      if (!pre || pre.querySelector('.code-copy')) return;
+
+      var btn = document.createElement('button');
+      btn.className = 'code-copy';
+      btn.type = 'button';
+      btn.textContent = 'Copy';
+      btn.setAttribute('aria-label', 'Copy code to clipboard');
+      pre.appendChild(btn);
+
+      btn.addEventListener('click', function () {
+        var text = code.textContent.replace(/\n+$/, '');
+        function done() {
+          btn.classList.add('copied');
+          btn.textContent = 'Copied!';
+          setTimeout(function () {
+            btn.classList.remove('copied');
+            btn.textContent = 'Copy';
+          }, 1800);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+    });
+  }
+
+  setupCopyButtons();
 })();

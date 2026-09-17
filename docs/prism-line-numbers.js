@@ -2,6 +2,7 @@
   function numberBlocks() {
     document.querySelectorAll('pre').forEach(function (pre) {
       if (pre.classList.contains('code-block')) return;
+      if (pre.classList.contains('no-line-numbers')) return;
 
       var code = null;
       for (var i = 0; i < pre.children.length; i++) {

@@ -259,6 +259,7 @@ code {
 }
 
 pre {
+  position: relative;
   background: var(--code-bg);
   color: var(--code-fg);
   padding: 1rem 1.25rem;
@@ -301,6 +302,36 @@ pre.code-block > .code-gutter {
 pre.code-block > .code-gutter > span {
   display: block;
   line-height: 1.5;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 5;
+  padding: 0.12rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.85;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.code-copy:hover {
+  background: var(--accent);
+  color: var(--bg);
+  opacity: 1;
+}
+
+.code-copy.copied {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .hero {
