@@ -26,7 +26,6 @@
     <a href="#boundary">Intent and Context</a>
     <a href="#syntax">Syntax</a>
     <a href="#expression-scope">What Butter Expresses</a>
-    <a href="#outside-scope">Outside Butter's Scope</a>
     <a href="#features">Features</a>
     <a href="#rules">Rules</a>
     <a href="#params">Params</a>
@@ -37,6 +36,7 @@
     <a href="#returns">Returns</a>
     <a href="#structural-rules">Structural Rules</a>
     <a href="#examples">Examples</a>
+    <a href="#outside-scope">Outside Butter's Scope</a>
     <a href="cli-reference.html">CLI Reference</a>
     <a href="extension.html">VS Code Extension</a>
     <a href="changelog.html">Changelog</a>
@@ -59,9 +59,6 @@ Then help me express application intent without prescribing implementation techn
 <section id="philosophy">
   <h2>Core Philosophy</h2>
   <p>Butter is an <strong>intent specification language for AI agents</strong>. Its purpose is to communicate what software is intended to do, what must happen, what must not happen, which constraints apply, and what outcomes are expected.</p>
-  <blockquote><strong>Butter specifies what must be true; the implementation context specifies how to make it true.</strong></blockquote>
-  <p>Butter does not attempt to describe every aspect of an implementation. It stays intentionally small: introduce a keyword or construct only when the existing language cannot express an important form of intent clearly.</p>
-  <p>Before adding syntax, ask: <em>Can this already be expressed clearly using the existing Butter language?</em> If the answer is yes, keep the language unchanged.</p>
 </section>
 
 <section id="boundary">
@@ -648,11 +645,18 @@ Implement the application intent. Keep the actions in their declared order
 and respect the rules, params, enforce expressions, and endpoint contracts.</code></pre>
 </section>
 
+<section id="outside-scope">
+    <h2>What Butter Intentionally Does Not Express</h2>
+    <p>Butter is not a programming language, framework, database schema language, deployment language, UI design language, Figma-like design specification, visual styling language, or technology configuration language.</p>
+    <p>For user interfaces, Butter can express behavioral intent related to an interaction. It does not need to describe exact layouts, colors, typography, spacing, component dimensions, or responsive breakpoints. Communicate those details through design artifacts or implementation context provided alongside the specification.</p>
+    <blockquote><strong>Butter can express:</strong> \u201cA user must be able to filter their tasks by status.\u201d<br><strong>Butter does not need to express:</strong> \u201cPlace the filter dropdown 24px from the right edge and use a 14px font.\u201d</blockquote>
+    <p>The first statement is application intent. The second is a design or implementation concern.</p>
+</section>
+
 <footer class="footer">
   <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
   <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
 </footer>
-
 </main>
 </div>
 
@@ -660,12 +664,5 @@ and respect the rules, params, enforce expressions, and endpoint contracts.</cod
 <script src="prism-core.min.js"></script>
 <script src="prism-butber.js"></script>
 <script src="prism-line-numbers.js"></script>
-<section id="outside-scope">
-  <h2>What Butter Intentionally Does Not Express</h2>
-  <p>Butter is not a programming language, framework, database schema language, deployment language, UI design language, Figma-like design specification, visual styling language, or technology configuration language.</p>
-  <p>For user interfaces, Butter can express behavioral intent related to an interaction. It does not need to describe exact layouts, colors, typography, spacing, component dimensions, or responsive breakpoints. Communicate those details through design artifacts or implementation context provided alongside the specification.</p>
-  <blockquote><strong>Butter can express:</strong> “A user must be able to filter their tasks by status.”<br><strong>Butter does not need to express:</strong> “Place the filter dropdown 24px from the right edge and use a 14px font.”</blockquote>
-  <p>The first statement is application intent. The second is a design or implementation concern.</p>
-</section>
 </body>
 </html>
