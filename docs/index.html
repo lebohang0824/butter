@@ -40,19 +40,19 @@
   <div class="hero">
     <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
     <h1>Butter</h1>
-    <p class="subtitle">A specification language for AI agents. Write <code>.butter</code> files, compile to a prompt, and hand it to an AI. The AI builds what you described — with fewer mistakes and less back-and-forth.</p>
+    <p class="subtitle">An implementation-agnostic intent specification language for AI agents. Write <code>.butter</code> files, compile them to structured prompts, and provide the desired implementation context separately.</p>
   </div>
-  <p>AI coding agents are useful, but they drift. They invent parameters that don't exist, skip steps, reorder actions, or waste time guessing what you meant. Butter fixes that. You write a structured <code>.butter</code> spec that declares exactly what your system should do — parameters, constraints, execution order — then compile it to a prompt and give it to the AI. The AI follows the spec instead of improvising.</p>
+  <p>Butter makes application intent explicit: what software should do, what must remain true, which inputs are acceptable, and what outcomes are expected. It does not prescribe a programming language, framework, database, or UI technology. The AI agent receives the compiled specification together with the implementation context and produces an implementation for review and testing.</p>
 </section>
 
 <section id="why">
   <h2>Why Butter</h2>
-  <p>Natural language prompts are vague. Data files describe data, not intent. Butter sits in between: compact enough to write by hand, structured enough to remove ambiguity.</p>
+  <p>Natural language prompts can be vague, while data files describe data rather than intent. Butter sits in between: compact enough to write by hand and structured enough to make important requirements easier to communicate and review.</p>
   <ul>
-    <li><strong>Actions run in order.</strong> Steps inside a feature execute one after another. No parallelism, no reordering. The AI doesn't guess the sequence.</li>
-    <li><strong>Parameters are typed.</strong> Every input has a type — <code>string</code>, <code>integer</code>, <code>boolean</code>, <code>enum</code>, etc. The AI can't invent inputs you didn't declare.</li>
-    <li><strong>Constraints are explicit.</strong> <code>enforce</code> rules sit right under the actions they apply to. The AI knows what must be true before proceeding.</li>
-    <li><strong>One spec, one shot.</strong> Compile the spec, paste the prompt into your AI chat, and get a working implementation. No iterative Q&A, no wasted tokens.</li>
+    <li><strong>Actions run in order.</strong> Steps inside a feature are declared sequentially, making the intended order explicit.</li>
+    <li><strong>Parameters are typed.</strong> Inputs use declared types such as <code>string</code>, <code>integer</code>, <code>boolean</code>, and <code>enum</code>.</li>
+    <li><strong>Constraints are explicit.</strong> <code>enforce</code> expressions sit under the actions they qualify and state conditions that must hold.</li>
+    <li><strong>One specification, many stacks.</strong> Butter describes application intent independently of the implementation language, framework, database, or UI technology.</li>
     <li><strong>Zero dependencies.</strong> The compiler is a single Go binary with no third-party packages.</li>
   </ul>
 </section>
@@ -130,11 +130,16 @@ butter compile hello.butter -f yaml   # produces hello.yaml</code></pre>
     <li>Write a <code>.butter</code> spec — declare features, parameters, and sequential actions.</li>
     <li>Compile with <code>butter compile spec.butter</code> — this produces <code>spec.prompt.md</code>.</li>
     <li>Paste the prompt into your AI chat with a short instruction:
-      <pre><code class="language-text">Implement every feature in this specification. Each feature's
-actions are sequential — run them in listed order. Respect
-all types and constraints.</code></pre>
+      <pre><code class="language-text">Implementation context:
+- Use the selected language, framework, and project conventions
+
+Butter specification:
+[paste compiled spec.prompt.md here]
+
+Implement the application intent. Keep actions in listed order and respect
+all types, rules, enforce expressions, and interface contracts.</code></pre>
     </li>
-    <li>The AI builds it. First time, accurately. Less hallucination, less token waste.</li>
+    <li>The AI uses the specification and implementation context to produce an implementation for review and testing.</li>
   </ol>
   <p>The spec defines <em>what</em> to build. The AI figures out <em>how</em>.</p>
 </section>
@@ -143,15 +148,15 @@ all types and constraints.</code></pre>
   <h2>Syntax Overview</h2>
 
   <h3>File Structure</h3>
-  <p>Every <code>.butter</code> file starts with an <code>app</code> declaration, followed by one or more <code>feature</code> or <code>endpoint</code> blocks. Blocks are defined by indentation — 2 or 4 spaces.</p>
+  <p>Every <code>.butter</code> file starts with an <code>app</code> declaration, followed by zero or more <code>feature</code> or <code>endpoint</code> blocks. Blocks are defined by strict 2-space indentation per nesting depth.</p>
 
   <pre><code class="language-butter">app MyApp
   description "What the app does"
   version "1.0.0"
 
   rules
-    "Use Node on the backend"
-    "Use React on the frontend"
+    "Users may only access resources they own"
+    "Operations that create duplicate records must be rejected"
 
 feature FeatureName
   description "What this feature does"
@@ -185,7 +190,7 @@ endpoint EndpointName "route/path"
       <tr><td><code>endpoint</code></td><td>Under app</td><td>An HTTP API contract — route, method, params, responses, actions, returns.</td></tr>
       <tr><td><code>description</code></td><td>Anywhere</td><td>A quoted context string.</td></tr>
       <tr><td><code>version</code></td><td>Anywhere</td><td>A version identifier.</td></tr>
-      <tr><td><code>rules</code></td><td>Under app</td><td>App-wide constraints the AI must follow.</td></tr>
+      <tr><td><code>rules</code></td><td>Under app</td><td>App-wide application intent, business constraints, and invariants.</td></tr>
       <tr><td><code>params</code></td><td>Under feature/endpoint</td><td>Typed input parameters.</td></tr>
       <tr><td><code>actions</code></td><td>Under feature/endpoint</td><td>Sequential execution steps (quoted strings).</td></tr>
       <tr><td><code>enforce</code></td><td>Under action</td><td>A constraint that must hold for the action to succeed.</td></tr>

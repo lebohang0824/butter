@@ -12,8 +12,8 @@ func TestParseAppRulesReturns(t *testing.T) {
   version "1.0.0"
 
   rules
-    "Use React on the frontend"
-    "Use Nodejs on the backend"
+    "Users may only access their own tasks"
+    "A task cannot be completed until it is assigned to a user"
 
 feature CreateTodo
   description "Todo frontend form"
@@ -62,7 +62,7 @@ endpoint SaveTodo "/todo"
 	if len(spec.Rules) != 2 {
 		t.Fatalf("expected 2 rules, got %d", len(spec.Rules))
 	}
-	if spec.Rules[0].Statement != "Use React on the frontend" {
+	if spec.Rules[0].Statement != "Users may only access their own tasks" {
 		t.Errorf("unexpected rule: %q", spec.Rules[0].Statement)
 	}
 	if len(spec.Features) != 1 {

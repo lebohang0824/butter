@@ -1,13 +1,19 @@
-# TodoApp — A complete task management application
-# AI agents: implement every feature below. Each feature's actions are sequential
-# execution steps — run them one after another in the listed order. Respect all
-# types and constraints.
+# TodoApp — A task management application intent specification
+# AI agents: implement the application behavior below. Each feature's actions
+# are sequential execution steps — run them one after another in the listed order.
+# Respect all types, rules, and constraints.
 app TodoApp
-  description "A full-featured todo application with task management capabilities. This spec demonstrates Butter's AI intent workflow: an AI agent reads the compiled prompt and produces a complete working application with higher first-pass accuracy."
+  description "A task management application for creating, listing, updating, and deleting tasks."
   version "1.0.0"
 
+  rules
+    "Users may only access tasks they own"
+    "A task cannot be completed until it is assigned to a user"
+    "Operations that would create duplicate tasks must be rejected"
+    "Archived tasks cannot be modified or deleted"
+
 feature CreateTask
-  description "Allows creation of new tasks with title, priority, and due date. AI agents: this feature's actions are sequential — validate, then assign ID, then timestamp, then notify and schedule."
+  description "Creates a task with a title, priority, and optional due date."
   version "1.0.0"
 
   params
@@ -26,7 +32,7 @@ feature CreateTask
     "Schedule reminder for due date"
 
 feature ListTasks
-  description "Retrieves and filters tasks based on various criteria; each task provides an Edit button that opens a modal for update and delete operations. AI agents: query first, then sort, then validate limits, then limit, then paginate — sequential, never parallel."
+  description "Retrieves and filters tasks based on the requesting user's criteria."
   version "1.0.0"
 
   params
@@ -35,16 +41,13 @@ feature ListTasks
     limit integer
 
   actions
-    "Query task repository with specified filters"
+    "Select tasks owned by the requesting user"
     "Sort results according to sort_by parameter"
     "Limit results to specified count"
     "Apply pagination metadata to response"
 
 feature UpdateTask
-  description "Modifies existing task attributes via a modal form opened from the task list. AI agents: look up, pre-fill form, merge changes, timestamp, reject-archived check — each step is one discrete operation."
-  version "1.0.0"
-  # When rendering the update form, pre-fill each field with the task's current
-  # values so the user can see what they are changing before modifying them.
+  description "Updates editable attributes of a task."
 
   params
     task_id string
@@ -53,14 +56,14 @@ feature UpdateTask
     priority enum["low", "medium", "high", "urgent"]
 
   actions
-    "Look up task by task_id"
-    "Populate form fields with current task values for reference"
-    "Merge provided fields into existing task record"
-    "Set last-modified timestamp to current time"
-    "Reject update if task is archived"
+    "Look up the task owned by the requesting user"
+    "Reject the update if the task is archived"
+    "Validate title is not empty when provided"
+    "Apply the requested task changes"
+    "Set the last-modified timestamp"
 
 feature DeleteTask
-  description "Removes a task from the system permanently via a confirmation modal. AI agents: verify existence, verify confirmation matches title, remove, broadcast — strictly sequential."
+  description "Permanently removes a task after confirmation."
   version "1.0.0"
 
   params
@@ -68,7 +71,8 @@ feature DeleteTask
     confirmation string
 
   actions
-    "Verify task_id exists in repository"
-    "Verify confirmation matches task title"
-    "Remove task record from persistent storage"
-    "Broadcast deletion event to connected clients"
+    "Look up the task owned by the requesting user"
+    "Verify confirmation matches the task title"
+    "Reject the deletion if the task is archived"
+    "Remove the task"
+    "Notify authorized observers about the deletion"

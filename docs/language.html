@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Language Guide — Butter</title>
-<meta name="description" content="Complete language reference for Butter — features, rules, endpoints, parameters, actions, enforce rules, and response schemas.">
+<meta name="description" content="Language guide for Butter, an implementation-agnostic intent specification language for AI agents.">
 <link rel="icon" href="icon.svg">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -22,7 +22,11 @@
   </div>
   <nav>
     <a href="index.html">Home</a>
+    <a href="#philosophy">Philosophy</a>
+    <a href="#boundary">Intent and Context</a>
     <a href="#syntax">Syntax</a>
+    <a href="#expression-scope">What Butter Expresses</a>
+    <a href="#outside-scope">Outside Butter's Scope</a>
     <a href="#features">Features</a>
     <a href="#rules">Rules</a>
     <a href="#params">Params</a>
@@ -31,7 +35,7 @@
     <a href="#endpoints">Endpoints</a>
     <a href="#responses">Responses</a>
     <a href="#returns">Returns</a>
-    <a href="#scope">Scope Rules</a>
+    <a href="#structural-rules">Structural Rules</a>
     <a href="#examples">Examples</a>
     <a href="cli-reference.html">CLI Reference</a>
     <a href="extension.html">VS Code Extension</a>
@@ -44,12 +48,62 @@
 <div class="hero">
   <img src="icon.svg" alt="Butter logo" style="max-width: 80px;">
   <h1>Language Guide</h1>
-  <p class="subtitle">Everything you need to write <code>.butter</code> specs — from basic features to HTTP endpoints.</p>
+  <p class="subtitle">A small, implementation-agnostic intent specification language for AI agents.</p>
+  <p>Butter makes application intent explicit and structured. It describes what must be true and what behavior the implementation should satisfy, while leaving technology choices to the implementation context supplied alongside the specification.</p>
   <p class="hero-note"><strong>AI integration tip:</strong> teach your AI the Butter spec language and its syntax before asking it to help you write a spec. Copy this prompt and give it to your AI agent:</p>
   <pre class="no-line-numbers" style="margin-top:0.75rem;margin-bottom:0;"><code class="language-text">Learn the Butter Specification Language and its syntax from the language guide
 at https://butter-jet.vercel.app/language.html
-Then help me write a Butter spec.</code></pre>
+Then help me express application intent without prescribing implementation technology.</code></pre>
 </div>
+
+<section id="philosophy">
+  <h2>Core Philosophy</h2>
+  <p>Butter is an <strong>intent specification language for AI agents</strong>. Its purpose is to communicate what software is intended to do, what must happen, what must not happen, which constraints apply, and what outcomes are expected.</p>
+  <blockquote><strong>Butter specifies what must be true; the implementation context specifies how to make it true.</strong></blockquote>
+  <p>Butter does not attempt to describe every aspect of an implementation. It stays intentionally small: introduce a keyword or construct only when the existing language cannot express an important form of intent clearly.</p>
+  <p>Before adding syntax, ask: <em>Can this already be expressed clearly using the existing Butter language?</em> If the answer is yes, keep the language unchanged.</p>
+</section>
+
+<section id="boundary">
+  <h2>Intent and Implementation Context</h2>
+  <p>Keep application intent separate from technology and project decisions. The two belong together when you ask an AI agent to implement a specification, but they serve different purposes.</p>
+
+  <h3>Butter communicates</h3>
+  <ul>
+    <li>application intent and business requirements</li>
+    <li>business rules and application-level constraints</li>
+    <li>validation requirements</li>
+    <li>workflows and ordered actions</li>
+    <li>conditions, invariants, and boundaries</li>
+    <li>expected outcomes</li>
+    <li>API and interface contracts, including HTTP endpoints where supported</li>
+    <li>behavior that the implementation must satisfy</li>
+  </ul>
+
+  <h3>Implementation context communicates</h3>
+  <ul>
+    <li>programming language and framework</li>
+    <li>database technology and libraries</li>
+    <li>infrastructure and deployment environment</li>
+    <li>architecture choices</li>
+    <li>coding conventions and existing project structure</li>
+    <li>technology-specific documentation</li>
+  </ul>
+
+  <p>Supply implementation-specific information to the AI agent alongside the Butter specification. For example:</p>
+  <pre><code class="language-text">Butter specification
+        +
+"Implement using Laravel + Vue"
+        ↓
+Laravel/Vue application
+
+Butter specification
+        +
+"Implement using Django + React"
+        ↓
+Django/React application</code></pre>
+  <p>The Butter specification remains the same because the application's intent has not changed.</p>
+</section>
 
 <section id="syntax">
   <h2>Syntax</h2>
@@ -74,7 +128,7 @@ feature CreateTask
     └── &lt;string&gt;
         └── enforce &lt;string&gt;
 
-# Synchronous HTTP Endpoint Transport Block Specification
+# HTTP Endpoint Contract
 endpoint StoreTodo "/todo"
 ├── description &lt;string&gt;
 ├── version &lt;string&gt;
@@ -93,52 +147,148 @@ endpoint StoreTodo "/todo"
   <p><strong>Endpoint header note:</strong> <code>&lt;name&gt;</code> is an unquoted, CamelCase, unique identifier. <code>&lt;route&gt;</code> is a quoted string. Two endpoints may not share a <code>&lt;name&gt;</code> even if their routes differ. Endpoint uniqueness is on the name, not the route.</p>
 </section>
 
+<section id="expression-scope">
+  <h2>What Butter Can Express</h2>
+  <p>Butter's existing constructs already cover the important forms of application intent. This section explains that scope; it does not introduce new syntax.</p>
+
+  <h3>Application behavior</h3>
+  <p>Use a <code>feature</code> and ordered <code>actions</code> to describe what the application should do.</p>
+  <pre><code class="language-butter">feature CreateTask
+  description "Creates a task for an assigned user"
+
+  params
+    title string
+    assignee_id string
+
+  actions
+    "Validate title is not empty"
+    "Validate assignee_id identifies an existing user"
+    "Create a task with a unique identifier"
+    "Notify the assigned user"</code></pre>
+
+  <h3>Business rules</h3>
+  <p>Use the app-level <code>rules</code> block for conditions that apply across the application.</p>
+  <pre><code class="language-butter">app TaskManager
+  description "Manages tasks for individual users"
+
+  rules
+    "Users may only access tasks they own"
+    "A task cannot be completed until it is assigned to a user"</code></pre>
+
+  <h3>Workflows</h3>
+  <p>Actions are written in declaration order. Use separate actions for steps that must happen in a particular sequence.</p>
+  <pre><code class="language-butter">actions
+  "Validate the request"
+  "Reserve the requested capacity"
+  "Create the booking"
+  "Notify the customer"</code></pre>
+
+  <h3>Validation</h3>
+  <p>Use <code>params</code> for accepted input shapes and actions or <code>enforce</code> for conditions that reject invalid input.</p>
+  <pre><code class="language-butter">params
+  email string
+  age integer
+
+actions
+  "Validate email has the required format"
+  "Reject the request when age is below the minimum"
+    enforce "The user must meet the minimum age requirement"</code></pre>
+
+  <h3>Constraints and invariants</h3>
+  <p>Use <code>rules</code> for application-wide invariants and <code>enforce</code> for constraints attached to an action.</p>
+  <pre><code class="language-butter">"Transfer funds"
+  enforce "The source account must retain its required minimum balance"
+  enforce "The transfer amount must not exceed the available balance"</code></pre>
+
+  <h3>Interfaces</h3>
+  <p>Use an <code>endpoint</code> to describe an HTTP contract: route, method, parameters, response schemas, actions, and return mappings.</p>
+  <pre><code class="language-butter">endpoint GetTask "/tasks/{task_id}"
+  method "GET"
+
+  responses
+    TaskResponse
+      id integer
+      title string
+      status string
+
+  returns
+    200 TaskResponse
+    404 "Task not found"</code></pre>
+
+  <h3>Expected outcomes</h3>
+  <p>Actions and <code>returns</code> describe the result an implementation must produce or guarantee after an operation.</p>
+  <pre><code class="language-butter">actions
+  "Create an invitation with a unique identifier"
+  "Send the invitation to the recipient"
+
+returns
+  201 InvitationResponse
+  409 "An invitation already exists"</code></pre>
+
+  <h3>Boundaries</h3>
+  <p>Use rules, actions, and enforce expressions for behavior the implementation must not perform when that boundary is part of the application's intent.</p>
+  <pre><code class="language-butter">rules
+  "Users must not access another user's private resources"
+  "Deleted resources must not be returned by list operations"
+
+actions
+  "Reject the request when the user is not authorized"</code></pre>
+</section>
+
+
 <section id="features">
   <h2>Features</h2>
-  <p>A <code>feature</code> declares something your system should do. It describes a capability — what inputs it takes and what steps to follow.</p>
+  <p>A <code>feature</code> declares an application capability: what inputs it accepts and what behavior it provides.</p>
   <pre><code class="language-butter">feature ProcessPayment
-  description "Handles payment transactions"
+  description "Validates and records a payment"
   version "1.0.0"
 
   params
     order_id string
     amount double
-    payment_method enum["credit_card", "crypto", "bank_transfer"]
+    payment_method enum["card", "bank_transfer"]
 
   actions
-    "Validate routing balance metrics"
-    "Apply cryptocurrency transaction surcharge"
-    "Flag transaction for manual risk review"</code></pre>
+    "Validate the payment amount"
+    "Verify the payment method is allowed"
+    "Record the payment outcome"</code></pre>
 
-  <h3>Rules</h3>
+  <h3>Feature rules</h3>
   <ul>
     <li>Feature names are CamelCase; each name must be unique within the spec.</li>
-    <li>Valid names: letters, digits, underscores, hyphens.</li>
+    <li>Valid names contain letters, digits, underscores, and hyphens.</li>
     <li>Everything under a feature must be indented.</li>
-    <li>Valid keywords inside a feature: <code>description</code>, <code>version</code>, <code>params</code>, <code>actions</code>.</li>
-    <li>A blank line is required above a feature, except when it is the first top-level block in the file. If comments appear directly above, the blank line sits above the comment(s).</li>
+    <li>Valid keywords inside a feature are <code>description</code>, <code>version</code>, <code>params</code>, and <code>actions</code>.</li>
+    <li>A blank line is required above a feature, except when it is the first top-level block in the file. If comments appear directly above, the blank line sits above the comments.</li>
     <li>A feature can be empty — zero params and zero actions is valid.</li>
   </ul>
 </section>
 
 <section id="rules">
   <h2>Rules</h2>
-  <p>The <code>rules</code> block lives under <code>app</code> and declares app-wide constraints the AI must respect throughout the entire implementation.</p>
-  <pre><code class="language-butter">app MyApp
-  description "Order checkout and payment API"
+  <p>The <code>rules</code> block lives under <code>app</code> and declares application-wide intent, business constraints, and invariants that the implementation should respect.</p>
+  <pre><code class="language-butter">app OrderService
+  description "Creates and manages customer orders"
   version "1.0.0"
 
   rules
-    "Use Node on the backend"
-    "Use React on the frontend"
-    "Never store plain-text credentials"</code></pre>
+    "Customers may only access orders they own"
+    "An order cannot be charged for more than its calculated total"
+    "Operations that would create duplicate orders must be rejected"</code></pre>
+
+  <p>Do not use <code>rules</code> to select implementation technology. Statements such as the following belong in the implementation context or pre-prompt, not in the Butter specification:</p>
+  <pre><code class="language-text">"Use Laravel"
+"Use React"
+"Use PostgreSQL"
+"Use Redis"
+"Use Python"</code></pre>
 
   <h3>How they work</h3>
   <ul>
-    <li>Place under <code>app</code>, alongside <code>description</code> and <code>version</code>.</li>
+    <li>Place <code>rules</code> under <code>app</code>, alongside <code>description</code> and <code>version</code>.</li>
     <li>A blank line is required above the <code>rules</code> block.</li>
     <li>Each rule is a quoted string on its own line, indented 4 spaces.</li>
-    <li>Rules apply to every feature and endpoint in the spec — not to any single action.</li>
+    <li>Rules apply to every feature and endpoint in the spec, not to a single action.</li>
   </ul>
 </section>
 
@@ -162,59 +312,55 @@ endpoint StoreTodo "/todo"
       <tr><td><code>array[...]</code></td><td><code>tags array[string]</code></td><td>A list of a single element type.</td></tr>
     </tbody>
   </table>
-  <p>Parameter names are snake_case and must be unique within a feature or endpoint.
-  Inside <code>enum[...]</code>, values are quoted strings and each must be unique within the list.
-  <code>array[&lt;type&gt;]</code> accepts one of <code>string | integer | double | boolean</code> as its element type.</p>
+  <p>Parameter names are snake_case and must be unique within a feature or endpoint. Inside <code>enum[...]</code>, values are quoted strings and each must be unique within the list. <code>array[&lt;type&gt;]</code> accepts one of <code>string | integer | double | boolean</code> as its element type.</p>
 </section>
 
 <section id="actions">
   <h2>Actions</h2>
-  <p>Actions are the steps the AI must execute — in order, one after another. Each action is a quoted string describing what to do.</p>
+  <p>Actions describe the ordered behavior an implementation should perform. Each action is a quoted string.</p>
   <pre><code class="language-butter">actions
   "Validate title is not empty"
-  "Assign unique identifier to the new task"
-  "Set creation timestamp to current time"
-  "Send notification to assigned user"
-  "Schedule reminder for due date"</code></pre>
+  "Assign a unique identifier to the new task"
+  "Set the creation timestamp"
+  "Notify the assigned user"
+  "Schedule a reminder for the due date"</code></pre>
 
   <h3>How they work</h3>
   <ul>
-    <li><strong>Sequential.</strong> Steps run in declaration order. Never in parallel.</li>
-    <li><strong>Deterministic.</strong> Same inputs produce the same execution path.</li>
-    <li><strong>Atomic.</strong> Each action is one step. Break complex work into multiple actions.</li>
+    <li><strong>Sequential.</strong> Steps run in declaration order.</li>
+    <li><strong>Discrete.</strong> Keep each action to one behavior. Split complex work into multiple actions.</li>
+    <li><strong>Intent-focused.</strong> Describe the required result or behavior, not a preferred library, framework, or database.</li>
   </ul>
-  <p>Keep every action to a single step — one discrete operation, nothing more. If an action does several things, split it into separate actions so the AI executes them one at a time and in strict order.</p>
-  <p>Write actions like you're giving instructions to a developer. Be specific about what to validate, calculate, or create.</p>
+  <p>Write actions as clear application-level instructions. The implementation context determines how each action is realized.</p>
 </section>
 
 <section id="enforce">
-  <h2>Enforce Rules</h2>
-  <p>Actions can have <code>enforce</code> rules as indented children. These are constraints that must hold for the action to succeed.</p>
-  <pre><code class="language-butter">"Validate routing balance metrics"
-  enforce "The payment gateway must have sufficient routing capacity"
-  enforce "Failed validations must log the routing error before halting"
+  <h2>Enforce</h2>
+  <p>Actions can have <code>enforce</code> expressions as indented children. These are constraints or invariants that must hold for the action to succeed.</p>
+  <pre><code class="language-butter">"Validate account balance"
+  enforce "The source account must retain its required minimum balance"
 
-"Charge customer payment method"
+"Charge payment method"
   enforce "The charge amount must not exceed the order total"
   enforce "The payment method must be verified before charging"</code></pre>
-  <p>An action always runs. The enforce rule is an invariant — something that must be true for the step to succeed.</p>
+  <p>An action describes the behavior; the enforce expression states a condition that must remain true.</p>
 </section>
 
 <section id="endpoints">
   <h2>Endpoints</h2>
-  <p>An <code>endpoint</code> describes an HTTP API contract: the route, method, parameters, response schemas, execution steps, and return mappings. Everything the AI needs to implement the endpoint is in one block.</p>
-  <pre><code class="language-butter">app MyApp
-  description "Order checkout and payment API"
+  <p>An <code>endpoint</code> describes an HTTP interface contract: route, method, parameters, response schemas, ordered behavior, and return mappings.</p>
+  <pre><code class="language-butter">app OrderService
+  description "Creates and retrieves customer orders"
   version "1.0.0"
 
-endpoint ProcessOrder "/api/checkout/orders"
-  description "Validates checkout and processes payment"
+endpoint CreateOrder "/api/orders"
+  description "Validates and creates an order"
   version "1.0.0"
   method "POST"
 
   params
-    checkout_token string
-    coupon_code string
+    customer_id string
+    currency string
     dry_run boolean
 
   responses
@@ -224,27 +370,27 @@ endpoint ProcessOrder "/api/checkout/orders"
       currency string
 
   actions
-    "Verify checkout token is valid and active"
-    "Calculate final prices using coupon_code"
-    "Authorize payment transaction"
+    "Validate the customer identifier"
+    "Calculate the order total"
+    "Create the order with a unique identifier"
 
   returns
     201 OrderSuccessPayload
     200 "Dry run completed"
-    400 "Invalid checkout token"
-    500 "Payment provider timeout"</code></pre>
+    400 "Invalid order data"
+    500 "Order creation failed"</code></pre>
 
   <h3>Rules</h3>
   <ul>
     <li>Route goes in the header: <code>endpoint Name "/path"</code>. The parser rejects an unquoted or missing route.</li>
-    <li><code>method</code> is required and enforced — one of <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>PATCH</code>.</li>
-    <li>Valid keywords inside an endpoint: <code>description</code>, <code>version</code>, <code>method</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, <code>returns</code>.</li>
-    <li>Each endpoint must have a unique name (unique on <code>&lt;name&gt;</code>, not the route).</li>
-    <li>A blank line is required above each endpoint, except when it is the first top-level block. If comments appear directly above, the blank line sits above the comment(s).</li>
+    <li><code>method</code> is required and must be one of <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, or <code>PATCH</code>.</li>
+    <li>Valid keywords inside an endpoint are <code>description</code>, <code>version</code>, <code>method</code>, <code>params</code>, <code>responses</code>, <code>actions</code>, and <code>returns</code>.</li>
+    <li>Each endpoint must have a unique name.</li>
+    <li>A blank line is required above each endpoint, except when it is the first top-level block. If comments appear directly above, the blank line sits above the comments.</li>
     <li><code>returns</code> status codes must be integers in the range <code>100</code>–<code>599</code>.</li>
   </ul>
 
-  <blockquote><strong>Feature vs Endpoint:</strong> Use <code>feature</code> for business logic. Use <code>endpoint</code> for HTTP API contracts. They live side by side under <code>app</code>.</blockquote>
+  <blockquote><strong>Feature vs Endpoint:</strong> Use <code>feature</code> for application behavior. Use <code>endpoint</code> for an HTTP interface contract. They live side by side under <code>app</code>.</blockquote>
 </section>
 
 <section id="responses">
@@ -269,9 +415,9 @@ endpoint ProcessOrder "/api/checkout/orders"
   <pre><code class="language-butter">returns
   201 OrderSuccessPayload
   200 "Dry run completed"
-  400 "Invalid checkout token"
+  400 "Invalid order data"
   404
-  500 "Payment provider timeout"</code></pre>
+  500 "Order creation failed"</code></pre>
 
   <h3>Format</h3>
   <table>
@@ -282,13 +428,12 @@ endpoint ProcessOrder "/api/checkout/orders"
       <tr><td><code>204</code></td><td>Status 204, no body.</td></tr>
     </tbody>
   </table>
-  <p>Status codes must be integers in the range <code>100</code>–<code>599</code> (inclusive); codes outside this range are rejected. The compiler validates the range only — use codes that match the standard HTTP status code registry (e.g. <code>200</code>, <code>201</code>, <code>400</code>, <code>404</code>, <code>500</code>) for meaningful mappings.</p>
-  <p>Response names referenced here must exist in the <code>responses</code> block.</p>
+  <p>Status codes must be integers in the range <code>100</code>–<code>599</code> inclusive. Use codes that match the standard HTTP status code registry for meaningful mappings. Response names referenced here must exist in the <code>responses</code> block.</p>
 </section>
 
-<section id="scope">
-  <h2>Scope Rules</h2>
-  <p>The compiler enforces structural rules: exactly one <code>app</code>; unique feature, endpoint, param, and <code>enum</code> values; valid types and HTTP methods; status codes in <code>100</code>–<code>599</code>; response references defined in the same <code>endpoint</code>. Field presence below is a matter of convention and intent — the compiler does not require the "recommended" items.</p>
+<section id="structural-rules">
+  <h2>Structural Rules</h2>
+  <p>The compiler enforces structural rules: exactly one <code>app</code>; unique feature, endpoint, param, and <code>enum</code> values; valid types and HTTP methods; status codes in <code>100</code>–<code>599</code>; and response references defined in the same <code>endpoint</code>. Field presence below is a matter of convention and intent — the compiler does not require the “recommended” items.</p>
 
   <h3>app</h3>
   <ul>
@@ -304,53 +449,56 @@ endpoint ProcessOrder "/api/checkout/orders"
     <li><code>description</code> (Recommended)</li>
     <li><code>version</code> (Optional)</li>
     <li><code>params</code> (Optional)</li>
-    <li><code>actions</code> (Recommended — at least 1, run in strict order)</li>
+    <li><code>actions</code> (Recommended — at least 1, run in order)</li>
   </ul>
 
   <h3>endpoint</h3>
   <ul>
-    <li>Route in the header, e.g. <code>endpoint &lt;name&gt; "/route"</code> (Required — the parser rejects an unquoted or missing route)</li>
-    <li><code>method</code> (Required — one of <code>POST | GET | PUT | DELETE | PATCH</code>; enforced)</li>
+    <li>Route in the header, e.g. <code>endpoint &lt;name&gt; "/route"</code> (Required)</li>
+    <li><code>method</code> (Required — one of <code>POST | GET | PUT | DELETE | PATCH</code>)</li>
     <li><code>description</code> (Recommended)</li>
     <li><code>version</code> (Optional)</li>
     <li><code>params</code> (Optional)</li>
     <li><code>responses</code> (Optional)</li>
-    <li><code>actions</code> (Recommended — at least 1, run in strict order)</li>
+    <li><code>actions</code> (Recommended — at least 1, run in order)</li>
     <li><code>returns</code> (Recommended — at least 1)</li>
   </ul>
 </section>
 
 <section id="examples">
-  <h2>Full Example — Todo App</h2>
-  <pre><code class="language-butter">app TodoApp
-  description "A full-featured todo application"
+  <h2>Full-Stack Example — Task Manager Intent</h2>
+  <p>This example specifies a full-stack application's intent without selecting a technology stack. It includes application behavior, business rules, features, actions, and HTTP endpoints using only existing Butter syntax.</p>
+  <pre><code class="language-butter">app TaskManager
+  description "Manages tasks for individual users"
   version "1.0.0"
 
   rules
-    "Use Node on the backend"
-    "Use React on the frontend"
+    "Users may only access tasks they own"
+    "A task cannot be completed until it is assigned to a user"
+    "Operations that would create duplicate tasks must be rejected"
+    "Archived tasks cannot be modified or deleted"
 
 feature CreateTask
-  description "Creates new tasks with title, priority, and due date"
+  description "Creates a task with a title, priority, and optional due date"
   version "1.0.0"
 
   params
     title string
     description string
-    completed boolean
     priority enum["low", "medium", "high", "urgent"]
     due_date string
+    assignee_id string
 
   actions
     "Validate title is not empty"
-    "Assign unique identifier to the new task"
-    "Set creation timestamp to current time"
-    "Set completed status to false"
-    "Send notification to assigned user"
-    "Schedule reminder for due date"
+    "Validate assignee_id identifies an existing user"
+    "Validate due_date is a valid future date when provided"
+    "Create a task with a unique identifier"
+    "Set the task status to pending"
+    "Notify the assigned user about the new task"
 
 feature ListTasks
-  description "Retrieves and filters tasks based on criteria"
+  description "Lists and filters the requesting user's tasks"
   version "1.0.0"
 
   params
@@ -359,13 +507,14 @@ feature ListTasks
     limit integer
 
   actions
-    "Query task repository with specified filters"
-    "Sort results according to sort_by parameter"
-    "Limit results to specified count"
-    "Apply pagination metadata to response"
+    "Select tasks owned by the requesting user"
+    "Filter selected tasks by status_filter"
+    "Sort selected tasks according to sort_by"
+    "Limit results to the requested count"
+    "Return tasks with pagination metadata"
 
 feature UpdateTask
-  description "Modifies existing task attributes"
+  description "Updates editable attributes of a task"
   version "1.0.0"
 
   params
@@ -375,14 +524,14 @@ feature UpdateTask
     priority enum["low", "medium", "high", "urgent"]
 
   actions
-    "Look up task by task_id"
-    "Populate form fields with current task values"
-    "Merge provided fields into existing task record"
-    "Set last-modified timestamp to current time"
-    "Reject update if task is archived"
+    "Look up the task owned by the requesting user"
+    "Reject the update if the task is archived"
+    "Validate title is not empty when provided"
+    "Apply the requested task changes"
+    "Set the last-modified timestamp"
 
 feature DeleteTask
-  description "Removes a task permanently"
+  description "Permanently removes a task after confirmation"
   version "1.0.0"
 
   params
@@ -390,46 +539,113 @@ feature DeleteTask
     confirmation string
 
   actions
-    "Verify task_id exists in repository"
-    "Verify confirmation matches task title"
-    "Remove task record from persistent storage"
-    "Broadcast deletion event to connected clients"
+    "Look up the task owned by the requesting user"
+    "Verify confirmation matches the task title"
+    "Reject the deletion if the task is archived"
+    "Remove the task"
+    "Notify authorized observers about the deletion"
 
 endpoint SaveTask "/api/tasks"
-  description "Persists a task to the todo API"
+  description "Creates a task through the task API"
   version "1.0.0"
   method "POST"
 
   params
     title string
     description string
-    completed boolean
+    priority enum["low", "medium", "high", "urgent"]
+    due_date string
+    assignee_id string
 
   responses
     TaskResponse
       id integer
       title string
       description string
-      completed boolean
+      priority string
+      due_date string
+      assignee_id string
+      status string
 
   actions
     "Validate title is not empty"
-    "Set completed to false by default"
-    "Store task in the database"
+    "Validate assignee_id identifies an existing user"
+    "Reject the request when it would create a duplicate task"
+    "Create the task with a unique identifier"
+    "Set the task status to pending"
 
   returns
     201 TaskResponse
-    500 "Internal server error"</code></pre>
+    400 "Invalid task data"
+    403 "The user may not create a task for that assignee"
+    409 "A duplicate task already exists"
 
-  <p>Compile: <code>butter compile todo.butter</code> — produces <code>todo.prompt.md</code>. Use <code>-f json</code> or <code>-f yaml</code> for other formats.</p>
-  <p>See a working single-page app: <a href="todo.html">todo.html</a>.</p>
+endpoint ListTasks "/api/tasks"
+  description "Lists tasks through the task API"
+  version "1.0.0"
+  method "GET"
+
+  params
+    status_filter enum["all", "pending", "completed", "archived"]
+    sort_by enum["created", "priority", "due_date", "title"]
+    limit integer
+
+  responses
+    TaskListResponse
+      tasks array[string]
+      total integer
+      next_cursor string
+
+  actions
+    "Select tasks owned by the requesting user"
+    "Filter selected tasks by status_filter"
+    "Sort selected tasks according to sort_by"
+    "Limit results to the requested count"
+    "Return tasks with pagination metadata"
+
+  returns
+    200 TaskListResponse
+    400 "Invalid filter or limit"</code></pre>
+
+  <h3>Same intent, different implementation contexts</h3>
+  <pre><code class="language-text">                SAME INTENT
+                    │
+                 Butter
+                    │
+        ┌───────────┴───────────┐
+        │                       │
+   Implementation A       Implementation B
+   Laravel + Vue          Django + React
+        │                       │
+        └───────────┬───────────┘
+                    │
+              Different code
+              Same intent</code></pre>
+
+  <p>Implementation A receives the same Butter specification with an implementation prompt that selects Laravel and Vue. Implementation B receives the same specification with a prompt that selects Django and React. The Butter file does not change.</p>
+  <pre><code class="language-text">Implementation context A:
+- Programming language: PHP
+- Framework: Laravel
+- UI framework: Vue
+- Follow the existing project conventions
+
+Implementation context B:
+- Programming language: Python
+- Framework: Django
+- UI framework: React
+- Follow the existing project conventions</code></pre>
 
   <h3>Using the output with AI</h3>
-  <pre><code class="language-text">Using this specification, build the complete application. Each feature's
-actions are sequential execution steps — they must be implemented strictly one
-after the other in the listed order, never in parallel or reordered.
+  <p>Compile the specification, then provide the compiled prompt together with the desired implementation context. Review and test the resulting implementation as you would any other implementation.</p>
+  <pre><code class="language-text">Implementation context:
+- Use Laravel + Vue
+- Follow the existing project structure and conventions
 
-[paste compiled .prompt.md here]</code></pre>
+Butter specification:
+[paste compiled .prompt.md here]
+
+Implement the application intent. Keep the actions in their declared order
+and respect the rules, params, enforce expressions, and endpoint contracts.</code></pre>
 </section>
 
 <footer class="footer">
@@ -444,5 +660,12 @@ after the other in the listed order, never in parallel or reordered.
 <script src="prism-core.min.js"></script>
 <script src="prism-butber.js"></script>
 <script src="prism-line-numbers.js"></script>
+<section id="outside-scope">
+  <h2>What Butter Intentionally Does Not Express</h2>
+  <p>Butter is not a programming language, framework, database schema language, deployment language, UI design language, Figma-like design specification, visual styling language, or technology configuration language.</p>
+  <p>For user interfaces, Butter can express behavioral intent related to an interaction. It does not need to describe exact layouts, colors, typography, spacing, component dimensions, or responsive breakpoints. Communicate those details through design artifacts or implementation context provided alongside the specification.</p>
+  <blockquote><strong>Butter can express:</strong> “A user must be able to filter their tasks by status.”<br><strong>Butter does not need to express:</strong> “Place the filter dropdown 24px from the right edge and use a 14px font.”</blockquote>
+  <p>The first statement is application intent. The second is a design or implementation concern.</p>
+</section>
 </body>
 </html>

@@ -10,7 +10,7 @@ import (
 func TestSerializeIncludesRules(t *testing.T) {
 	spec := &ast.AppSpec{
 		App:   "TestApp",
-		Rules: []ast.RuleSpec{{Statement: "Use TypeScript"}, {Statement: "Use React"}},
+		Rules: []ast.RuleSpec{{Statement: "Users may only access their own tasks"}, {Statement: "A task cannot be completed until it is assigned to a user"}},
 	}
 
 	out, err := (promptExt{}).Serialize(spec)
@@ -19,7 +19,7 @@ func TestSerializeIncludesRules(t *testing.T) {
 	}
 
 	got := string(out)
-	for _, want := range []string{"### Rules", "* Use TypeScript", "* Use React"} {
+	for _, want := range []string{"### Rules", "* Users may only access their own tasks", "* A task cannot be completed until it is assigned to a user"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("Serialize() output missing %q; got:\n%s", want, got)
 		}

@@ -1,6 +1,6 @@
 ![Butter](butter.png)
 
-**Butter** is a specification language designed to communicate intent to AI agents. Write a `.butter` file that declares exactly what your system should do — parameters, constraints, and sequential execution steps — then compile it to a Markdown prompt and feed it to an AI agent. The agent follows the spec and produces implementations with higher first-pass accuracy. Less hallucination, less token waste, less back-and-forth.
+**Butter** is an intent specification language for AI agents. A `.butter` file describes what software is intended to do, what must happen, what must not happen, which constraints apply, and what outcomes are expected. Butter intentionally leaves implementation technology choices to the implementation context supplied alongside the specification. Compile a spec to a structured prompt, then provide the prompt and the desired implementation context to an AI agent.
 
 ---
 
@@ -26,21 +26,74 @@
 
 ## Design Philosophy
 
-AI agents are powerful, but they hallucinate, produce unexpected output, waste tokens on irrelevant paths, and rarely get things right in one shot. The problem isn't the AI — it's the instruction. Natural language prompts are ambiguous, and configuration formats like JSON/YAML describe data, not intent.
+Butter is an **intent specification language for AI agents**. It communicates what software is intended to do, what must happen, what must not happen, which constraints apply, and what outcomes are expected. It does not attempt to describe every implementation detail.
 
-Butter is a **specification language for AI intent**. It sits between you and the AI: you write a structured `.butter` spec, compile it to a prompt, and feed that prompt to an AI agent. The spec constrains the AI's output space with typed parameters, enforce constraints, and deterministic action sequences — so the AI spends its context window on implementation, not interpretation.
+> **Butter specifies what must be true; the implementation context specifies how to make it true.**
+
+Butter stays intentionally small. A new keyword or construct is only useful when the existing language cannot express an important form of intent clearly. Prefer expressing intent with the constructs that already exist.
+
+### Butter and implementation context
+
+Butter communicates application intent:
+
+- business requirements and application behavior
+- business rules, constraints, and invariants
+- validation requirements
+- workflows and ordered actions
+- expected outcomes
+- API and interface contracts
+- boundaries that are part of the application's intent
+
+The implementation context communicates technology and project decisions:
+
+- programming language and framework
+- database, libraries, and infrastructure
+- deployment environment
+- architecture choices and coding conventions
+- existing project structure
+- technology-specific documentation
+
+Technology choices belong in the implementation context or pre-prompt supplied to the AI agent alongside the Butter specification. The same Butter specification can therefore be implemented with different technology stacks without changing the application intent.
 
 ### Core Principles
 
-- **Intent over data** — JSON and YAML describe *what* data looks like. Butter describes *what to do*: features declare capabilities, parameters define typed inputs, and actions are sequential execution steps that must run one after another. The AI gets a complete execution model, not a data schema.
+- **Intent over implementation** — Butter describes what the application must do and what must remain true. It does not prescribe a programming language, framework, database, library, or UI technology.
 
-- **Sequential actions, deterministic results** — Actions inside a feature are synchronous, ordered steps. Each step performs one discrete operation. No parallel execution, no reordering, no guessing. This eliminates the most common source of AI hallucination: ambiguous sequencing.
+- **Small and focused** — Existing constructs express behavior, rules, validation, workflows, constraints, interfaces, and outcomes. New syntax is not added merely to make a detail more explicit.
 
-- **Constrained output space** — Types (`string`, `integer`, `double`, `boolean`, `enum[...]`, `array[...]`), `enforce` constraints, and app-level `rules` define precise boundaries. The AI can't invent parameters that don't exist or skip steps that are required. Fewer degrees of freedom means fewer surprises.
+- **Explicit constraints** — `rules` and `enforce` express application-level boundaries. They should not be used for technology choices such as “Use Laravel” or “Use React.”
 
-- **One-shot prompting** — Feed the compiled spec to an AI agent with a simple instruction: "Implement this spec." The agent produces code with higher first-pass accuracy. No iterative back-and-forth, no ambiguous follow-ups, no wasted tokens on clarifying questions.
+- **Ordered behavior** — Actions describe a required sequence of behavior. The implementation chooses how to realize that sequence in the selected technology context.
 
-- **Zero-dependency core** — The lexer, parser, and semantic validator are hand-written in Go with zero third-party dependencies. No supply-chain risk, no bloat, predictable compilation every time.
+- **Implementation independence** — A Butter specification remains stable when the implementation stack changes. Supply the stack and project conventions separately when asking an agent to implement the specification.
+
+- **Clear, not guaranteed** — A structured specification makes intent easier to communicate and review. It does not guarantee a correct implementation or a particular level of accuracy.
+
+### Implementation context
+
+A Butter specification describes the application's intent. When asking an AI agent to implement it, provide technology and project decisions separately, for example:
+
+```text
+Implementation context
+- Programming language: PHP
+- Framework: Laravel
+- UI framework: Vue
+- Database: PostgreSQL
+- Follow the existing project conventions and architecture
+```
+
+The same specification can be paired with a different context:
+
+```text
+Implementation context
+- Programming language: Python
+- Framework: Django
+- UI framework: React
+- Database: PostgreSQL
+- Follow the existing project conventions and architecture
+```
+
+The Butter file does not change. Only the implementation context changes.
 
 ---
 
@@ -93,7 +146,7 @@ endpoint <name> <route>
 | `version`     | Top/Block     | Declares the version identifier for the application, feature, or endpoint |
 | `feature`     | Block-level   | Declares a sub-system module or discrete capability |
 | `endpoint`    | Block-level   | Declares a synchronous HTTP transport contract with a route: `endpoint Name "route"` |
-| `rules`       | App block     | A container block of app-level rules: `rules` followed by quoted strings |
+| `rules`       | App block     | App-wide application intent, business constraints, and invariants: `rules` followed by quoted strings |
 | `method`      | Endpoint      | The HTTP verb, quoted: `method "POST"` |
 | `params`      | Block-level   | A dedicated container block for parameter definitions |
 | `actions`     | Block-level   | A dedicated container block for execution steps |
@@ -161,8 +214,9 @@ app OrderProcessor
   version "2.1.0"
 
   rules
-    "Use Node on the backend"
-    "Use React on the frontend"
+    "Customers may only access orders they own"
+    "An order cannot be charged for more than its calculated total"
+    "Operations that would create duplicate orders must be rejected"
 
 feature ProcessPayment
   description "Processes financial transactions through multiple payment gateways"
@@ -198,8 +252,9 @@ Output (`demo.prompt.md`):
 ### Rules
 **CRITICAL:** The following rules MUST be respected throughout the entire implementation:
 
-* Use Node on the backend
-* Use React on the frontend
+* Customers may only access orders they own
+* An order cannot be charged for more than its calculated total
+* Operations that would create duplicate orders must be rejected
 
 ## Feature: ProcessPayment
 **Version:** 1.0.0
@@ -332,16 +387,20 @@ Butter's true value emerges when you feed the compiled output to an AI agent. He
 
 2. **Compile it** — `butter compile spec.butter` produces `spec.prompt.md`.
 
-3. **Feed the prompt to an AI agent** — Include the compiled prompt with a simple instruction: *"Implement every feature in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all types, rules, and enforce constraints."*
+3. **Feed the prompt and implementation context to an AI agent** — Include the compiled prompt with a short instruction: *"Implement the application intent in this specification. Each feature's actions are sequential execution steps — run them one after another in the listed order. Respect all types, rules, enforce constraints, and interface contracts."*
 
-4. **Get higher first-pass accuracy** — The structured spec eliminates ambiguity. The AI knows exactly what to build, in what order, and with what constraints. Hallucination drops, token waste drops, and you get working code on the first try.
+4. **Review the implementation** — The structured spec makes intent easier to communicate and check. The agent chooses how to realize it in the supplied implementation context, and the result should be reviewed and tested like any other implementation.
 
 ### Example
 
 ```text
-Using this specification, build the complete application. Each feature's
-actions are sequential execution steps — they must be implemented strictly one
-after the other in the listed order, never in parallel or reordered.
+Using this specification and the implementation context below, build the application. Each feature's
+actions are sequential execution steps — implement them strictly one after the other
+in the listed order. Respect the application rules, params, enforce expressions,
+and interface contracts.
+
+Implementation context:
+- Use the selected language, framework, database, and project conventions
 
 [paste compiled spec.prompt.md here]
 ```

@@ -10,8 +10,8 @@ func TestFormatLineSpacing(t *testing.T) {
   description "A todo application"
   version "1.0.0"
   rules
-    "Use React on the frontend"
-    "Use Node on the backend"
+    "Users may only access their own tasks"
+    "A task cannot be completed until it is assigned to a user"
 
 feature CreateTodo
   description "Creates a todo"
@@ -47,8 +47,8 @@ endpoint SaveTodo "/todo"
   version "1.0.0"
 
   rules
-    "Use React on the frontend"
-    "Use Node on the backend"
+    "Users may only access their own tasks"
+    "A task cannot be completed until it is assigned to a user"
 
 feature CreateTodo
   description "Creates a todo"
@@ -138,7 +138,7 @@ func TestFormatIdempotent(t *testing.T) {
   version "1.0.0"
 
   rules
-    "Use React on the frontend"
+    "Users may only access their own tasks"
 
 feature CreateTodo
   description "Creates a todo"

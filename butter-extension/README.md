@@ -2,7 +2,7 @@
 
 ![Butter Logo](https://raw.githubusercontent.com/lebohang0824/butter/main/butter-extension/butter.png)
 
-A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — a specification language that communicates intent to AI agents. Write `.butter` specs, compile to a Markdown prompt, and feed it to AI agents who produce higher first-pass accuracy.
+A VS Code extension providing syntax highlighting, IntelliSense, formatting, linting, and language configuration for **Butter** — an intent specification language for AI agents. Write `.butter` specs, compile them to structured prompts, and provide the desired implementation context separately.
 
 ## Features
 
@@ -46,7 +46,7 @@ feature ProcessPayment
     "Apply cryptocurrency transaction surcharge"
 
 endpoint SaveOrder "/orders"
-  description "Stores an order in the database"
+  description "Creates and records an order"
   version "1.0.0"
   method "POST"
 
@@ -61,7 +61,7 @@ endpoint SaveOrder "/orders"
 
   actions
     "Validate order payload"
-    "Store order in the database"
+    "Persist the order record"
 
   returns
     201 OrderSuccess
