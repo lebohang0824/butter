@@ -75,7 +75,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   border-right: 1px solid var(--sidebar-border);
   padding: 1.5rem 0;
   z-index: 100;
-  transition: background 0.3s, border-color 0.3s;
+  transition: background 0.3s, border-color 0.3s, transform 0.3s ease;
 }
 
 .sidebar::-webkit-scrollbar { width: 6px; }
@@ -165,7 +165,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 
 .menu-toggle {
-  display: none;
+  display: flex;
   position: fixed;
   top: 0.75rem;
   left: 0.75rem;
@@ -551,6 +551,20 @@ pre[class*="language-"] {
 
 [data-theme="dark"] .token.number {
   color: #E8A060;
+}
+
+@media (min-width: 769px) {
+  .sidebar-header {
+    padding-top: 1.75rem;
+  }
+
+  body.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+  }
+
+  body.sidebar-collapsed .main {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 1024px) {

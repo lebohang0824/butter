@@ -23,6 +23,8 @@
 
   document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
+  const SIDEBAR_KEY = 'butter-docs-sidebar';
+
   const sidebar = document.getElementById('sidebar');
   const menuToggle = document.getElementById('menuToggle');
   const navLinks = sidebar.querySelectorAll('nav a');
@@ -31,19 +33,43 @@
   backdrop.className = 'sidebar-backdrop';
   document.body.appendChild(backdrop);
 
-  function toggleSidebar(open) {
-    if (open === undefined) {
-      sidebar.classList.toggle('open');
-    } else if (open) {
-      sidebar.classList.add('open');
-    } else {
-      sidebar.classList.remove('open');
-    }
+  function isDesktop() {
+    return window.innerWidth > 768;
+  }
+
+  function updateBackdrop() {
     var isOpen = sidebar.classList.contains('open');
     backdrop.classList.toggle('visible', isOpen);
-    if (window.innerWidth <= 768) {
+    if (!isDesktop()) {
       document.body.style.overflow = isOpen ? 'hidden' : '';
     }
+  }
+
+  function setDesktopCollapsed(collapsed) {
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+  }
+
+  function toggleSidebar(open) {
+    if (isDesktop()) {
+      var collapsed = open === undefined
+        ? !document.body.classList.contains('sidebar-collapsed')
+        : !open;
+      setDesktopCollapsed(collapsed);
+    } else {
+      if (open === undefined) {
+        sidebar.classList.toggle('open');
+      } else if (open) {
+        sidebar.classList.add('open');
+      } else {
+        sidebar.classList.remove('open');
+      }
+      updateBackdrop();
+    }
+  }
+
+  if (isDesktop() && localStorage.getItem(SIDEBAR_KEY) === '1') {
+    document.body.classList.add('sidebar-collapsed');
   }
 
   menuToggle.addEventListener('click', function () {
@@ -52,7 +78,7 @@
 
   navLinks.forEach(function (link) {
     link.addEventListener('click', function () {
-      toggleSidebar(false);
+      if (!isDesktop()) toggleSidebar(false);
     });
   });
 
@@ -61,7 +87,7 @@
   });
 
   document.addEventListener('click', function (e) {
-    if (window.innerWidth <= 768 &&
+    if (!isDesktop() &&
         !sidebar.contains(e.target) &&
         !menuToggle.contains(e.target)) {
       toggleSidebar(false);
