@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spec Writing Guide — Butter</title>
+<meta name="description" content="A framework for writing Butter specs that prevent an implementer — human or AI — from choosing the easy, wrong interpretation.">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀️</button>
+
+<div class="container">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">
+      <img class="brand-mark" src="icon.svg" alt="">
+      <span>Butter</span>
+    </div>
+    <div class="version">v2.1.0</div>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="#four-constructs">Four Constructs</a>
+    <a href="#order">Write in This Order</a>
+    <a href="#must-must-not">Match Must with Must Not</a>
+    <a href="#authority">Name Authority</a>
+    <a href="#vocabulary">Define Vocabulary</a>
+    <a href="#derivation">Derivation Chains</a>
+    <a href="#absence">Handle Absence</a>
+    <a href="#rigor">Match Rigor to Risk</a>
+    <a href="#self-audit">Self-Audit</a>
+    <a href="#sentence-style">Sentence-Level Style</a>
+    <a href="#checklist">Pre-Publish Checklist</a>
+    <a href="language.html">Language Guide</a>
+    <a href="cli-reference.html">CLI Reference</a>
+    <a href="extension.html">VS Code Extension</a>
+    <a href="changelog.html">Changelog</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<h1>Writing High-Quality Butter Specs</h1>
+
+<p>A butter spec is only as good as its ability to prevent an implementer — human or AI — from silently choosing the easy, wrong interpretation. This guide is a framework for writing specs that close that gap.</p>
+
+<section id="four-constructs">
+  <h2>The Four Constructs, and the Question Each One Answers</h2>
+  <p>Every line you write should be answering exactly one of these questions. Know which one before you write the sentence.</p>
+  <table>
+    <thead>
+      <tr><th>Construct</th><th>Question it answers</th><th>Scope</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>rules</code></td><td>What must always be true, everywhere, forever?</td><td>Global — binds every feature implicitly</td></tr>
+      <tr><td><code>feature</code></td><td>What is this one coherent thing the system does?</td><td>A scope boundary / unit of behavior</td></tr>
+      <tr><td><code>actions</code></td><td>In what order does this happen?</td><td>Local to its feature, sequential</td></tr>
+      <tr><td><code>enforce</code></td><td>What must this one step never be allowed to do?</td><td>Local to the single action it's attached to</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>The asymmetry that matters most:</strong> a <code>rule</code> constrains every feature, including ones written later that never mention it. An <code>enforce</code> constrains only the one action it's attached to. If a constraint should hold everywhere, put it in <code>rules</code> — don't leave it stranded inside one feature where a sibling feature can quietly ignore it.</p>
+
+  <p><strong>Common misclassification to avoid:</strong> writing an invariant as a feature-level <code>enforce</code> when it's actually a system-wide truth. Test: if you removed this feature entirely, would the constraint still need to hold? If yes, it belongs in <code>rules</code>.</p>
+</section>
+
+<section id="order">
+  <h2>Write in This Order</h2>
+  <ol>
+    <li><strong>Rules first.</strong> Draft the full invariant list before touching a single feature. Rules are the constitution; features are laws that must not violate it. Writing features first tempts you to write rules that just describe what the features already do, instead of rules that constrain what they're allowed to do.</li>
+    <li><strong>Vocabulary second.</strong> Define every domain term you're about to rely on.</li>
+    <li><strong>Features in lifecycle order.</strong> Input → validation → core processing → scoring or computation → persistence → retrieval → export/output. Each feature should read as one coherent operation, not a grab-bag of loosely related steps.</li>
+    <li><strong>Cross-cutting contracts last.</strong> Error handling, security, determinism, observability — these apply <em>across</em> features and are easiest to write correctly once the features they cut across already exist.</li>
+    <li><strong>Acceptance criteria at the end.</strong> A closing translation of the rules into named, checkable test scenarios.</li>
+  </ol>
+</section>
+
+<section id="must-must-not">
+  <h2>For Every "Must," Find the Matching "Must Not"</h2>
+  <p>This is the single highest-leverage habit for spec quality. Every positive requirement has a shadow failure mode: a way to <em>technically</em> satisfy the sentence while violating what it was actually protecting.</p>
+  <p>For each requirement you write, ask: <strong>what's the cheapest, most technically-compliant way to fake this?</strong> Then forbid that specifically, as its own sentence.</p>
+  <p>Examples of the pattern (not the content — apply this to your own domain):</p>
+  <ul>
+    <li>"Preserve X" invites "I'll preserve a copy and edit the original" → add "must never overwrite or delete the original."</li>
+    <li>"Calculate independently" invites "I'll derive it from something adjacent and call it independent" → add "must not depend on [the specific adjacent thing]."</li>
+    <li>"Handle missing data" invites "I'll substitute a default and move on" → add "must not silently substitute missing evidence with a default value."</li>
+    <li>"Complete the operation" invites "I'll mark it complete even if step 3 silently failed" → add "must not be marked complete when a required step has failed."</li>
+  </ul>
+  <p>If you can't think of a plausible shortcut for a requirement, you probably don't need a paired "must not" for it. Don't manufacture prohibitions defensively — only where a real shortcut exists.</p>
+</section>
+
+<section id="authority">
+  <h2>Name Authority Explicitly</h2>
+  <p>Any sentence describing an action a person can take — create, modify, delete, view, approve, override — needs an explicit answer to <strong>"who is allowed to do this?"</strong> before it's considered finished.</p>
+  <ul>
+    <li>Don't write "the record can be corrected" — write "only a user holding [specific role/permission] may correct the record."</li>
+    <li>Don't assume symmetry — the ability to <em>view</em> something and the ability to <em>act on</em> it are different permissions and usually need separate statements.</li>
+    <li>If two different actors interact with the same object (e.g., a subject of a record and an administrator of it), state explicitly what each one can and cannot do to it, even if one answer seems "obvious." Obvious to you is unstated to an implementer.</li>
+  </ul>
+  <p>An unstated authority model is the most common real-world gap in specs that are otherwise well-written — it's easy to describe <em>what</em> happens and forget to pin down <em>who</em> is allowed to trigger it.</p>
+</section>
+
+<section id="vocabulary">
+  <h2>Define Vocabulary Before You Rely On It</h2>
+  <p>Any term that will be used as a load-bearing condition later — "sufficient," "valid," "reliable," "complete," "matching," "significant" — needs its own vocabulary entry defining exactly what makes it true or false.</p>
+  <p>Test for whether a term needs a definition: if two competent engineers could reasonably disagree about whether a given case satisfies the term, it needs a definition. If the definition would just restate the term ("valid means the input is correctly formed"), push further — correctly formed <em>how</em>, specifically?</p>
+  <p>Undefined qualifiers are the most common way ambiguity survives into an implementation. The word itself feels precise; it just isn't backed by anything.</p>
+</section>
+
+<section id="derivation">
+  <h2>Make Derivation Chains Explicit</h2>
+  <p>When your system produces multiple computed values, state plainly which ones are allowed to depend on which. By default, assume independence and say so — don't leave it to be inferred.</p>
+  <ul>
+    <li>If value B must never be derived from value A (even though it would be cheaper), say so directly: "X must not be calculated from Y."</li>
+    <li>If a composite value is built from components, state the exact weighting or method, and add a paired enforcement that the components must sum or resolve correctly (e.g., weights totaling 100%).</li>
+    <li>If an aggregate value exists (an overall score, a summary status), forbid using it to backfill any of its own inputs. This specific shortcut — computing the parts from the whole instead of the whole from the parts — is one of the most common places implementations silently cut corners under time pressure.</li>
+  </ul>
+</section>
+
+<section id="absence">
+  <h2>Handle Absence as a First-Class Case</h2>
+  <p>Any time a rule or feature assumes data will be present, immediately follow with: what happens when it isn't?</p>
+  <p>Absence should never collapse into a default value unless you've explicitly said a default is permitted:</p>
+  <ul>
+    <li>Missing/insufficient evidence should not silently become zero, "average," or any other filled-in value.</li>
+    <li>Absence should be recorded as its own explicit state (unavailable, insufficient, unresolved — whatever fits your domain) and carried through to the output rather than quietly disappearing.</li>
+    <li>A result that depends on multiple sub-parts should not be marked complete or successful if a required sub-part is missing, unless the spec explicitly defines a partial-success or "some data unavailable" state.</li>
+  </ul>
+</section>
+
+<section id="rigor">
+  <h2>Match Rigor to Actual Risk</h2>
+  <p>Don't apply uniform ceremony everywhere. Before adding a rule, an <code>enforce</code> clause, or a whole cross-cutting section, ask: <strong>what specific failure does this prevent, in this domain, given how this will actually be built?</strong></p>
+  <ul>
+    <li>Domains with real uncertainty (probabilistic analysis, external untrusted data, anything a lazy implementation could fake convincingly) warrant heavy, explicit anti-fabrication language: don't invent values, don't manufacture confidence, don't claim certainty you don't have.</li>
+    <li>Domains that are mostly deterministic bookkeeping (state transitions, CRUD, arithmetic) need far less of that — their risk is logic bugs and missing edge cases, not fabrication. Spend your rigor on concurrency, ordering, and authorization instead.</li>
+  </ul>
+  <p>If you can't name the failure a rule prevents, either cut it or rewrite it until you can. Padding a spec with ceremony it doesn't need makes it harder to read without making it more correct.</p>
+</section>
+
+<section id="self-audit">
+  <h2>Self-Audit Before You Call It Done</h2>
+  <p>Run two passes over the finished draft:</p>
+  <p><strong>Pass one — read every rule, forward.</strong> For each rule, find at least one feature whose actions are actually shaped by it. A rule with no feature that could possibly violate it is decoration, not a constraint — either it's genuinely unenforceable as written, or you haven't built the feature that needs it yet.</p>
+  <p><strong>Pass two — read every feature, adversarially.</strong> For each feature, imagine implementing it as lazily and cheaply as possible while still technically passing a casual review. Does that lazy version violate any rule? If yes, and nothing in the spec would catch it, add the missing <code>enforce</code> clause or rule.</p>
+</section>
+
+<section id="sentence-style">
+  <h2>Sentence-Level Style</h2>
+  <ul>
+    <li><strong>One imperative clause per action line.</strong> "Validate X," "Record Y," "Reject Z." Never combine two actions in a single sentence — each action should be independently checkable as done or not done.</li>
+    <li><strong>Declarative, not conditional, in <code>rules</code>.</strong> State the invariant plainly; save the "if/when" branching logic for <code>actions</code>, where sequence and conditions belong.</li>
+    <li><strong>Concrete over abstract.</strong> "Must be an integer between 0 and 100 inclusive" beats "must be a valid score." Bound every numeric or enumerable value explicitly rather than trusting the reader to infer a sensible range.</li>
+    <li><strong>Consistent terminology.</strong> Once a vocabulary term is defined, use that exact term everywhere — don't vary the phrasing for readability. Variation reads as a different concept to an implementer, even when you meant the same thing.</li>
+    <li><strong>Short paragraphs of intent, then structure.</strong> A one-line <code>description</code> on every <code>app</code> and <code>feature</code> should be readable on its own as a summary — if you can't summarize a feature in one sentence, it's probably doing more than one job and should be split.</li>
+  </ul>
+</section>
+
+<section id="checklist">
+  <h2>A Pre-Publish Checklist</h2>
+  <p>Before treating a spec as finished, confirm:</p>
+  <ul>
+    <li>Every requirement has been checked against its cheapest possible shortcut, and that shortcut is explicitly forbidden if it exists.</li>
+    <li>Every action that lets someone create, modify, delete, or view something states who is authorized to trigger it.</li>
+    <li>Every qualifier term ("sufficient," "valid," "reliable," etc.) has a vocabulary definition.</li>
+    <li>Every computed value's allowed and forbidden dependencies on other computed values are stated explicitly.</li>
+    <li>Every feature that depends on data defines what happens when that data is missing or insufficient — and that outcome is never a silent default.</li>
+    <li>Every rule is tied to at least one feature that could plausibly violate it.</li>
+    <li>No feature, read adversarially, has a lazy-but-technically-compliant path that would violate a rule.</li>
+    <li>The level of ceremony (how many <code>enforce</code> clauses, how many cross-cutting sections) matches the actual risk of the domain — not more, not less.</li>
+  </ul>
+</section>
+
+<footer class="footer">
+  <p>Butter is open source software. See the <a href="https://github.com/lebohang0824/butter">project repository</a> for license information.</p>
+  <p style="margin-top:0.5rem;"><a href="index.html">← Back to main documentation</a></p>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+<script src="prism-core.min.js"></script>
+<script src="prism-butber.js"></script>
+<script src="prism-line-numbers.js"></script>
+</body>
+</html>

@@ -181,6 +181,7 @@ kbd {
 .sidebar nav a[href$=".html"] {
   border-left: 3px solid var(--border);
   padding-left: calc(0.6rem - 3px);
+  margin-top: 0.4rem;
 }
 
 .sidebar nav a[href$=".html"]:hover {
