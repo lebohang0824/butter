@@ -374,6 +374,10 @@ pre.code-block > .code-gutter {
   pointer-events: none;
 }
 
+pre.code-block > .code-gutter > span {
+  display: block;
+}
+
 .code-copy {
   position: absolute;
   top: 0.55rem;
